@@ -15,5 +15,12 @@ public interface Watcher extends Closeable {
 	 * @return
 	 * @throws IOException
 	 */
-	Resource watchFile(URL pContent, String... pPath) throws IOException;
+	Resource watchFile(URL pOriginContent, String... pPath) throws IOException;
+
+	/**
+	 * @param pContent
+	 * @return
+	 * @throws IOException
+	 */
+	Resource watchFile(URL pOriginContent, boolean pReplaceExisting, String... pPath) throws IOException;
 }

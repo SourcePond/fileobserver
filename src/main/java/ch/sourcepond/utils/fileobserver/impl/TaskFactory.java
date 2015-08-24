@@ -1,6 +1,7 @@
 package ch.sourcepond.utils.fileobserver.impl;
 
-import ch.sourcepond.utils.fileobserver.ChangeObserver;
+import ch.sourcepond.utils.fileobserver.ResourceChangeListener;
+import ch.sourcepond.utils.fileobserver.ResourceEvent;
 
 /**
  * @author rolandhauser
@@ -13,7 +14,8 @@ class TaskFactory {
 	 * @param pResource
 	 * @return
 	 */
-	Runnable newObserverTask(final ChangeObserver pObserver, final EventType pType, final InternalResource pResource) {
-		return new InformObserverTask(pObserver, pType, pResource);
+	Runnable newObserverTask(final ResourceChangeListener pObserver, final ResourceEvent pEvent,
+			final InternalResource pResource) {
+		return new InformObserverTask(pObserver, pEvent, pResource);
 	}
 }

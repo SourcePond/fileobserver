@@ -4,8 +4,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import org.slf4j.Logger;
 
-import ch.sourcepond.utils.fileobserver.ChangeObserver;
 import ch.sourcepond.utils.fileobserver.Resource;
+import ch.sourcepond.utils.fileobserver.ResourceChangeListener;
+import ch.sourcepond.utils.fileobserver.ResourceEvent;
 
 /**
  * @author rolandhauser
@@ -13,16 +14,16 @@ import ch.sourcepond.utils.fileobserver.Resource;
  */
 final class InformObserverTask implements Runnable {
 	private static final Logger LOG = getLogger(InformObserverTask.class);
-	private final ChangeObserver observer;
-	private final EventType type;
+	private final ResourceChangeListener listener;
+	private final ResourceEvent event;
 	private final Resource resource;
 
 	/**
-	 * @param pObserver
+	 * @param pListener
 	 */
-	InformObserverTask(final ChangeObserver pObserver, final EventType pType, final Resource pResource) {
-		observer = pObserver;
-		type = pType;
+	InformObserverTask(final ResourceChangeListener pListener, final ResourceEvent pEvent, final Resource pResource) {
+		listener = pListener;
+		event = pEvent;
 		resource = pResource;
 	}
 
@@ -34,7 +35,7 @@ final class InformObserverTask implements Runnable {
 	@Override
 	public void run() {
 		try {
-			type.dispatch(observer, resource);
+			listener.resourceChange(event);
 		} catch (final Exception e) {
 			LOG.warn("Caught unexpected exception", e);
 		}

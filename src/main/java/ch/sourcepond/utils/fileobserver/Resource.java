@@ -13,12 +13,12 @@ public interface Resource {
 	/**
 	 * @param pObserver
 	 */
-	void addObserver(ChangeObserver pObserver);
+	void addObserver(ResourceChangeListener pObserver);
 
 	/**
 	 * @param pObserver
 	 */
-	void removeObserver(ChangeObserver pObserver);
+	void removeObserver(ResourceChangeListener pObserver);
 
 	/**
 	 * @return

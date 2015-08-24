@@ -1,7 +1,7 @@
 package ch.sourcepond.utils.fileobserver.impl;
 
-import static ch.sourcepond.utils.fileobserver.impl.EventType.CREATED;
 import static java.nio.file.Files.newInputStream;
+import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,17 +12,18 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import ch.sourcepond.utils.fileobserver.ChangeObserver;
+import ch.sourcepond.utils.fileobserver.ResourceChangeListener;
+import ch.sourcepond.utils.fileobserver.ResourceEvent;
+import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
 
 /**
  * @author rolandhauser
  *
  */
-final class DefaultResource implements InternalResource {
-	private static final Logger LOG = LoggerFactory.getLogger(DefaultResource.class);
-	private final Set<ChangeObserver> observers = new HashSet<>();
+final class DefaultResource extends ClosableResource implements InternalResource {
+	private static final Logger LOG = getLogger(DefaultResource.class);
+	private final Set<ResourceChangeListener> listeners = new HashSet<>();
 	private final ExecutorService executor;
 	private final TaskFactory taskFactory;
 	private final URL originContent;
@@ -42,30 +43,33 @@ final class DefaultResource implements InternalResource {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * ch.sourcepond.utils.fileobserver.impl.WatchedFile#addObserver(ch.
+	 * @see ch.sourcepond.utils.fileobserver.impl.WatchedFile#addObserver(ch.
 	 * sourcepond.utils.content.observer.ChangeObserver)
 	 */
 	@Override
-	public synchronized void addObserver(final ChangeObserver pObserver) {
-		if (!observers.add(pObserver)) {
+	public synchronized void addObserver(final ResourceChangeListener pObserver) {
+		checkClosed();
+		if (!listeners.add(pObserver)) {
 			LOG.debug("Observer {0} already present, nothing to be added.", pObserver);
 		} else {
-			informObserver(pObserver, CREATED);
+			fireEvent(pObserver, new ResourceEvent(this, Type.LISTENER_ADDED));
 		}
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * ch.sourcepond.utils.fileobserver.impl.WatchedFile#removeObserver(ch.
+	 * @see ch.sourcepond.utils.fileobserver.impl.WatchedFile#removeObserver(ch.
 	 * sourcepond.utils.content.observer.ChangeObserver)
 	 */
 	@Override
-	public synchronized void removeObserver(final ChangeObserver pObserver) {
-		if (!observers.remove(pObserver)) {
+	public synchronized void removeObserver(final ResourceChangeListener pObserver) {
+		if (isClosed()) {
+			LOG.warn("Watcher is closed; do nothing");
+		} else if (!listeners.remove(pObserver)) {
 			LOG.debug("Observer {0} not present, nothing to be removed.", pObserver);
+		} else {
+			fireEvent(pObserver, new ResourceEvent(this, Type.LISTENER_REMOVED));
 		}
 	}
 
@@ -76,14 +80,15 @@ final class DefaultResource implements InternalResource {
 	 */
 	@Override
 	public InputStream open() throws IOException {
+		checkClosed();
 		return newInputStream(storagePath);
 	}
 
 	/**
 	 * @param pObserver
 	 */
-	private void informObserver(final ChangeObserver pObserver, final EventType pType) {
-		executor.execute(taskFactory.newObserverTask(pObserver, pType, this));
+	private void fireEvent(final ResourceChangeListener pObserver, final ResourceEvent pEvent) {
+		executor.execute(taskFactory.newObserverTask(pObserver, pEvent, this));
 	}
 
 	/*
@@ -93,9 +98,10 @@ final class DefaultResource implements InternalResource {
 	 * informObservers()
 	 */
 	@Override
-	public void informObservers(final EventType pType) {
-		for (final ChangeObserver observer : observers) {
-			informObserver(observer, pType);
+	public void informListeners(final ResourceEvent.Type pType) {
+		final ResourceEvent event = new ResourceEvent(this, pType);
+		for (final ResourceChangeListener listener : listeners) {
+			fireEvent(listener, event);
 		}
 	}
 
@@ -107,5 +113,15 @@ final class DefaultResource implements InternalResource {
 	@Override
 	public URL getOriginContent() {
 		return originContent;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ch.sourcepond.utils.fileobserver.impl.ClosableResource#doClose()
+	 */
+	@Override
+	protected void doClose() throws IOException {
+		listeners.clear();
 	}
 }
