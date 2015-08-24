@@ -27,6 +27,11 @@
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
+				<configuration>
+					<instructions>
+						<Bundle-Activator>ch.sourcepond.utils.fileobserver.impl.WatchManagerActivator</Bundle-Activator>
+					</instructions>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

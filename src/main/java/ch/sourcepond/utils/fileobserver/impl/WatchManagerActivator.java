@@ -9,7 +9,7 @@ import ch.sourcepond.utils.fileobserver.WatchManager;
  * @author rolandhauser
  *
  */
-final class WatchManagerActivator implements BundleActivator {
+public final class WatchManagerActivator implements BundleActivator {
 	private DefaultWatchManager factory;
 
 	/*
