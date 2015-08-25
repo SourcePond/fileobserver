@@ -3,10 +3,14 @@ package ch.sourcepond.utils.fileobserver;
 import java.util.EventObject;
 
 /**
- * @author rolandhauser
  *
  */
 public final class ResourceEvent extends EventObject {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6219486062224010008L;
 
 	/**
 	 * 
@@ -16,11 +20,14 @@ public final class ResourceEvent extends EventObject {
 		LISTENER_ADDED, LISTENER_REMOVED, RESOURCE_CREATED, RESOURCE_MODIFIED, RESOURCE_DELETED
 	}
 
+	private final Type type;
+
 	/**
 	 * 
 	 */
 	public ResourceEvent(final Resource pSource, final Type pType) {
 		super(pSource);
+		type = pType;
 	}
 
 	/*
@@ -31,5 +38,12 @@ public final class ResourceEvent extends EventObject {
 	@Override
 	public Resource getSource() {
 		return (Resource) super.getSource();
+	}
+
+	/**
+	 * @return
+	 */
+	public Type getType() {
+		return type;
 	}
 }

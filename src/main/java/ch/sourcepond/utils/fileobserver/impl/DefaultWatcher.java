@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
-import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
@@ -42,6 +41,7 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 	private static final Logger LOG = getLogger(DefaultWatcher.class);
 	private final Map<URL, InternalResource> watchedFiles = new HashMap<>();
 	private final Map<Path, InternalResource> resources = new ConcurrentHashMap<>();
+	private final Thread watcherThread;
 	private final Path lockFile;
 	private final TaskFactory taskFactory;
 	private final ExecutorService informObserverExector;
@@ -58,6 +58,12 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 		taskFactory = pTaskFactory;
 		informObserverExector = pInformObserverExector;
 		watchService = pLockFile.getFileSystem().newWatchService();
+		watcherThread = new Thread(this, getClass().getSimpleName() + ": " + lockFile.getParent().toAbsolutePath());
+		watcherThread.start();
+	}
+
+	private Path getWorkspace() {
+		return lockFile.getParent();
 	}
 
 	/**
@@ -66,7 +72,7 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 	 * @return
 	 */
 	private Path determinePath(final URL pUrl, final String[] pPath) {
-		Path currentPath = lockFile.getParent();
+		Path currentPath = getWorkspace();
 		for (final String path : pPath) {
 			currentPath = currentPath.resolve(path);
 		}
@@ -92,33 +98,36 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 	 * boolean, java.lang.String[])
 	 */
 	@Override
-	public synchronized Resource watchFile(final URL pOriginContent, final boolean pReplaceExisting,
-			final String... pPath) throws IOException {
+	public Resource watchFile(final URL pOriginContent, final boolean pReplaceExisting, final String... pPath)
+			throws IOException {
 		checkClosed();
 
 		notNull(pOriginContent, "URL cannot be null!");
 		notEmpty(pPath, "At least one path element must be specified!");
-		InternalResource file = watchedFiles.get(pOriginContent);
 
-		if (file == null) {
-			final Path path = determinePath(pOriginContent, pPath);
-			createDirectories(path.getParent());
+		synchronized (watchedFiles) {
+			InternalResource file = watchedFiles.get(pOriginContent);
 
-			try (final InputStream in = pOriginContent.openStream()) {
-				if (pReplaceExisting) {
-					copy(in, path, REPLACE_EXISTING);
-				} else {
-					copy(in, path);
+			if (file == null) {
+				final Path path = determinePath(pOriginContent, pPath);
+				createDirectories(path.getParent());
+
+				try (final InputStream in = pOriginContent.openStream()) {
+					if (pReplaceExisting) {
+						copy(in, path, REPLACE_EXISTING);
+					} else {
+						copy(in, path);
+					}
 				}
+
+				getWorkspace().register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+				file = new DefaultResource(informObserverExector, taskFactory, pOriginContent, path);
+
+				watchedFiles.put(pOriginContent, file);
+				resources.put(path.toAbsolutePath(), file);
 			}
-
-			path.getParent().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
-			file = new DefaultResource(informObserverExector, taskFactory, pOriginContent, path);
-
-			watchedFiles.put(pOriginContent, file);
-			resources.put(path, file);
+			return file;
 		}
-		return file;
 	}
 
 	@Override
@@ -151,12 +160,14 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 						continue; // loop
 					}
 
+					final Path absolutePath = getWorkspace().resolve((Path) event.context());
+
 					if (ENTRY_CREATE.equals(kind)) {
-						informObservers(event, Type.RESOURCE_CREATED);
+						informObservers(absolutePath, Type.RESOURCE_CREATED);
 					} else if (ENTRY_MODIFY.equals(kind)) {
-						informObservers(event, Type.RESOURCE_MODIFIED);
+						informObservers(absolutePath, Type.RESOURCE_MODIFIED);
 					} else if (ENTRY_DELETE.equals(kind)) {
-						informObservers(event, Type.RESOURCE_DELETED);
+						informObservers(absolutePath, Type.RESOURCE_DELETED);
 					}
 
 					// Inside the loop
@@ -182,8 +193,8 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 	 * @param pPath
 	 * @param pType
 	 */
-	private void informObservers(final WatchEvent<?> pEvent, final ResourceEvent.Type pEventType) {
-		final InternalResource resource = resources.get(pEvent.context());
+	private void informObservers(final Path pAbsolutePath, final ResourceEvent.Type pEventType) {
+		final InternalResource resource = resources.get(pAbsolutePath.toAbsolutePath());
 		if (resource != null) {
 			resource.informListeners(pEventType);
 		}

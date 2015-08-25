@@ -102,6 +102,11 @@ public class DefaultWatchManager extends Thread implements WatchManager {
 		managers.clear();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Thread#run()
+	 */
 	@Override
 	public void run() {
 		closeManagers();
