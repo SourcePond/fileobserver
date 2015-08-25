@@ -27,6 +27,9 @@ public final class ResourceEvent extends EventObject {
 	 */
 	public ResourceEvent(final Resource pSource, final Type pType) {
 		super(pSource);
+		if (pType == null) {
+			throw new IllegalArgumentException("type cannot be null");
+		}
 		type = pType;
 	}
 
