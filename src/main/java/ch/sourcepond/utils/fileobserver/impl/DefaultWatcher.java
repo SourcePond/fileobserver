@@ -1,5 +1,8 @@
 package ch.sourcepond.utils.fileobserver.impl;
 
+import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_CREATED;
+import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_DELETED;
+import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_MODIFIED;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.deleteIfExists;
@@ -141,6 +144,24 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 		}
 	}
 
+	/**
+	 * @param pKind
+	 * @return
+	 */
+	private Type getTypeOrNull(final Kind<?> pKind) {
+		final Type type;
+		if (ENTRY_CREATE.equals(pKind)) {
+			type = RESOURCE_CREATED;
+		} else if (ENTRY_MODIFY.equals(pKind)) {
+			type = RESOURCE_MODIFIED;
+		} else if (ENTRY_DELETE.equals(pKind)) {
+			type = RESOURCE_DELETED;
+		} else {
+			type = null;
+		}
+		return type;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -160,17 +181,11 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 						continue; // loop
 					}
 
-					final Path absolutePath = getWorkspace().resolve((Path) event.context());
-
-					if (ENTRY_CREATE.equals(kind)) {
-						informObservers(absolutePath, Type.RESOURCE_CREATED);
-					} else if (ENTRY_MODIFY.equals(kind)) {
-						informObservers(absolutePath, Type.RESOURCE_MODIFIED);
-					} else if (ENTRY_DELETE.equals(kind)) {
-						informObservers(absolutePath, Type.RESOURCE_DELETED);
+					final Type typeOrNull = getTypeOrNull(kind);
+					if (typeOrNull != null) {
+						informObservers(getWorkspace().resolve((Path) event.context()), typeOrNull);
 					}
 
-					// Inside the loop
 					if (key.reset()) {
 						break;
 					}
@@ -197,6 +212,9 @@ final class DefaultWatcher extends ClosableResource implements Watcher, Runnable
 		final InternalResource resource = resources.get(pAbsolutePath.toAbsolutePath());
 		if (resource != null) {
 			resource.informListeners(pEventType);
+		}
+		if (LOG.isDebugEnabled()) {
+
 		}
 	}
 }

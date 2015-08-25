@@ -47,7 +47,7 @@ final class DefaultResource extends ClosableResource implements InternalResource
 	 * sourcepond.utils.content.observer.ChangeObserver)
 	 */
 	@Override
-	public synchronized void addObserver(final ResourceChangeListener pObserver) {
+	public synchronized void addListener(final ResourceChangeListener pObserver) {
 		checkClosed();
 		if (!listeners.add(pObserver)) {
 			LOG.debug("Observer {0} already present, nothing to be added.", pObserver);
@@ -63,7 +63,7 @@ final class DefaultResource extends ClosableResource implements InternalResource
 	 * sourcepond.utils.content.observer.ChangeObserver)
 	 */
 	@Override
-	public synchronized void removeObserver(final ResourceChangeListener pObserver) {
+	public synchronized void removeListener(final ResourceChangeListener pObserver) {
 		if (isClosed()) {
 			LOG.warn("Watcher is closed; do nothing");
 		} else if (!listeners.remove(pObserver)) {

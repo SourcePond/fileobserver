@@ -1,8 +1,12 @@
 package ch.sourcepond.utils.content.observer.impl;
 
 import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_ADDED;
+import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.LISTENER_REMOVED;
 import static java.lang.Thread.sleep;
 import static java.nio.file.FileSystems.getDefault;
+import static java.nio.file.Files.delete;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -10,10 +14,10 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,6 +43,17 @@ import ch.sourcepond.utils.fileobserver.impl.DefaultWatchManager;
  *
  */
 public class WatchManagerTest {
+
+	/**
+	 * 
+	 */
+	private static final TestAction NOOP = new TestAction() {
+
+		@Override
+		public void test() throws Exception {
+			// noop
+		}
+	};
 
 	/**
 	 * @author rolandhauser
@@ -106,6 +121,7 @@ public class WatchManagerTest {
 	private final ExecutorService observerInforExecutor = Executors.newCachedThreadPool();
 	private final TestListener listener = new TestListener();
 	private final WatchManager factory = new DefaultWatchManager();
+	private URL originContent;
 	private Watcher manager;
 	private Resource resource;
 
@@ -115,12 +131,15 @@ public class WatchManagerTest {
 	 */
 	@Before
 	public void setup() throws Exception {
+		originContent = getClass().getResource("/" + TEST_FILE_NAME);
 		manager = factory.watch(WORKSPACE, observerInforExecutor);
-		resource = manager.watchFile(getClass().getResource("/" + TEST_FILE_NAME), TEST_FILE_NAME);
+		resource = manager.watchFile(originContent, TEST_FILE_NAME);
 
 		// Fixes test-run on MacOSX because WatchService is not ready when the
 		// test actually starts.
-		sleep(500);
+		sleep(1500);
+
+		resource.addListener(listener);
 	}
 
 	/**
@@ -139,18 +158,16 @@ public class WatchManagerTest {
 	 */
 	private void addLine(final String pKey, final String pValue) throws Exception {
 		try (final Writer writer = Files.newBufferedWriter(WORKSPACE.resolve(TEST_FILE_NAME), Charset.defaultCharset(),
-				StandardOpenOption.APPEND)) {
+				APPEND, CREATE)) {
 			writer.write("\n" + pKey + "=" + pValue);
 		}
 	}
 
 	/**
-	 * @throws IOException
-	 * 
+	 * @throws Exception
 	 */
 	@Test
-	public void verifyInformObserverAfterRegistration() throws Exception {
-		resource.addObserver(listener);
+	public void verifyListenerAddedRemoved() throws Exception {
 		listener.awaitAction(new TestAction() {
 
 			@Override
@@ -163,7 +180,25 @@ public class WatchManagerTest {
 				assertEquals("This is the initial value", listener.props.getProperty(KEY));
 			}
 		});
+		resource.removeListener(listener);
+		listener.awaitAction(new TestAction() {
 
+			@Override
+			public void test() throws Exception {
+				// The listener should have been informed about the fact that it
+				// has
+				// been added to the resource.
+				assertEquals(LISTENER_REMOVED, listener.event.getType());
+			}
+		});
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	public void verifyResourceChangeFileModified() throws Exception {
+		listener.awaitAction(NOOP);
 		addLine(ADDED_KEY, ADDED_VALUE);
 		listener.awaitAction(new TestAction() {
 
@@ -174,13 +209,34 @@ public class WatchManagerTest {
 				assertEquals(ADDED_VALUE, listener.props.getProperty(ADDED_KEY));
 			}
 		});
+
 	}
 
 	/**
 	 * @throws Exception
 	 */
 	@Test
-	public void verifyInformObserverAboutReCreation() throws Exception {
+	public void verifyResourceChangeFileReCreated() throws Exception {
+		listener.awaitAction(NOOP);
+		listener.props.clear();
+		delete(WORKSPACE.resolve(TEST_FILE_NAME));
+		listener.awaitAction(new TestAction() {
 
+			@Override
+			public void test() throws Exception {
+				assertEquals(Type.RESOURCE_DELETED, listener.event.getType());
+				assertEquals(originContent, listener.event.getSource().getOriginContent());
+			}
+		});
+		addLine(ADDED_KEY, ADDED_VALUE);
+		listener.awaitAction(new TestAction() {
+
+			@Override
+			public void test() throws Exception {
+				assertEquals(Type.RESOURCE_CREATED, listener.event.getType());
+				assertEquals(1, listener.props.size());
+				assertEquals(ADDED_VALUE, listener.props.getProperty(ADDED_KEY));
+			}
+		});
 	}
 }
