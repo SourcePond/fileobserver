@@ -14,6 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.utils.fileobserver;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 
@@ -24,10 +25,14 @@ import java.util.concurrent.ExecutorService;
 public interface WorkspaceFactory {
 
 	/**
+	 * FileSystem must support {@link FileSystem#newWatchService()}
+	 * 
 	 * @param pWorkspace
+	 * @param pAsynListenerExecutor
 	 * @return
 	 * @throws WorkspaceLockedException
 	 * @throws IOException
 	 */
-	Workspace create(Path pWorkspace, ExecutorService pExecutor) throws WorkspaceLockedException, IOException;
+	Workspace create(Path pWorkspace, ExecutorService pAsynListenerExecutor)
+			throws WorkspaceLockedException, IOException;
 }
