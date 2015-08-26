@@ -8,7 +8,7 @@ import java.net.URL;
  * @author rolandhauser
  *
  */
-public interface Watcher extends Closeable {
+public interface Workspace extends Closeable {
 
 	/**
 	 * @param pContent

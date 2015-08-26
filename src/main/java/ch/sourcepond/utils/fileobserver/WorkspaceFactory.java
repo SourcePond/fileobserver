@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
  * @author rolandhauser
  *
  */
-public interface WatchManager {
+public interface WorkspaceFactory {
 
 	/**
 	 * @param pWorkspace
@@ -16,5 +16,5 @@ public interface WatchManager {
 	 * @throws WorkspaceLockedException
 	 * @throws IOException
 	 */
-	Watcher watch(Path pWorkspace, ExecutorService pExecutor) throws WorkspaceLockedException, IOException;
+	Workspace create(Path pWorkspace, ExecutorService pExecutor) throws WorkspaceLockedException, IOException;
 }
