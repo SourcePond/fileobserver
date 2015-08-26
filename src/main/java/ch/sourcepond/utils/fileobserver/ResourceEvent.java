@@ -23,7 +23,7 @@ public final class ResourceEvent extends EventObject {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 6219486062224010008L;
+	private static final long serialVersionUID = -5819632600293975764L;
 
 	/**
 	 * 
@@ -61,5 +61,10 @@ public final class ResourceEvent extends EventObject {
 	 */
 	public Type getType() {
 		return type;
+	}
+
+	@Override
+	public String toString() {
+		return super.toString() + "[" + getType() + "]";
 	}
 }
