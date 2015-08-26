@@ -30,9 +30,7 @@ public interface WorkspaceFactory {
 	 * @param pWorkspace
 	 * @param pAsynListenerExecutor
 	 * @return
-	 * @throws WorkspaceLockedException
 	 * @throws IOException
 	 */
-	Workspace create(Path pWorkspace, ExecutorService pAsynListenerExecutor)
-			throws WorkspaceLockedException, IOException;
+	Workspace create(Path pWorkspace, ExecutorService pAsynListenerExecutor) throws IOException;
 }
