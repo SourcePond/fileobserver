@@ -37,9 +37,6 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
  * <p>
  * Resources are <em>thread-safe</em>.
  * </p>
- * 
- * @author Roland Hauser
- *
  */
 public interface Resource {
 
