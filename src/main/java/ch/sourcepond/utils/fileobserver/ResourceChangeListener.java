@@ -13,14 +13,23 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver;
 
+import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
+
 /**
- * @author rolandhauser
+ * A listener to receive notifications about changes on least one resource. A
+ * listener can be registered with a resource through
+ * {@link Resource#addListener(ResourceChangeListener)}.
  *
  */
 public interface ResourceChangeListener {
 
 	/**
-	 * @param pResource
+	 * Receives change notifications tracked by the resource(s) on which this
+	 * listener is registered. See {@link Type} for an overview of all supported
+	 * event kinds.
+	 * 
+	 * @param pEvent
+	 *            Change notification, never {@code null}
 	 */
 	void resourceChange(ResourceEvent pEvent);
 }
