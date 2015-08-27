@@ -30,7 +30,15 @@ public final class ResourceEvent extends EventObject {
 	 *
 	 */
 	public static enum Type {
-		LISTENER_ADDED, LISTENER_REMOVED, RESOURCE_CREATED, RESOURCE_MODIFIED, RESOURCE_DELETED
+		LISTENER_ADDED, LISTENER_REMOVED, RESOURCE_CREATED, RESOURCE_MODIFIED, RESOURCE_DELETED,
+
+		/**
+		 * Indicates, that the workspace associated with a {@link Resource} has
+		 * been closed. In this case calling
+		 * {@link Resource#addListener(ResourceChangeListener)} or
+		 * {@link Resource#open()} will cause an exception to be thrown.
+		 */
+		WORKSPACE_CLOSED;
 	}
 
 	private final Type type;
