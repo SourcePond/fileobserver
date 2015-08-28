@@ -79,6 +79,19 @@ public interface Resource {
 	URL getOriginContent();
 
 	/**
+	 * Indicates, whether the observed file of this resource does exist. If the
+	 * file has been deleted (see {@link Type#RESOURCE_DELETED}, this method
+	 * returns {@code false}. If the file has been re-created (see
+	 * {@link Type#RESOURCE_CREATED}, this method returns {@code true}. Note: if
+	 * the associated workspace of this resource has been closed, calling this
+	 * method returns {@code false}, even when the file still physically exists.
+	 * 
+	 * @return {@code true} if the observed file exists and the workspace is not
+	 *         closed, {@code false} otherwise.
+	 */
+	boolean exists();
+
+	/**
 	 * Opens the observed file of this resource for reading. If the file does
 	 * not exist in the workspace (because it has been deleted, see
 	 * {@link Type#RESOURCE_DELETED}), or, the workspace has been closed, an
