@@ -41,6 +41,10 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
  * </p>
  */
 public interface Resource {
+	/**
+	 * Standard size for buffering.
+	 */
+	static final int STD_BUFFER_SIZE = 8192;
 
 	/**
 	 * Adds the {@link ResourceChangeListener} specified to this resource. The
@@ -99,12 +103,28 @@ public interface Resource {
 	 * {@link Type#RESOURCE_DELETED}), or, the workspace has been closed, an
 	 * {@link IOException} will be caused to be thrown.
 	 * 
-	 * @return Input stream for reading, never {@code null}.
+	 * @return Buffered input-stream for reading (buffer size is
+	 *         {@link #STD_BUFFER_SIZE}), never {@code null}.
 	 * @throws IOException
 	 *             Thrown, if the file observed by this resource could not be
 	 *             opened for reading.
 	 */
 	InputStream openStream() throws IOException;
+
+	/**
+	 * Opens the observed file of this resource for reading. If the file does
+	 * not exist in the workspace (because it has been deleted, see
+	 * {@link Type#RESOURCE_DELETED}), or, the workspace has been closed, an
+	 * {@link IOException} will be caused to be thrown.
+	 * 
+	 * @param pBufferSize
+	 *            Buffer size to be used for reading, must be greater than 0
+	 * @return Input stream for reading, never {@code null}.
+	 * @throws IOException
+	 *             Thrown, if the file observed by this resource could not be
+	 *             opened for reading.
+	 */
+	InputStream openStream(int pBufferSize) throws IOException;
 
 	/**
 	 * <p>
