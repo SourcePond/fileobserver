@@ -85,6 +85,13 @@ public interface Resource {
 	URL getOriginContent();
 
 	/**
+	 * @return
+	 */
+	byte[] getChecksum();
+
+	String getChecksumAsString();
+
+	/**
 	 * Indicates, whether the observed file of this resource does exist. If the
 	 * file has been deleted (see {@link Type#RESOURCE_DELETED}, this method
 	 * returns {@code false}. If the file has been re-created (see
