@@ -16,6 +16,8 @@ package ch.sourcepond.utils.fileobserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.channels.FileChannel;
+import java.nio.file.FileSystem;
 
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
 
@@ -102,5 +104,28 @@ public interface Resource {
 	 *             Thrown, if the file observed by this resource could not be
 	 *             opened for reading.
 	 */
-	InputStream open() throws IOException;
+	InputStream openStream() throws IOException;
+
+	/**
+	 * <p>
+	 * This operation is <em>optional</em> and depends on if the workspace
+	 * {@link FileSystem} supports file channels, see
+	 * {@link FileChannel#open(java.nio.file.Path, java.nio.file.OpenOption...)}
+	 * for more information.
+	 * </p>
+	 * 
+	 * Opens the observed file of this resource for reading. If the file does
+	 * not exist in the workspace (because it has been deleted, see
+	 * {@link Type#RESOURCE_DELETED}), or, the workspace has been closed, an
+	 * {@link IOException} will be caused to be thrown.
+	 * 
+	 * @return Read-only {@link FileChannel}, never {@code null}.
+	 * @throws IOException
+	 *             Thrown, if the file observed by this resource could not be
+	 *             opened for reading.
+	 * @throws UnsupportedOperationException
+	 *             Thrown, if file channels are not supported by the workspace
+	 *             filesystem.
+	 */
+	FileChannel openChannel() throws IOException;
 }
