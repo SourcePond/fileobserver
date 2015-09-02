@@ -38,7 +38,14 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
  * </p>
  * 
  * <p>
- * Resources are <em>thread-safe</em>.
+ * If a resource is closed through {@link #close()}, all listeners will be
+ * notified about that event before they are removed from the resource being
+ * closed. After closing, the resource cannot be opened for reading nor any
+ * listener can be added.
+ * </p>
+ * 
+ * <p>
+ * Implementations of this interface must be <em>thread-safe</em>.
  * </p>
  */
 public interface Resource extends Closeable {
