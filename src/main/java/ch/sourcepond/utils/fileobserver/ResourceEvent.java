@@ -71,12 +71,11 @@ public final class ResourceEvent extends EventObject {
 		RESOURCE_DELETED,
 
 		/**
-		 * Indicates, that the workspace associated with a {@link Resource} has
-		 * been closed. In this case calling
-		 * {@link Resource#addListener(ResourceChangeListener)} or
+		 * Indicates, that the this {@link Resource} has been closed. In this
+		 * case calling {@link Resource#addListener(ResourceChangeListener)} or
 		 * {@link Resource#open()} will cause an exception to be thrown.
 		 */
-		WORKSPACE_CLOSED;
+		CLOSED;
 	}
 
 	private final Type type;
