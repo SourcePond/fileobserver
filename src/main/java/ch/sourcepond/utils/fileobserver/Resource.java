@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -40,7 +41,7 @@ import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
  * Resources are <em>thread-safe</em>.
  * </p>
  */
-public interface Resource {
+public interface Resource extends Closeable {
 	/**
 	 * Standard size for buffering.
 	 */

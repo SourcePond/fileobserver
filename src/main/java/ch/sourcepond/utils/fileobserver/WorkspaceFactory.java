@@ -13,27 +13,54 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.utils.fileobserver;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.nio.file.FileSystem;
+import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 
 /**
- * @author rolandhauser
+ * Factory service to create new {@link Workspace} instances.
  *
  */
-public interface WorkspaceFactory {
+public interface WorkspaceFactory extends Closeable {
 
 	/**
-	 * FileSystem must support {@link FileSystem#newWatchService()} FileSystem
-	 * must support {@link FileChannel}
-	 * 
-	 * @param pAsynListenerExecutor
+	 * @param pListenerNotifier
+	 * @param pWorkspace
+	 * @return
+	 * @throws IOException
+	 */
+	Workspace create(ExecutorService pCommonExecutor, Path pWorkspace) throws IOException;
+
+	/**
+	 * @param pListenerNotifier
+	 * @param pChecksumCalculator
 	 * @param pFs
 	 * @param pWorkspacePath
 	 * @return
 	 * @throws IOException
 	 */
-	Workspace create(ExecutorService pAsynListenerExecutor, FileSystem pFs, String pBaseWorkspacePath,
-			String... pWorkspacePath) throws IOException;
+	Workspace create(ExecutorService pListenerNotifier, ExecutorService pChecksumCalculator, Path pWorkspace)
+			throws IOException;
+
+	/**
+	 * @param pListenerNotifier
+	 * @param pFs
+	 * @param pWorkspacePath
+	 * @return
+	 * @throws IOException
+	 */
+	Workspace create(ExecutorService pCommonExecutor, FileSystem pFs, String pWorkspacePath) throws IOException;
+
+	/**
+	 * @param pListenerNotifier
+	 * @param pChecksumCalculator
+	 * @param pFs
+	 * @param pWorkspacePath
+	 * @return
+	 * @throws IOException
+	 */
+	Workspace create(ExecutorService pListenerNotifier, ExecutorService pChecksumCalculator, FileSystem pFs,
+			String pWorkspacePath) throws IOException;
 }
