@@ -20,16 +20,12 @@ import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 
-import javax.annotation.Resource;
-
 import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
 
 /**
  * <p>
- * A workspace manages an arbitrary number of observed {@link Resource} objects.
- * Those resource objects are bound to the lifecycle of this workspace. If the
- * workspace is being closed, all assigned resources will be closed as well (see
- * {@link Resource}).
+ * Container to watch for changes on the directory specified during construction
+ * of this object, see {@link WorkspaceFactory} for further information.
  * </p>
  * 
  * <p>
