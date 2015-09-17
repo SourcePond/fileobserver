@@ -106,9 +106,7 @@ public interface Workspace extends Closeable {
 	 * Copies the content from the given input-stream to the path specified. The
 	 * path specified is relative to the workspace path (see
 	 * {@link WorkspaceFactory#create(java.util.concurrent.ExecutorService, Path)}
-	 * and
-	 * {@link WorkspaceFactory#create(java.util.concurrent.ExecutorService, java.nio.file.FileSystem, String)}
-	 * ).
+	 * .
 	 * </p>
 	 * 
 	 * <p>
@@ -139,9 +137,7 @@ public interface Workspace extends Closeable {
 	 * Copies the content from the given input-stream to the path specified. The
 	 * path specified is relative to the workspace path (see
 	 * {@link WorkspaceFactory#create(java.util.concurrent.ExecutorService, Path)}
-	 * and
-	 * {@link WorkspaceFactory#create(java.util.concurrent.ExecutorService, java.nio.file.FileSystem, String)}
-	 * ).
+	 * .
 	 * </p>
 	 * 
 	 * <p>

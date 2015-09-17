@@ -15,9 +15,9 @@ package ch.sourcepond.utils.fileobserver;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.util.concurrent.ExecutorService;
+import java.nio.file.WatchService;
+import java.util.concurrent.Executor;
 
 /**
  * Factory service to create new {@link Workspace} instances.
@@ -26,19 +26,21 @@ import java.util.concurrent.ExecutorService;
 public interface WorkspaceFactory extends Closeable {
 
 	/**
+	 * Creates a new {@link Workspace} for the directory specified. The
+	 * workspace will use the executor specified to inform registered listeners
+	 * (see {@link ResourceChangeListener}) about changes (see
+	 * {@link ResourceEvent}) on files/directories within the watched directory.
+	 * 
 	 * @param pListenerNotifier
-	 * @param pWorkspace
-	 * @return
+	 *            Executor to be used for informing listeners about changes;
+	 *            must not be {@code null}.
+	 * @param pDirectory
+	 *            Directory to watched; must not be {@code null} and must be a
+	 *            directory.
+	 * @return New workspace instance, never {@code null}.
 	 * @throws IOException
+	 *             Thrown, if no {@link WatchService} could be created for the
+	 *             path specified.
 	 */
-	Workspace create(ExecutorService pListenerNotifier, Path pWorkspace) throws IOException;
-
-	/**
-	 * @param pListenerNotifier
-	 * @param pFs
-	 * @param pWorkspacePath
-	 * @return
-	 * @throws IOException
-	 */
-	Workspace create(ExecutorService pListenerNotifier, FileSystem pFs, String pWorkspacePath) throws IOException;
+	Workspace create(Executor pListenerNotifier, Path pDirectory) throws IOException;
 }
