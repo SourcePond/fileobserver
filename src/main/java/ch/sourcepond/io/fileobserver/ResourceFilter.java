@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver;
+package ch.sourcepond.io.fileobserver;
 
 /**
  * A resource filter is used to decide whether a {@link ResourceChangeListener}
@@ -29,7 +29,7 @@ public interface ResourceFilter {
 		/*
 		 * (non-Javadoc)
 		 * 
-		 * @see ch.sourcepond.utils.fileobserver.ResourceFilter#isDispatched(ch.
+		 * @see ch.sourcepond.io.fileobserver.ResourceFilter#isDispatched(ch.
 		 * sourcepond.utils.fileobserver.ResourceEvent)
 		 */
 		@Override

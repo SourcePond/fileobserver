@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.utils.fileobserver;
+package ch.sourcepond.io.fileobserver;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 
-import ch.sourcepond.utils.fileobserver.ResourceEvent.Type;
+import ch.sourcepond.io.fileobserver.ResourceEvent.Type;
 
 /**
  * <p>
