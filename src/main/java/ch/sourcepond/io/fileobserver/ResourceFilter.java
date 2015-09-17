@@ -24,8 +24,8 @@ import static java.nio.file.Files.isRegularFile;
 public interface ResourceFilter {
 
 	/**
-	 * Common filter which dispatches <em>all</em> {@link ResourceEvent} objects
-	 * to its assigned {@link ResourceChangeListener} instances.
+	 * Common filter to dispatch <em>all</em> {@link ResourceEvent} objects to
+	 * its assigned {@link ResourceChangeListener} instances.
 	 */
 	ResourceFilter DISPATCH_ALL = new ResourceFilter() {
 
@@ -43,7 +43,9 @@ public interface ResourceFilter {
 	};
 
 	/**
-	 * 
+	 * Common filter to dispatch {@link ResourceEvent} objects which represent a
+	 * change on a regular file to its assigned {@link ResourceChangeListener}
+	 * instances.
 	 */
 	ResourceFilter FILES_ONLY = new ResourceFilter() {
 
@@ -60,7 +62,9 @@ public interface ResourceFilter {
 	};
 
 	/**
-	 * 
+	 * Common filter to dispatch {@link ResourceEvent} objects which represent a
+	 * change on a directory to its assigned {@link ResourceChangeListener}
+	 * instances.
 	 */
 	ResourceFilter DIRECTORIES_ONLY = new ResourceFilter() {
 
