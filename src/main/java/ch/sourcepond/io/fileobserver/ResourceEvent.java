@@ -21,7 +21,7 @@ import javax.annotation.Resource;
 
 /**
  * Event to be fired when a resource tracks a change on its observed workspace
- * file.
+ * file. The path returned by {@link #getSource()} is always absolute.
  */
 public class ResourceEvent extends EventObject {
 
@@ -38,15 +38,10 @@ public class ResourceEvent extends EventObject {
 	public static enum Type {
 		/**
 		 * Indicates, that the receiving {@link ResourceChangeListener} has just
-		 * been added to the {@link Resource}, i.e. the listener will receive
-		 * all subsequent change events of the resource.
-		 */
-		LISTENER_ADDED,
-
-		/**
-		 * Indicates, that the receiving {@link ResourceChangeListener} has just
-		 * been removed from the {@link Resource}, i.e. no further events will
-		 * be delivered to the listener until it is added again to the resource.
+		 * been removed from the {@link Workspace}, i.e. no further events will
+		 * be delivered to the listener until it is added again to the
+		 * workspace. For instance, this event type is useful to indicate the
+		 * removed listener to clear caches etc.
 		 */
 		LISTENER_REMOVED,
 
@@ -82,23 +77,41 @@ public class ResourceEvent extends EventObject {
 	}
 
 	private final Type type;
+	private final Path relativePath;
 
 	/**
 	 * Creates a new instance of this class.
 	 * 
-	 * @param pSource
-	 *            Resource which causes this event, must not be {@code null}
+	 * @param pAbsolutePath
+	 *            Absolute path which causes this event, must not be
+	 *            {@code null}
+	 * @param pRelativePath
+	 *            Relative path to workspace directory, must not be {@code null}
 	 * @param pType
 	 *            Type of this event, must not be {@code null}
 	 * @throws IllegalArgumentException
 	 *             Thrown, if either argument is {@code null}
 	 */
-	public ResourceEvent(final Path pSource, final Type pType) {
-		super(pSource);
+	public ResourceEvent(final Path pAbsolutePath, final Path pRelativePath, final Type pType) {
+		super(pAbsolutePath);
+		if (pRelativePath == null) {
+			throw new NullPointerException("Relative path cannot be null");
+		}
+		relativePath = pRelativePath;
 		if (pType == null) {
-			throw new IllegalArgumentException("type cannot be null");
+			throw new IllegalArgumentException("Type cannot be null");
 		}
 		type = pType;
+	}
+
+	/**
+	 * Returns the relative path to the workspace directory (see
+	 * {@link WorkspaceFactory#create(java.util.concurrent.Executor, Path)}.
+	 * 
+	 * @return Relative path, never {@code null}
+	 */
+	public Path getRelativeSource() {
+		return relativePath;
 	}
 
 	/*

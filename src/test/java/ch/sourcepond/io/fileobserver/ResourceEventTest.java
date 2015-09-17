@@ -8,30 +8,37 @@ import java.nio.file.Path;
 
 import org.junit.Test;
 
-import ch.sourcepond.io.fileobserver.ResourceEvent;
-
 /**
  * @author rolandhauser
  *
  */
 public class ResourceEventTest {
-	private final Path resource = mock(Path.class);
-	private final ResourceEvent event = new ResourceEvent(resource, RESOURCE_CREATED);
+	private final Path absolutePath = mock(Path.class);
+	private final Path relativePath = mock(Path.class);
+	private final ResourceEvent event = new ResourceEvent(absolutePath, relativePath, RESOURCE_CREATED);
 
 	/**
 	 * 
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void newResourceNoType() {
-		new ResourceEvent(resource, null);
+		new ResourceEvent(absolutePath, relativePath, null);
+	}
+
+	/**
+	 * 
+	 */
+	@Test(expected = NullPointerException.class)
+	public void newRelativePathDefined() {
+		new ResourceEvent(absolutePath, null, RESOURCE_CREATED);
 	}
 
 	/**
 	 * 
 	 */
 	@Test
-	public void verifyGetResource() {
-		assertSame(resource, event.getSource());
+	public void verifyGetSource() {
+		assertSame(absolutePath, event.getSource());
 	}
 
 	/**
