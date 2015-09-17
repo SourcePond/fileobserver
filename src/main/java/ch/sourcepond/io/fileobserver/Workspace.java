@@ -38,10 +38,11 @@ public interface Workspace extends Closeable {
 	/**
 	 * <p>
 	 * Adds the {@link ResourceChangeListener} specified to this workspace. The
-	 * listener will receive a {@link ResourceEvent} of type
-	 * {@link Type#LISTENER_ADDED} immediately after it has been successfully
-	 * registered with this resource. If the listener specified is already
-	 * registered, calling this method has no effect.
+	 * workspace will generate a {@link ResourceEvent} for every existing file
+	 * including those located in sub-directories. If an event matches the
+	 * listeners {@link ResourceFilter}, it will be dispatched to the newly
+	 * added listener. If the listener specified is already registered, calling
+	 * this method has no effect.
 	 * </p>
 	 * 
 	 * <p>
@@ -61,12 +62,12 @@ public interface Workspace extends Closeable {
 
 	/**
 	 * <p>
-	 * Adds the {@link ResourceChangeListener} with the {@link ResourceFilter}
-	 * specified to this workspace. The listener will receive a
-	 * {@link ResourceEvent} of type {@link Type#LISTENER_ADDED} immediately
-	 * after it has been successfully registered with this resource. If the
-	 * listener specified is already registered, calling this method has no
-	 * effect.
+	 * Adds the {@link ResourceChangeListener} specified to this workspace. The
+	 * workspace will generate a {@link ResourceEvent} for every existing file
+	 * including those located in sub-directories. If an event matches the
+	 * listeners {@link ResourceFilter}, it will be dispatched to the newly
+	 * added listener. If the listener specified is already registered, calling
+	 * this method has no effect.
 	 * </p>
 	 * 
 	 * <p>
