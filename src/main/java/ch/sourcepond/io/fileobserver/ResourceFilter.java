@@ -13,6 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
+import static java.nio.file.Files.isDirectory;
+import static java.nio.file.Files.isRegularFile;
+
 /**
  * A resource filter is used to decide whether a {@link ResourceChangeListener}
  * should receive a {@link ResourceEvent} or not.
@@ -37,6 +40,40 @@ public interface ResourceFilter {
 			return true;
 		}
 
+	};
+
+	/**
+	 * 
+	 */
+	ResourceFilter FILES_ONLY = new ResourceFilter() {
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see ch.sourcepond.io.fileobserver.ResourceFilter#isDispatched(ch.
+		 * sourcepond.io.fileobserver.ResourceEvent)
+		 */
+		@Override
+		public boolean isDispatched(final ResourceEvent pEvent) {
+			return isRegularFile(pEvent.getSource());
+		}
+	};
+
+	/**
+	 * 
+	 */
+	ResourceFilter DIRECTORIES_ONLY = new ResourceFilter() {
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see ch.sourcepond.io.fileobserver.ResourceFilter#isDispatched(ch.
+		 * sourcepond.io.fileobserver.ResourceEvent)
+		 */
+		@Override
+		public boolean isDispatched(final ResourceEvent pEvent) {
+			return isDirectory(pEvent.getSource());
+		}
 	};
 
 	/**
