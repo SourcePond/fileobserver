@@ -14,18 +14,21 @@ limitations under the License.*/
 package ch.sourcepond.utils.fileobserver;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.EventObject;
+
+import javax.annotation.Resource;
 
 /**
  * Event to be fired when a resource tracks a change on its observed workspace
  * file.
  */
-public final class ResourceEvent extends EventObject {
+public class ResourceEvent extends EventObject {
 
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -5819632600293975764L;
+	private static final long serialVersionUID = -2307053276178570592L;
 
 	/**
 	 * Enumeration of of all possible types which a {@link ResourceEvent} can
@@ -90,7 +93,7 @@ public final class ResourceEvent extends EventObject {
 	 * @throws IllegalArgumentException
 	 *             Thrown, if either argument is {@code null}
 	 */
-	public ResourceEvent(final Resource pSource, final Type pType) {
+	public ResourceEvent(final Path pSource, final Type pType) {
 		super(pSource);
 		if (pType == null) {
 			throw new IllegalArgumentException("type cannot be null");
@@ -104,8 +107,8 @@ public final class ResourceEvent extends EventObject {
 	 * @see java.util.EventObject#getSource()
 	 */
 	@Override
-	public Resource getSource() {
-		return (Resource) super.getSource();
+	public Path getSource() {
+		return (Path) super.getSource();
 	}
 
 	/**

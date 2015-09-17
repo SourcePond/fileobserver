@@ -4,6 +4,8 @@ import static ch.sourcepond.utils.fileobserver.ResourceEvent.Type.RESOURCE_CREAT
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 
+import java.nio.file.Path;
+
 import org.junit.Test;
 
 /**
@@ -11,7 +13,7 @@ import org.junit.Test;
  *
  */
 public class ResourceEventTest {
-	private final Resource resource = mock(Resource.class);
+	private final Path resource = mock(Path.class);
 	private final ResourceEvent event = new ResourceEvent(resource, RESOURCE_CREATED);
 
 	/**

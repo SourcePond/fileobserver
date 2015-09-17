@@ -31,18 +31,7 @@ public interface WorkspaceFactory extends Closeable {
 	 * @return
 	 * @throws IOException
 	 */
-	Workspace create(ExecutorService pCommonExecutor, Path pWorkspace) throws IOException;
-
-	/**
-	 * @param pListenerNotifier
-	 * @param pChecksumCalculator
-	 * @param pFs
-	 * @param pWorkspacePath
-	 * @return
-	 * @throws IOException
-	 */
-	Workspace create(ExecutorService pListenerNotifier, ExecutorService pChecksumCalculator, Path pWorkspace)
-			throws IOException;
+	Workspace create(ExecutorService pListenerNotifier, Path pWorkspace) throws IOException;
 
 	/**
 	 * @param pListenerNotifier
@@ -51,16 +40,5 @@ public interface WorkspaceFactory extends Closeable {
 	 * @return
 	 * @throws IOException
 	 */
-	Workspace create(ExecutorService pCommonExecutor, FileSystem pFs, String pWorkspacePath) throws IOException;
-
-	/**
-	 * @param pListenerNotifier
-	 * @param pChecksumCalculator
-	 * @param pFs
-	 * @param pWorkspacePath
-	 * @return
-	 * @throws IOException
-	 */
-	Workspace create(ExecutorService pListenerNotifier, ExecutorService pChecksumCalculator, FileSystem pFs,
-			String pWorkspacePath) throws IOException;
+	Workspace create(ExecutorService pListenerNotifier, FileSystem pFs, String pWorkspacePath) throws IOException;
 }
