@@ -6,7 +6,7 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>ch.sourcepond.sol.tachocline</groupId>
+	<groupId>ch.sourcepond.io</groupId>
 	<artifactId>fileobserver-api</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<inceptionYear>2015</inceptionYear>
