@@ -122,7 +122,6 @@ public interface Workspace extends Closeable {
 	 * @param pPath
 	 *            Path where to store the content, actually points to the
 	 *            observed resource, must not be empty.
-	 * @return Observed path, never {@code null}.
 	 * @throws NullPointerException
 	 *             Thrown, if the {@link URL} specified is {@code null}.
 	 * @throws IllegalArgumentException
@@ -131,7 +130,7 @@ public interface Workspace extends Closeable {
 	 * @throws IOException
 	 *             Thrown, if the content could not be copied for some reason.
 	 */
-	Path copy(InputStream pOriginContent, String... pPath) throws FileAlreadyExistsException, IOException;
+	void copy(InputStream pOriginContent, String... pPath) throws FileAlreadyExistsException, IOException;
 
 	/**
 	 * <p>
@@ -159,7 +158,6 @@ public interface Workspace extends Closeable {
 	 * @param pPath
 	 *            Path where to store the content, actually points to the
 	 *            observed resource, must not be empty.
-	 * @return Observed path, never {@code null}.
 	 * @throws NullPointerException
 	 *             Thrown, if the {@link URL} specified is {@code null}.
 	 * @throws IllegalArgumentException
@@ -171,6 +169,6 @@ public interface Workspace extends Closeable {
 	 * @throws IOException
 	 *             Thrown, if the content could not be copied for some reason.
 	 */
-	Path copy(InputStream pOriginContent, boolean pReplaceExisting, String... pPath)
+	void copy(InputStream pOriginContent, boolean pReplaceExisting, String... pPath)
 			throws FileAlreadyExistsException, IOException;
 }
