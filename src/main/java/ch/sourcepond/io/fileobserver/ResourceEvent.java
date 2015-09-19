@@ -38,6 +38,14 @@ public class ResourceEvent extends EventObject {
 	public static enum Type {
 		/**
 		 * Indicates, that the receiving {@link ResourceChangeListener} has just
+		 * been added to the {@link Workspace}, i.e. the listener will receive
+		 * events of this type for every file/directory in the watched workspace
+		 * (if not filtered out, see {@link ResourceFilter}).
+		 */
+		LISTENER_ADDED,
+
+		/**
+		 * Indicates, that the receiving {@link ResourceChangeListener} has just
 		 * been removed from the {@link Workspace}, i.e. no further events will
 		 * be delivered to the listener until it is added again to the
 		 * workspace. For instance, this event type is useful to indicate the
