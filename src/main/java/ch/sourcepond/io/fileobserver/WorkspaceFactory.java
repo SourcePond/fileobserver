@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchService;
@@ -23,7 +22,7 @@ import java.util.concurrent.Executor;
  * Factory service to create new {@link Workspace} instances.
  *
  */
-public interface WorkspaceFactory extends Closeable {
+public interface WorkspaceFactory {
 
 	/**
 	 * Creates a new {@link Workspace} for the directory specified. The
