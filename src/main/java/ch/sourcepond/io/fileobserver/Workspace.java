@@ -112,8 +112,8 @@ public interface Workspace extends Closeable {
 	 * 
 	 * <p>
 	 * This method is a shorthand for {@code copy(InputStream, true, String...)}
-	 * . The input-stream specified will be closed in any case before this
-	 * method returns a result or throws an exception.
+	 * . The input-stream specified will be closed before this method returns a
+	 * result or throws an exception.
 	 * </p>
 	 * 
 	 * @param pOriginContent
