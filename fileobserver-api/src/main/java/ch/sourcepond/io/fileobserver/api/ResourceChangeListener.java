@@ -11,11 +11,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver;
+package ch.sourcepond.io.fileobserver.api;
 
-import static ch.sourcepond.io.fileobserver.ResourceFilter.FILES_ONLY;
+import static ch.sourcepond.io.fileobserver.api.ResourceFilter.FILES_ONLY;
 
-import ch.sourcepond.io.fileobserver.ResourceEvent.Type;
+import ch.sourcepond.io.fileobserver.api.ResourceEvent.Type;
 
 /**
  * A listener to receive notifications about changes on a watched resource.
