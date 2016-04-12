@@ -36,7 +36,7 @@ public interface ResourceFilter {
 		 * sourcepond.utils.fileobserver.ResourceEvent)
 		 */
 		@Override
-		public boolean isDispatched(final ResourceEvent pEvent) {
+		public boolean allowDispatch(final ResourceEvent pEvent) {
 			return true;
 		}
 
@@ -56,7 +56,7 @@ public interface ResourceFilter {
 		 * sourcepond.io.fileobserver.ResourceEvent)
 		 */
 		@Override
-		public boolean isDispatched(final ResourceEvent pEvent) {
+		public boolean allowDispatch(final ResourceEvent pEvent) {
 			return isRegularFile(pEvent.getSource());
 		}
 	};
@@ -75,7 +75,7 @@ public interface ResourceFilter {
 		 * sourcepond.io.fileobserver.ResourceEvent)
 		 */
 		@Override
-		public boolean isDispatched(final ResourceEvent pEvent) {
+		public boolean allowDispatch(final ResourceEvent pEvent) {
 			return isDirectory(pEvent.getSource());
 		}
 	};
@@ -91,5 +91,5 @@ public interface ResourceFilter {
 	 * @return {@code true} if the event should be dispatched, {@code false}
 	 *         otherwise.
 	 */
-	boolean isDispatched(ResourceEvent pEvent);
+	boolean allowDispatch(final ResourceEvent pEvent);
 }

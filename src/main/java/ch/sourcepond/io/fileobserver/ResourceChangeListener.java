@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
+import static ch.sourcepond.io.fileobserver.ResourceFilter.FILES_ONLY;
+
 import ch.sourcepond.io.fileobserver.ResourceEvent.Type;
 
 /**
@@ -20,6 +22,18 @@ import ch.sourcepond.io.fileobserver.ResourceEvent.Type;
  *
  */
 public interface ResourceChangeListener {
+
+	String PATH_ATTRIBUTE = "sourcepond.io.watched.path";
+
+	/**
+	 * Returns the {@link ResourceFilter} instance to be used in conjunction
+	 * with this listener. Defaults to {@link ResourceFilter#FILES_ONLY}.
+	 * 
+	 * @return {@link ResourceFilter} instance, should not be {@code null}
+	 */
+	default ResourceFilter getFilter() {
+		return FILES_ONLY;
+	}
 
 	/**
 	 * Receives change notifications tracked by the {@link Workspace} on which

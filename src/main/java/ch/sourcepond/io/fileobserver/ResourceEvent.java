@@ -63,9 +63,17 @@ public class ResourceEvent extends EventObject {
 		/**
 		 * Indicates, that the file associated with the resource has been
 		 * modified. This does not necessarily mean that the content of the file
-		 * has been changed (could also be an fs-attribute change).
+		 * has been changed; it could also be an fs-attribute change. Use
+		 * {@link #CONTENT_CHANGED} if a content change should be processed.
 		 */
 		RESOURCE_MODIFIED,
+
+		/**
+		 * Indicates, that the content of the file associated with the resource
+		 * has been modified. Use {@link #RESOURCE_MODIFIED} if an attribute
+		 * change should be processed.
+		 */
+		CONTENT_CHANGED,
 
 		/**
 		 * Indicates, that the file associated with the resource has been
@@ -74,14 +82,7 @@ public class ResourceEvent extends EventObject {
 		 * {@link IOException} until a subsequent event of type
 		 * {@link #RESOURCE_CREATED} is fired.
 		 */
-		RESOURCE_DELETED,
-
-		/**
-		 * Indicates, that the this {@link Resource} has been closed. In this
-		 * case calling {@link Resource#addListener(ResourceChangeListener)} or
-		 * {@link Resource#open()} will cause an exception to be thrown.
-		 */
-		CLOSED;
+		RESOURCE_DELETED;
 	}
 
 	private final Type type;
