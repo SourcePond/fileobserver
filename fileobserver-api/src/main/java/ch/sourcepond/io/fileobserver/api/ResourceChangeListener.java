@@ -36,9 +36,9 @@ public interface ResourceChangeListener {
 	}
 
 	/**
-	 * Receives change notifications tracked by the {@link Workspace} on which
-	 * this listener is registered. See {@link Type} for an overview of all
-	 * supported event kinds.
+	 * Receives change notifications tracked by the file-observer implementation
+	 * where this listener is registered on. See {@link Type} for an overview of
+	 * all supported event kinds.
 	 * 
 	 * @param pEvent
 	 *            Change notification, never {@code null}

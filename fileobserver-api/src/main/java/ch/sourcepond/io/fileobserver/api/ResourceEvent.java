@@ -13,11 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.api;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EventObject;
-
-import javax.annotation.Resource;
 
 /**
  * Event to be fired when a resource tracks a change on its observed workspace
@@ -38,16 +35,16 @@ public class ResourceEvent extends EventObject {
 	public static enum Type {
 		/**
 		 * Indicates, that the receiving {@link ResourceChangeListener} has just
-		 * been added to the {@link Workspace}, i.e. the listener will receive
-		 * events of this type for every file/directory in the watched workspace
-		 * (if not filtered out, see {@link ResourceFilter}).
+		 * been added to the file-observer instance, i.e. the listener will
+		 * receive events of this type for every file/directory in the watched
+		 * workspace (if not filtered out, see {@link ResourceFilter}).
 		 */
 		LISTENER_ADDED,
 
 		/**
 		 * Indicates, that the receiving {@link ResourceChangeListener} has just
-		 * been removed from the {@link Workspace}, i.e. no further events will
-		 * be delivered to the listener until it is added again to the
+		 * been removed from the file-observer instance, i.e. no further events
+		 * will be delivered to the listener until it is added again to the
 		 * workspace. For instance, this event type is useful to indicate the
 		 * removed listener to clear caches etc.
 		 */
@@ -77,10 +74,7 @@ public class ResourceEvent extends EventObject {
 
 		/**
 		 * Indicates, that the file associated with the resource has been
-		 * deleted. After this event, {@link Resource#exists()} will return
-		 * {@code false} and {@link Resource#open()} will throw an
-		 * {@link IOException} until a subsequent event of type
-		 * {@link #RESOURCE_CREATED} is fired.
+		 * deleted.
 		 */
 		RESOURCE_DELETED;
 	}
@@ -114,8 +108,7 @@ public class ResourceEvent extends EventObject {
 	}
 
 	/**
-	 * Returns the relative path to the workspace directory (see
-	 * {@link WorkspaceFactory#create(java.util.concurrent.Executor, Path)}.
+	 * Returns the relative path to the workspace directory.
 	 * 
 	 * @return Relative path, never {@code null}
 	 */
