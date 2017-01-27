@@ -1,12 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<parent>
-		<groupId>ch.sourcepond</groupId>
-		<artifactId>bundle</artifactId>
-		<version>0.5.0</version>
+		<groupId>ch.sourcepond.io</groupId>
+		<artifactId>fileobserver</artifactId>
+		<version>0.1-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>ch.sourcepond.io</groupId>
 	<artifactId>fileobserver-impl</artifactId>
 	<version>0.1-SNAPSHOT</version>
 	<inceptionYear>2016</inceptionYear>
@@ -24,4 +23,30 @@
 		<connection>scm:git:${project.scm.url}.git</connection>
 		<developerConnection>scm:git:ssh://${repo.domain}/${repo.path}.git</developerConnection>
 	</scm>
+
+	<dependencies>
+		<dependency>
+			<groupId>ch.sourcepond.io</groupId>
+			<artifactId>fileobserver-api</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.sourcepond.io</groupId>
+			<artifactId>checksum-api</artifactId>
+			<version>${checksum.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
 </project>
