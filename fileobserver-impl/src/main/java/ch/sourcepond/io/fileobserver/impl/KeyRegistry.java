@@ -16,10 +16,10 @@ import static java.nio.file.Files.walkFileTree;
  */
 public class KeyRegistry {
     private final ConcurrentMap<Enum<?>, Path> keyToPath = new ConcurrentHashMap<>();
-    private final WatchKeyManager manager;
+    private final WatchServices manager;
     private final ResourceEventProducer producer;
 
-    public KeyRegistry(final WatchKeyManager pManager, final ResourceEventProducer pProducer) {
+    public KeyRegistry(final WatchServices pManager, final ResourceEventProducer pProducer) {
         manager = pManager;
         producer = pProducer;
     }
