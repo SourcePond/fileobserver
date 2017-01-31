@@ -8,6 +8,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
+import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -31,7 +33,13 @@ class WatchServiceInstaller {
         walkFileTree(directory, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                keys.put(dir, dir.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY));
+                keys.put(dir, dir.register(watchService, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY
+                }, HIGH));
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(format("Installed watch-service for %s", dir));
+                }
+
                 return CONTINUE;
             }
         });
