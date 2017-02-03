@@ -17,24 +17,22 @@ import java.nio.file.Path;
 
 /**
  * Observer interface to receive notifications about changes on a watched (file-) paths.
- *
  */
-public interface PathObserver {
+public interface ResourceObserver {
 
-	Enum<?>[] getKeys();
+    Enum<?>[] getKeys();
 
-	/**
-	 * Checks whether this observer should handle the path specified. When this method
-	 * returns {@code true}, {@link #modified(Path)} or {@link #deleted(Path)} will be called depending on a file
-	 * has been created/modified or deleted.
-	 *
-	 * @param pRelativePath Relative path of the file (relative to the watched root directory), never {@code null}.
-	 * @return {@code true} if the path should be dispatched, {@code false}
-	 *         otherwise.
-	 */
-	boolean accept(Path pRelativePath);
+    /**
+     * Checks whether this observer should handle the path specified. When this method
+     * returns {@code true}, {@link #modified(String, Path)} will be called.
+     *
+     * @param pFile Path of the modified file, never {@code null}.
+     * @return {@code true} if the path should be dispatched, {@code false}
+     * otherwise.
+     */
+    boolean accept(String pId, Path pFile);
 
-	void modified(Path pRelativePath);
+    void modified(String pId, Path pFile);
 
-	void deleted(Path pRelativePath);
+    void deleted(String pId);
 }

@@ -1,7 +1,10 @@
 package ch.sourcepond.io.fileobserver.impl;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -16,12 +19,10 @@ import static java.nio.file.Files.walkFileTree;
  */
 public class KeyRegistry {
     private final ConcurrentMap<Enum<?>, Path> keyToPath = new ConcurrentHashMap<>();
-    private final WatchKeys manager;
-    private final ResourceEventProducer producer;
+    private final Directories directories;
 
-    public KeyRegistry(final WatchKeys pManager, final ResourceEventProducer pProducer) {
-        manager = pManager;
-        producer = pProducer;
+    public KeyRegistry(final Directories pDirectories) {
+        directories = pDirectories;
     }
 
     public void put(final Enum<?> pKey, final Path pDirectory) throws IOException {
@@ -49,9 +50,7 @@ public class KeyRegistry {
                 manager.cancelWatchKey(previousDirectory);
             }
 
-            // We should update all file-checksums, to detect
-            // new or changed files.
-            walkFileTree(pDirectory, new FileCollector(pDirectory, f -> producer.fileModify(f)));
+            walkDirectory(pDirectory);
         }
     }
 
@@ -66,7 +65,14 @@ public class KeyRegistry {
     }
 
     private void walkDirectory(final Path pDirectory) throws IOException {
-        walkFileTree(pDirectory, new FileCollector(pDirectory, f -> producer.fileModify(f)));
+        walkFileTree(pDirectory, new SimpleFileVisitor<Path>() {
+
+            @Override
+            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                producer.fileModify(pDirectory.relativize(file).toString(), file);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     void walkFiles(final Enum<?>[] keys, final Consumer<Path> pConsumer) throws IOException {

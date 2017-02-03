@@ -20,16 +20,16 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class WatchKeysTest {
+public class WatchKeysTest2 {
     private static final String NEW_FILE_NAME = "newfile.txt";
     private static final String TEST_FILE_TXT_NAME = "testfile.txt";
     private static final String TEST_FILE_XML_NAME = "testfile.xml";
     private static final String SUB_DIR_NAME = "subdir";
     private static final String NEW_SUB_DIR_NAME = "newsubdir";
-    private final WatchServiceInstaller installer = mock(WatchServiceInstaller.class);
     private final ResourceEventProducer producer = mock(ResourceEventProducer.class);
-    private final ExecutorService executor = Executors.newFixedThreadPool(1);
-    private final WatchKeys watchKeys = new WatchKeys(executor, producer);
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final Directories directories = new Directories(producer);
+    private final DirectoryScanner watchKeys = new DirectoryScanner(executor, directories);
     private final FileSystem fs = FileSystems.getDefault();
     private final Path sourceDir = fs.getPath(System.getProperty("user.dir"), "src", "test", "resources");
     private final Path targetDir = fs.getPath(System.getProperty("java.io.tmpdir"), getClass().getName(), UUID.randomUUID().toString());
@@ -48,8 +48,8 @@ public class WatchKeysTest {
                 return CONTINUE;
             }
         });
+        directories.addRoot(targetDir);
         watchKeys.start();
-        watchKeys.openWatchKey(targetDir);
 
         // Necessary for on macOS (polling watch-service)
         // TODO: remove this when JDK for macOS uses native FS facilities
@@ -59,7 +59,8 @@ public class WatchKeysTest {
 
     @After
     public void tearDown() throws IOException {
-        watchKeys.shutdown();
+        directories.removeRoot(targetDir);
+        watchKeys.close();
         executor.shutdown();
         walkFileTree(targetDir, new SimpleFileVisitor<Path>() {
             @Override
@@ -76,24 +77,29 @@ public class WatchKeysTest {
         });
     }
 
-    private void changeContent(final Path pPath) throws IOException {
+    private void changeContent(final Path pPath) throws Exception {
         try (final BufferedWriter writer = Files.newBufferedWriter(pPath, CREATE)) {
             writer.write(UUID.randomUUID().toString());
         }
+        Thread.sleep(5000);
     }
 
-    private void fileModification(final Path pPath) throws IOException {
+    private String toKey(final Path pPath) throws IOException {
+        return targetDir.relativize(pPath).toString();
+    }
+
+    private void fileModification(final Path pPath) throws Exception {
         changeContent(pPath);
-        verify(producer, timeout(20000)).fileModify(pPath);
+        verify(producer, timeout(5000)).fileModify(toKey(pPath), pPath);
     }
 
     private void fileDelete(final Path pPath) throws IOException {
         Files.delete(pPath);
-        verify(producer, timeout(20000)).fileDelete(pPath);
+        verify(producer, timeout(5000)).fileDelete(toKey(pPath));
     }
 
     @Test
-    public void processFileCreateInRootDirectory() throws IOException {
+    public void processFileCreateInRootDirectory() throws Exception {
         fileModification(targetDir.resolve(NEW_FILE_NAME));
     }
 
@@ -108,7 +114,7 @@ public class WatchKeysTest {
     }
 
     @Test
-    public void processFileCreateInSubDirectory() throws IOException {
+    public void processFileCreateInSubDirectory() throws Exception {
         fileModification(targetDir.resolve(SUB_DIR_NAME).resolve(NEW_FILE_NAME));
     }
 
@@ -126,7 +132,7 @@ public class WatchKeysTest {
         Files.createDirectories(pFile.getParent());
         // Necessary for on macOS (polling watch-service)
         // TODO: remove this when JDK for macOS uses native FS facilities
-        Thread.sleep(1000);
+        Thread.sleep(3000);
         return pFile;
     }
 
@@ -142,9 +148,35 @@ public class WatchKeysTest {
 
         // Necessary for on macOS (polling watch-service)
         // TODO: remove this when JDK for macOS uses native FS facilities
-        Thread.sleep(1000);
+        Thread.sleep(3000);
 
         fileDelete(path);
     }
+
+    @Test
+    public void startListenAgainAfterSubDirectoryDeletionAndRecreation() throws Exception {
+        final Path file = createSubDirectory(targetDir.resolve(NEW_SUB_DIR_NAME).resolve(NEW_FILE_NAME));
+        changeContent(file);
+        verify(producer, timeout(5000)).fileModify(toKey(file), file);
+        fileDelete(file);
+
+        // Necessary for on macOS (polling watch-service)
+        // TODO: remove this when JDK for macOS uses native FS facilities
+        Thread.sleep(3000);
+
+        // Delete parent directory
+        Files.delete(file.getParent());
+
+        // Necessary for on macOS (polling watch-service)
+        // TODO: remove this when JDK for macOS uses native FS facilities
+        Thread.sleep(3000);
+
+        createSubDirectory(file);
+        changeContent(file);
+        Thread.sleep(3000);
+        verify(producer, times(2)).fileModify(toKey(file), file);
+    }
+
+
 
 }

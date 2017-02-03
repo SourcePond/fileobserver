@@ -26,6 +26,12 @@
 
 	<dependencies>
 		<dependency>
+			<scope>test</scope>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>2.7.1</version>
+		</dependency>
+		<dependency>
 			<groupId>ch.sourcepond.io</groupId>
 			<artifactId>fileobserver-api</artifactId>
 			<version>${project.version}</version>

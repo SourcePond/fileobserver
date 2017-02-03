@@ -34,4 +34,5 @@
 		<connection>scm:git:${project.scm.url}.git</connection>
 		<developerConnection>scm:git:ssh://${repo.domain}/${repo.path}.git</developerConnection>
 	</scm>
+
 </project>
