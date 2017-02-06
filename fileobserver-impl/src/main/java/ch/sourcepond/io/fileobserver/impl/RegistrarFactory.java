@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
+import ch.sourcepond.io.checksum.api.ResourcesFactory;
+
 import java.io.IOException;
 import java.nio.file.FileSystem;
 
@@ -20,8 +22,13 @@ import java.nio.file.FileSystem;
  *
  */
 class RegistrarFactory {
+    private final ResourcesFactory resourcesFactory;
+
+    RegistrarFactory(final ResourcesFactory pResourcesFactory) {
+        resourcesFactory = pResourcesFactory;
+    }
 
     Registrar newRegistrar(final FileSystem pFs) throws IOException {
-        return new Registrar(pFs.newWatchService());
+        return new Registrar(resourcesFactory, pFs.newWatchService());
     }
 }

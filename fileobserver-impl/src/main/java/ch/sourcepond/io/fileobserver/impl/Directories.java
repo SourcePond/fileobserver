@@ -100,7 +100,8 @@ class Directories implements Closeable {
         if (isDirectory(pPath)) {
             getFsDirectories(pPath).directoryCreated(pPath, observers);
         } else {
-            observers.modified(toId(pPath), pPath);
+            final FsDirectory dir = getFsDirectories(pPath).getDirectory(pPath);
+            dir.informIfChanged(observers, pPath);
         }
     }
 

@@ -96,7 +96,7 @@ public class DirectoriesTest {
         directories.addObserver(observer);
 
         directories.pathCreated(testPath);
-        verify(compoundObserverHandler).modified(RELATIVE_PATH, testPath);
+        verify(fsDirectory).informIfChanged(compoundObserverHandler, testPath);
     }
 
     @Test

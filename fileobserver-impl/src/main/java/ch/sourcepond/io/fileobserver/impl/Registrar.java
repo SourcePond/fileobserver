@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
+import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
@@ -38,9 +39,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 class Registrar implements Closeable, Iterable<FsDirectory> {
     private static final Logger LOG = getLogger(Registrar.class);
     private final ConcurrentMap<Path, FsDirectory> children = new ConcurrentHashMap<>();
+    private final ResourcesFactory resourcesFactory;
     private final WatchService watchService;
 
-    Registrar(final WatchService pWatchService) {
+    Registrar(final ResourcesFactory pResourcesFactory, final WatchService pWatchService) {
+        resourcesFactory = pResourcesFactory;
         watchService = pWatchService;
     }
 
@@ -70,7 +73,7 @@ class Registrar implements Closeable, Iterable<FsDirectory> {
             public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                 try {
                     children.computeIfAbsent(dir,
-                            p -> new FsDirectory(children.get(dir.getParent()), register(dir)));
+                            p -> new FsDirectory(resourcesFactory, children.get(dir.getParent()), register(dir)));
                 } catch (final WatchServiceException e) {
                     throw new IOException(e.getMessage(), e);
                 }
