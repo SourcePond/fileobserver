@@ -1,5 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl;
 
+import ch.sourcepond.io.fileobserver.api.ResourceObserver;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,27 +16,31 @@ import java.util.concurrent.Executors;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.*;
 import static java.nio.file.StandardOpenOption.CREATE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
  *
  */
-public class WatchKeysTest2 {
+public class DirectoryScannerTest {
     private static final String NEW_FILE_NAME = "newfile.txt";
     private static final String TEST_FILE_TXT_NAME = "testfile.txt";
     private static final String TEST_FILE_XML_NAME = "testfile.xml";
     private static final String SUB_DIR_NAME = "subdir";
     private static final String NEW_SUB_DIR_NAME = "newsubdir";
-    private final ResourceEventProducer producer = mock(ResourceEventProducer.class);
+    private final ResourceObserver observer = mock(ResourceObserver.class);
     private final ExecutorService executor = Executors.newCachedThreadPool();
-    private final Directories directories = new Directories(producer);
-    private final DirectoryScanner watchKeys = new DirectoryScanner(executor, directories);
+    private final Directories directories = new Directories(new ObserverHandlerFactory(executor), new FsDirectoriesFactory());
+    private final DirectoryScanner scanner = new DirectoryScanner(executor, directories);
     private final FileSystem fs = FileSystems.getDefault();
     private final Path sourceDir = fs.getPath(System.getProperty("user.dir"), "src", "test", "resources");
     private final Path targetDir = fs.getPath(System.getProperty("java.io.tmpdir"), getClass().getName(), UUID.randomUUID().toString());
 
     @Before
     public void setup() throws Exception {
+        when(observer.accept(anyString(), any())).thenReturn(true);
+        directories.addObserver(observer);
         createDirectories(targetDir);
         walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
 
@@ -49,7 +54,7 @@ public class WatchKeysTest2 {
             }
         });
         directories.addRoot(targetDir);
-        watchKeys.start();
+        scanner.start();
 
         // Necessary for on macOS (polling watch-service)
         // TODO: remove this when JDK for macOS uses native FS facilities
@@ -60,7 +65,7 @@ public class WatchKeysTest2 {
     @After
     public void tearDown() throws IOException {
         directories.removeRoot(targetDir);
-        watchKeys.close();
+        scanner.close();
         executor.shutdown();
         walkFileTree(targetDir, new SimpleFileVisitor<Path>() {
             @Override
@@ -90,12 +95,12 @@ public class WatchKeysTest2 {
 
     private void fileModification(final Path pPath) throws Exception {
         changeContent(pPath);
-        verify(producer, timeout(5000)).fileModify(toKey(pPath), pPath);
+        verify(observer, timeout(5000)).modified(toKey(pPath), pPath);
     }
 
     private void fileDelete(final Path pPath) throws IOException {
         Files.delete(pPath);
-        verify(producer, timeout(5000)).fileDelete(toKey(pPath));
+        verify(observer, timeout(5000)).deleted(toKey(pPath));
     }
 
     @Test
@@ -105,7 +110,10 @@ public class WatchKeysTest2 {
 
     @Test
     public void processFileModificationInRootDirectory() throws Exception {
-        fileModification(targetDir.resolve(TEST_FILE_TXT_NAME));
+        final Path path = targetDir.resolve(TEST_FILE_TXT_NAME);
+        changeContent(path);
+        Thread.sleep(5000);
+        verify(observer, times(2)).modified(toKey(path), path);
     }
 
     @Test
@@ -157,7 +165,7 @@ public class WatchKeysTest2 {
     public void startListenAgainAfterSubDirectoryDeletionAndRecreation() throws Exception {
         final Path file = createSubDirectory(targetDir.resolve(NEW_SUB_DIR_NAME).resolve(NEW_FILE_NAME));
         changeContent(file);
-        verify(producer, timeout(5000)).fileModify(toKey(file), file);
+        verify(observer, timeout(5000)).modified(toKey(file), file);
         fileDelete(file);
 
         // Necessary for on macOS (polling watch-service)
@@ -174,7 +182,7 @@ public class WatchKeysTest2 {
         createSubDirectory(file);
         changeContent(file);
         Thread.sleep(3000);
-        verify(producer, times(2)).fileModify(toKey(file), file);
+        verify(observer, times(2)).modified(toKey(file), file);
     }
 
 

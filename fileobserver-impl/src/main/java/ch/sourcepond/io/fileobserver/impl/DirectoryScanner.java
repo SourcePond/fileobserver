@@ -93,7 +93,7 @@ class DirectoryScanner implements Runnable, Closeable, WatchKeyProcessor {
         }
 
         if (!pWatchKey.reset()) {
-            directories.removeInvalidDirectory((Path) pWatchKey.watchable());
+            directories.pathDeleted((Path) pWatchKey.watchable());
         }
     }
 

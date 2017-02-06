@@ -13,15 +13,33 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.api;
 
-import java.io.IOException;
 import java.nio.file.Path;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  *
  */
-public interface WatchedDirectories {
+public interface WatchedDirectory {
 
-    void enable(Enum<?> pKey, Path pDirectory) throws IOException;
+    Enum<?> getKey();
 
-    void disable(Enum<?> pKey);
+    Path getDirectory();
+
+    static WatchedDirectory create(final Enum<?> pKey, final Path pDirectory) {
+        requireNonNull(pKey, "Key is null");
+        requireNonNull(pDirectory, "Directory is null");
+
+        return new WatchedDirectory() {
+            @Override
+            public Enum<?> getKey() {
+                return null;
+            }
+
+            @Override
+            public Path getDirectory() {
+                return null;
+            }
+        };
+    }
 }

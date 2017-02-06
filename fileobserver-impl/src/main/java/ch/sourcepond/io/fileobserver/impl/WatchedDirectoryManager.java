@@ -1,6 +1,7 @@
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.WatchedDirectories;
+import ch.sourcepond.io.fileobserver.api.WatchedDirectory;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -13,21 +14,34 @@ import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Created by rolandhauser on 20.01.17.
  */
-public class KeyRegistry implements WatchedDirectories {
+public class WatchedDirectoryManager {
+    private static final Logger LOG = getLogger(WatchedDirectoryManager.class);
     private final ConcurrentMap<Enum<?>, Path> keyToPaths = new ConcurrentHashMap<>();
     private final ConcurrentMap<Path, Collection<Enum<?>>> pathToKeys = new ConcurrentHashMap<>();
     private final Directories directories;
 
-    public KeyRegistry(final Directories pDirectories) {
+    public WatchedDirectoryManager(final Directories pDirectories) {
         directories = pDirectories;
     }
 
-    @Override
-    public void enable(final Enum<?> pKey, final Path pDirectory) throws IOException {
+    public void bind(final WatchedDirectory pWatchedDirectory) {
+        try {
+            enable(pWatchedDirectory.getKey(), pWatchedDirectory.getDirectory());
+        } catch (final IOException e) {
+            LOG.warn(e.getMessage(), e);
+        }
+    }
+
+    void unbind(final WatchedDirectory pWatchedDirectory) {
+        disable(pWatchedDirectory.getKey());
+    }
+
+    private void enable(final Enum<?> pKey, final Path pDirectory) throws IOException {
         requireNonNull(pKey, "Key is null");
         requireNonNull(pDirectory, "Directory is null");
 
@@ -49,8 +63,7 @@ public class KeyRegistry implements WatchedDirectories {
         disable(pKey, previous);
     }
 
-    @Override
-    public void disable(final Enum<?> pKey) {
+    private void disable(final Enum<?> pKey) {
         requireNonNull(pKey, "Key is null");
         disable(pKey, keyToPaths.remove(pKey));
     }

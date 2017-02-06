@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +45,7 @@ class FsDirectories implements Closeable {
         watchService = pWatchService;
     }
 
-    void initialyInformHandler(final ResourceObserverHandler pHandler) {
+    void initialyInformHandler(final ObserverHandler pHandler) {
         for (final FsDirectory fsdir : children.values()) {
             try {
                 list(fsdir.getPath()).forEach(f -> {
@@ -56,9 +57,16 @@ class FsDirectories implements Closeable {
         }
     }
 
-    void directoryCreated(final Path pDirectory) throws IOException {
+    void directoryCreated(final Path pDirectory, final Collection<ObserverHandler> pHandlers) throws IOException {
         try {
             walkFileTree(pDirectory, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                    pHandlers.forEach(h -> h.modified(pDirectory.relativize(file).toString(), file));
+                    return CONTINUE;
+                }
+
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                     children.computeIfAbsent(dir,
@@ -95,8 +103,6 @@ class FsDirectories implements Closeable {
                     it.remove();
                 }
             }
-        } else if (LOG.isWarnEnabled()) {
-            LOG.warn("Directory {} was not registered", pDirectory);
         }
         return children.isEmpty();
     }
