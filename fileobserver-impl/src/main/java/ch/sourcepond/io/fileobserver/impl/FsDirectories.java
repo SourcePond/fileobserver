@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
+import static java.nio.file.Files.list;
 import static java.nio.file.Files.walkFileTree;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -34,7 +35,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-class FsDirectories implements Closeable, Iterable<FsDirectory> {
+class FsDirectories implements Closeable {
     private static final Logger LOG = getLogger(FsDirectories.class);
     private final ConcurrentMap<Path, FsDirectory> children = new ConcurrentHashMap<>();
     private final WatchService watchService;
@@ -43,9 +44,16 @@ class FsDirectories implements Closeable, Iterable<FsDirectory> {
         watchService = pWatchService;
     }
 
-    @Override
-    public Iterator<FsDirectory> iterator() {
-        return children.values().iterator();
+    void initialyInformHandler(final ResourceObserverHandler pHandler) {
+        for (final FsDirectory fsdir : children.values()) {
+            try {
+                list(fsdir.getPath()).forEach(f -> {
+                    pHandler.modified(fsdir.relativize(f), f);
+                });
+            } catch (final IOException e) {
+                LOG.warn(e.getMessage(), e);
+            }
+        }
     }
 
     void directoryCreated(final Path pDirectory) throws IOException {
@@ -103,14 +111,6 @@ class FsDirectories implements Closeable, Iterable<FsDirectory> {
             throw new NullPointerException(format("No directory object found for file %s", pFile));
         }
         return dir;
-    }
-
-    void fileModified(final ResourceEventProducer pProducer, final Path pFile) {
-        pProducer.fileModify(getDirectory(pFile).relativize(pFile), pFile);
-    }
-
-    void fileDeleted(final ResourceEventProducer pProducer, final Path pFile) {
-        pProducer.fileDelete(getDirectory(pFile).relativize(pFile));
     }
 
     @Override

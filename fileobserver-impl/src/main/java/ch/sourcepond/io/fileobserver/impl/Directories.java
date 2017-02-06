@@ -1,5 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl;
 
+import ch.sourcepond.io.fileobserver.api.ResourceObserver;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
@@ -16,18 +17,22 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-class Directories implements Closeable, Iterable<FsDirectories> {
-    private static final Logger LOG = getLogger(FsDirectories.class);
+class Directories implements Closeable {
+    private static final Logger LOG = getLogger(Directories.class);
     private final ConcurrentMap<FileSystem, FsDirectories> children = new ConcurrentHashMap<>();
-    private final ResourceEventProducer resourceEventProducer;
+    private final ConcurrentMap<ResourceObserver, ResourceObserverHandler> observers = new ConcurrentHashMap<>();
 
-    Directories(final ResourceEventProducer pResourceEventProducer) {
-        resourceEventProducer = pResourceEventProducer;
+    void addObserver(final ResourceObserver pObserver) {
+        final ResourceObserverHandler handler = new ResourceObserverHandler(pObserver);
+        if (null == observers.putIfAbsent(pObserver, handler)) {
+            for (final FsDirectories fsdirs : children.values()) {
+                fsdirs.initialyInformHandler(handler);
+            }
+        }
     }
 
-    @Override
-    public Iterator<FsDirectories> iterator() {
-        return children.values().iterator();
+    void removeObserver(final ResourceObserver pObserver) {
+        observers.remove(pObserver);
     }
 
     private WatchService newWatchService(final FileSystem pFs) {
@@ -62,8 +67,8 @@ class Directories implements Closeable, Iterable<FsDirectories> {
         return fsdirs;
     }
 
-    void fileModified(final Path pFile) {
-        getFsDirectories(pFile).fileModified(resourceEventProducer, pFile);
+    private String toId(final Path pPath) {
+        return getFsDirectories(pPath).getDirectory(pPath).relativize(pPath);
     }
 
     void pathCreated(final Path pPath)  {
@@ -74,7 +79,7 @@ class Directories implements Closeable, Iterable<FsDirectories> {
                 LOG.warn(e.getMessage(), e);
             }
         } else {
-            fileModified(pPath);
+            observers.values().forEach(h -> h.modified(toId(pPath), pPath));
         }
     }
 
@@ -84,12 +89,10 @@ class Directories implements Closeable, Iterable<FsDirectories> {
 
     void pathDeleted(final Path pPath)  {
         final FsDirectories fsdirs = getFsDirectories(pPath);
-        if (!fsdirs.directoryDeleted(pPath)) {
-            getFsDirectories(pPath).fileDeleted(resourceEventProducer, pPath);
-        }
-        if (fsdirs.isEmpty()) {
+        if (fsdirs.directoryDeleted(pPath)) {
             children.remove(pPath.getFileSystem());
         }
+        observers.values().forEach(h -> h.deleted(toId(pPath)));
     }
 
     @Override

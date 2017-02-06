@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
-import static java.nio.file.Files.isRegularFile;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -63,10 +62,8 @@ class DirectoryScanner implements Runnable, Closeable, WatchKeyProcessor {
     private void processPath(final WatchEvent.Kind pKind, final Path child) {
         // The filename is the
         // context of the event.
-        if (ENTRY_CREATE == pKind) {
+        if (ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) {
             directories.pathCreated(child);
-        } else if (isRegularFile(child) && (ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind)) {
-            directories.fileModified(child);
         } else if (ENTRY_DELETE == pKind)  {
             directories.pathDeleted(child);
         }

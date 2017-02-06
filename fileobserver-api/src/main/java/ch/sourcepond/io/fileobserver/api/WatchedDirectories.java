@@ -17,9 +17,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 /**
- * Service to register or update
  *
- * Created by rolandhauser on 19.01.17.
  */
 public interface WatchedDirectories {
 
