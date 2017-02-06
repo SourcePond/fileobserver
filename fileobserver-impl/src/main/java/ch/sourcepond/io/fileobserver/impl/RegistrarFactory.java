@@ -13,21 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.ResourceObserver;
-
-import java.util.concurrent.ExecutorService;
+import java.io.IOException;
+import java.nio.file.FileSystem;
 
 /**
  *
  */
-class ObserverHandlerFactory {
-    private final ExecutorService observerExecutor;
+class RegistrarFactory {
 
-    ObserverHandlerFactory(final ExecutorService pObserverExecutor) {
-        observerExecutor = pObserverExecutor;
-    }
-
-    ObserverHandler newHander(final ResourceObserver pObserver) {
-        return new DefaultObserverHandler(observerExecutor, pObserver);
+    Registrar newRegistrar(final FileSystem pFs) throws IOException {
+        return new Registrar(pFs.newWatchService());
     }
 }

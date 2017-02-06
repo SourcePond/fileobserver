@@ -18,7 +18,10 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.ClosedWatchServiceException;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.WatchKey;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -33,32 +36,29 @@ import static org.slf4j.LoggerFactory.getLogger;
 class Directories implements Closeable {
     private static final Logger LOG = getLogger(Directories.class);
     private final ConcurrentMap<FileSystem, FsDirectories> children = new ConcurrentHashMap<>();
-    private final ConcurrentMap<ResourceObserver, ObserverHandler> observers = new ConcurrentHashMap<>();
-    private final ObserverHandlerFactory observerHandlerFactory;
+    private final RegistrarFactory registrarFactory;
+    private final CompoundObserverHandler observers;
     private final FsDirectoriesFactory fsDirectoriesFactory;
 
-    public Directories(final ObserverHandlerFactory pObserverHandlerFactory,
+    public Directories(final RegistrarFactory pRegistrarFactory,
+                       final CompoundObserverHandler pObservers,
                        final FsDirectoriesFactory pFsDirectories) {
-        observerHandlerFactory = pObserverHandlerFactory;
+        registrarFactory = pRegistrarFactory;
+        observers = pObservers;
         fsDirectoriesFactory = pFsDirectories;
     }
 
     void addObserver(final ResourceObserver pObserver) {
-        final ObserverHandler handler = observerHandlerFactory.newHander(pObserver);
-        if (null == observers.putIfAbsent(pObserver, handler)) {
-            for (final FsDirectories fsdirs : children.values()) {
-                fsdirs.initialyInformHandler(handler);
-            }
-        }
+        observers.putIfAbsent(pObserver, children.values());
     }
 
     void removeObserver(final ResourceObserver pObserver) {
         observers.remove(pObserver);
     }
 
-    private WatchService newWatchService(final FileSystem pFs) {
+    private Registrar newRegistrar(final FileSystem pFs) {
         try {
-            return pFs.newWatchService();
+            return registrarFactory.newRegistrar(pFs);
         } catch (final IOException e) {
             throw new WatchServiceException(e);
         }
@@ -71,7 +71,7 @@ class Directories implements Closeable {
         try {
             children.computeIfAbsent(pDirectory.getFileSystem(), fs ->
                     fsDirectoriesFactory.newDirectories(
-                            newWatchService(fs))).directoryCreated(pDirectory, observers.values());
+                            newRegistrar(fs))).directoryCreated(pDirectory, observers);
         } catch (final WatchServiceException e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -98,13 +98,9 @@ class Directories implements Closeable {
 
     void pathCreated(final Path pPath) {
         if (isDirectory(pPath)) {
-            try {
-                getFsDirectories(pPath).directoryCreated(pPath, observers.values());
-            } catch (final IOException e) {
-                LOG.warn(e.getMessage(), e);
-            }
+            getFsDirectories(pPath).directoryCreated(pPath, observers);
         } else {
-            observers.values().forEach(h -> h.modified(toId(pPath), pPath));
+            observers.modified(toId(pPath), pPath);
         }
     }
 
@@ -114,7 +110,7 @@ class Directories implements Closeable {
         if (fsdirs.directoryDeleted(pPath)) {
             children.remove(pPath.getFileSystem());
         }
-        observers.values().forEach(h -> h.deleted(id));
+        observers.deleted(id);
     }
 
     @Override

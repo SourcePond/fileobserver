@@ -31,7 +31,10 @@ public class DirectoryScannerTest {
     private static final String NEW_SUB_DIR_NAME = "newsubdir";
     private final ResourceObserver observer = mock(ResourceObserver.class);
     private final ExecutorService executor = Executors.newCachedThreadPool();
-    private final Directories directories = new Directories(new ObserverHandlerFactory(executor), new FsDirectoriesFactory());
+    private final Directories directories = new Directories(
+            new RegistrarFactory(),
+            new CompoundObserverHandler(new ObserverHandlerFactory(executor)),
+            new FsDirectoriesFactory());
     private final DirectoryScanner scanner = new DirectoryScanner(executor, directories);
     private final FileSystem fs = FileSystems.getDefault();
     private final Path sourceDir = fs.getPath(System.getProperty("user.dir"), "src", "test", "resources");

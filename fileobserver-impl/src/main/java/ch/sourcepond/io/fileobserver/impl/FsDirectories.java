@@ -17,20 +17,13 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collection;
+import java.nio.file.Path;
+import java.nio.file.WatchKey;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
-import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.lang.String.format;
-import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.list;
-import static java.nio.file.Files.walkFileTree;
-import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -38,18 +31,17 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 class FsDirectories implements Closeable {
     private static final Logger LOG = getLogger(FsDirectories.class);
-    private final ConcurrentMap<Path, FsDirectory> children = new ConcurrentHashMap<>();
-    private final WatchService watchService;
+    private final Registrar registrar;
 
-    FsDirectories(final WatchService pWatchService) {
-        watchService = pWatchService;
+    FsDirectories(final Registrar pRegistrar) {
+        registrar = pRegistrar;
     }
 
     void initialyInformHandler(final ObserverHandler pHandler) {
-        for (final FsDirectory fsdir : children.values()) {
+        for (final FsDirectory fsdir : registrar) {
             try {
-                list(fsdir.getPath()).forEach(f -> {
-                    pHandler.modified(fsdir.relativize(f), f);
+                list(fsdir.getPath()).forEach(dir -> {
+                    directoryCreated(dir, pHandler);
                 });
             } catch (final IOException e) {
                 LOG.warn(e.getMessage(), e);
@@ -57,46 +49,19 @@ class FsDirectories implements Closeable {
         }
     }
 
-    void directoryCreated(final Path pDirectory, final Collection<ObserverHandler> pHandlers) throws IOException {
+    void directoryCreated(final Path pDirectory, final ObserverHandler pHandler) {
         try {
-            walkFileTree(pDirectory, new SimpleFileVisitor<Path>() {
-
-                @Override
-                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                    pHandlers.forEach(h -> h.modified(pDirectory.relativize(file).toString(), file));
-                    return CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                    children.computeIfAbsent(dir,
-                            p -> new FsDirectory(children.get(dir.getParent()), register(dir)));
-                    return CONTINUE;
-                }
-            });
+            registrar.directoryCreated(pDirectory, pHandler);
         } catch (final IOException e) {
-            throw new WatchServiceException(e);
-        }
-    }
-
-    private WatchKey register(final Path pDirectory) throws WatchServiceException {
-        try {
-            return pDirectory.register(watchService, new WatchEvent.Kind[]{
-                    ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY}, HIGH);
-        } catch (final IOException e) {
-            throw new WatchServiceException(e);
-        } finally {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(format("Added Directory %s", pDirectory));
-            }
+            LOG.warn(e.getMessage(), e);
         }
     }
 
     boolean directoryDeleted(final Path pDirectory) {
-        final FsDirectory dir = children.remove(pDirectory);
+        final FsDirectory dir = registrar.remove(pDirectory);
         if (null != dir) {
             dir.cancelKey();
-            for (final Iterator<Map.Entry<Path, FsDirectory>> it = children.entrySet().iterator() ; it.hasNext() ; ) {
+            for (final Iterator<Map.Entry<Path, FsDirectory>> it = registrar.entrySet().iterator() ; it.hasNext() ; ) {
                 final Map.Entry<Path, FsDirectory> entry = it.next();
                 if (entry.getKey().startsWith(pDirectory)) {
                     entry.getValue().cancelKey();
@@ -104,15 +69,15 @@ class FsDirectories implements Closeable {
                 }
             }
         }
-        return children.isEmpty();
+        return registrar.isEmpty();
     }
 
     boolean isEmpty() {
-        return children.isEmpty();
+        return registrar.isEmpty();
     }
 
     FsDirectory getDirectory(final Path pFile) {
-        final FsDirectory dir = children.get(pFile.getParent());
+        final FsDirectory dir = registrar.get(pFile.getParent());
         if (null == dir) {
             throw new NullPointerException(format("No directory object found for file %s", pFile));
         }
@@ -122,15 +87,13 @@ class FsDirectories implements Closeable {
     @Override
     public void close() {
         try {
-            watchService.close();
+            registrar.close();
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
-        } finally {
-            children.clear();
         }
     }
 
     WatchKey poll() {
-        return watchService.poll();
+        return registrar.poll();
     }
 }
