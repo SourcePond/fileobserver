@@ -71,28 +71,30 @@ public class FsDirectoriesTest {
     }
 
     @Test
+    public void directoryCreated() throws  IOException{
+        fsDirectories.directoryCreated(directory, handler);
+        verify(registrar).directoryCreated(directory, handler);
+    }
+
+    @Test
+    public void directoryCreatedIOExceptionOccurred() throws  IOException{
+        final IOException expected = new IOException();
+        doThrow(expected).when(registrar).directoryCreated(directory, handler);
+
+        // Should not cause an exception
+        fsDirectories.directoryCreated(directory, handler);
+    }
+
+    @Test
     public void directoryDeleted() {
-        when(registrar.directoryDeleted(directory)).thenReturn(true);
-        when(subDirectory.startsWith(directory)).thenReturn(true);
-        assertTrue(fsDirectories.directoryDeleted(directory));
-        assertTrue(entries.isEmpty());
-        verify(fsDirectory).cancelKey();
-        verify(fsSubDirectory).cancelKey();
+        fsDirectories.directoryDeleted(directory);
+        verify(registrar).directoryDeleted(directory);
     }
 
     @Test
     public void directoryDeletedDirUnknown() {
         fsDirectories.directoryDeleted(directory);
         verifyZeroInteractions(directory, subDirectory);
-    }
-
-    @Test
-    public void directoryDeletedNoASubDirectory() {
-        when(registrar.directoryDeleted(directory)).thenReturn(true);
-        assertTrue(fsDirectories.directoryDeleted(directory));
-        assertFalse(entries.isEmpty());
-        verify(fsDirectory).cancelKey();
-        verify(fsSubDirectory, never()).cancelKey();
     }
 
     @Test
