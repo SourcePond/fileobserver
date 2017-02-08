@@ -43,45 +43,45 @@ public class WatchedDirectoryManager {
     }
 
     public void bind(final WatchedDirectory pWatchedDirectory) {
+        requireNonNull(pWatchedDirectory, "Watched directory is null");
         try {
-            enable(pWatchedDirectory.getKey(), pWatchedDirectory.getDirectory());
+            final Enum<?> key = pWatchedDirectory.getKey();
+            final Path directory = pWatchedDirectory.getDirectory();
+            requireNonNull(key, "Key is null");
+            requireNonNull(directory, "Directory is null");
+
+            if (!isDirectory(directory)) {
+                throw new IllegalArgumentException(format("[%s]: %s is not a directory!", key, directory));
+            }
+
+            // Put the directory to the registered paths; if the returned value is null, it's a new key.
+            final Path previous = keyToPaths.put(key, directory);
+
+            if (!directory.equals(previous)) {
+                final Collection<Enum<?>> keys = pathToKeys.computeIfAbsent(directory, d -> new CopyOnWriteArraySet<>());
+
+                // If the key is newly added, open a watch-service for the directory
+                if (keys.add(key) && keys.size() == 1) {
+                    directories.addRoot(directory);
+                }
+
+                // The previous directory is not null. This means, that we watch a new target
+                // directory, and therefore, need to clean-up.
+                disableIfNecessary(key, previous);
+            }
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         }
     }
 
     void unbind(final WatchedDirectory pWatchedDirectory) {
-        disable(pWatchedDirectory.getKey());
+        requireNonNull(pWatchedDirectory, "Watched directory is null");
+        final Enum<?> key = pWatchedDirectory.getKey();
+        requireNonNull(key, "Key is null");
+        disableIfNecessary(key, keyToPaths.remove(key));
     }
 
-    private void enable(final Enum<?> pKey, final Path pDirectory) throws IOException {
-        requireNonNull(pKey, "Key is null");
-        requireNonNull(pDirectory, "Directory is null");
-
-        if (!isDirectory(pDirectory)) {
-            throw new IllegalArgumentException(format("[%s]: %s is not a directory!", pKey, pDirectory));
-        }
-
-        // Put the directory to the registered paths; if the returned value is null, it's a new key.
-        final Path previous = keyToPaths.put(pKey, pDirectory);
-        Collection<Enum<?>> keys = pathToKeys.computeIfAbsent(pDirectory, d -> new CopyOnWriteArraySet<>());
-
-        // If the key is newly added, open a watch-service for the directory
-        if (keys.add(pKey) && keys.size() == 1) {
-            directories.addRoot(pDirectory);
-        }
-
-        // The previous directory is not null. This means, that we watch a new target
-        // directory, and therefore, need to clean-up.
-        disable(pKey, previous);
-    }
-
-    private void disable(final Enum<?> pKey) {
-        requireNonNull(pKey, "Key is null");
-        disable(pKey, keyToPaths.remove(pKey));
-    }
-
-    private void disable(final Enum<?> pKey, final Path pToBeDisabled) {
+    private void disableIfNecessary(final Enum<?> pKey, final Path pToBeDisabled) {
         if (null != pToBeDisabled) {
             final Collection<Enum<?>> keys = pathToKeys.getOrDefault(pToBeDisabled, emptyList());
 
