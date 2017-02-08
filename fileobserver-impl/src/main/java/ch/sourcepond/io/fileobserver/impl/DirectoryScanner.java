@@ -21,19 +21,17 @@ import java.nio.file.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.DelayQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
-import static java.lang.Thread.currentThread;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * <p>This thread-safe class manages watch-service instances and their associated watch-keys.
  */
-class DirectoryScanner implements Runnable, Closeable {
+class DirectoryScanner extends Thread implements Closeable {
 
     private static class DelayedWatchKey {
         private final long delayedUntilInMilliseconds;
@@ -65,17 +63,12 @@ class DirectoryScanner implements Runnable, Closeable {
      */
     private final List<DelayedWatchKey> delayQueue = new LinkedList<>();
     private final List<FsDirectories> roots;
-    private final ExecutorService executor;
     private final Directories directories;
 
-    DirectoryScanner(final ExecutorService pExecutor, final List<FsDirectories> pRoots, final Directories pDirectories) {
-        executor = pExecutor;
+    DirectoryScanner(final List<FsDirectories> pRoots, final Directories pDirectories) {
+        super("sourcepond.DirectoryScanner");
         roots = pRoots;
         directories = pDirectories;
-    }
-
-    void start() {
-        executor.execute(this);
     }
 
     /**

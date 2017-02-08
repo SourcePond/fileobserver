@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -23,11 +21,10 @@ import static org.mockito.Mockito.*;
  */
 public class DirectoryScannerTest extends CopyResourcesTest {
     private static final String NEW_FILE_NAME = "newfile.txt";
-    private final ExecutorService executor = Executors.newCachedThreadPool();
     private final Directories directories = mock(Directories.class);
     private final FsDirectories child = mock(FsDirectories.class);
     private final List<FsDirectories> roots = asList(child);
-    private final DirectoryScanner scanner = new DirectoryScanner(executor, roots, directories);
+    private final DirectoryScanner scanner = new DirectoryScanner(roots, directories);
     private WatchService watchService;
     private WatchKey key;
 
@@ -49,7 +46,6 @@ public class DirectoryScannerTest extends CopyResourcesTest {
         watchService.close();
         directories.removeRoot(directory);
         scanner.close();
-        executor.shutdown();
     }
 
     private void changeContent(final Path pPath) throws Exception {

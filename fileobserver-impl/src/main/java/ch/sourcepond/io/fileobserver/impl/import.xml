@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0">
+
+    <reference id="OSGi_service.smartSwitch" interface="ch.sourcepond.commons.smartswitch.api.SmartSwitchFactory" />
+
+    <reference id="OSGi_service.resourceFactory" interface="ch.sourcepond.io.checksum.api.ResourcesFactory" />
+
+    <reference-list interface="ch.sourcepond.io.fileobserver.api.ResourceObserver" availability="optional">
+        <reference-listener ref="directories" bind-method="addObserver" unbind-method="removeObserver" />
+    </reference-list>
+
+    <reference-list interface="ch.sourcepond.io.fileobserver.api.WatchedDirectory" availability="optional">
+        <reference-listener ref="watchedDirectoryManager" bind-method="bind" unbind-method="unbind" />
+    </reference-list>
+</blueprint>

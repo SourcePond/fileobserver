@@ -13,18 +13,37 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
+import ch.sourcepond.commons.smartswitch.api.SmartSwitchFactory;
 import ch.sourcepond.io.fileobserver.api.ResourceObserver;
+import org.slf4j.Logger;
 
+import java.io.Closeable;
 import java.util.concurrent.ExecutorService;
+
+import static java.util.concurrent.Executors.newCachedThreadPool;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  *
  */
-class DefaultObserverHandlerFactory {
+class DefaultObserverHandlerFactory implements Closeable {
+    private static final Logger LOG = getLogger(DefaultObserverHandlerFactory.class);
     private final ExecutorService observerExecutor;
 
-    DefaultObserverHandlerFactory(final ExecutorService pObserverExecutor) {
-        observerExecutor = pObserverExecutor;
+    DefaultObserverHandlerFactory(final SmartSwitchFactory pSmartSwitch) {
+        observerExecutor = pSmartSwitch.whenService(ExecutorService.class).
+                withFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
+                isUnavailableThenUse(() -> newCachedThreadPool()).
+                insteadAndExecuteWhenAvailable(ExecutorService::shutdown);
+    }
+
+    @Override
+    public void close() {
+        try {
+            observerExecutor.shutdown();
+        } catch (final SecurityException e) {
+            LOG.debug(e.getMessage(), e);
+        }
     }
 
     ObserverHandler newHander(final ResourceObserver pObserver) {

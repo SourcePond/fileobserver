@@ -1,14 +1,15 @@
 package ch.sourcepond.io.fileobserver.impl;
 
+import ch.sourcepond.commons.smartswitch.testing.SmartSwitchRule;
 import ch.sourcepond.io.fileobserver.api.ResourceObserver;
-import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 
 import static java.lang.Thread.sleep;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.Mockito.*;
 
 /**
@@ -17,18 +18,21 @@ import static org.mockito.Mockito.*;
 public class DefaultObserverHandlerTest {
     private static final String ANY_ID = "anyId";
     private final ResourceObserver delegate = mock(ResourceObserver.class);
-    private final ExecutorService observerExecutor = newSingleThreadExecutor();
     private final Path file = mock(Path.class);
-    private final DefaultObserverHandlerFactory factory = new DefaultObserverHandlerFactory(observerExecutor);
-    private final ObserverHandler handler = factory.newHander(delegate);
 
-    @After
-    public void tearDown() {
-        observerExecutor.shutdown();
+    @Rule
+    public final SmartSwitchRule rule = new SmartSwitchRule();
+
+    private ObserverHandler handler;
+
+    @Before
+    public void setup() {
+        rule.useDefaultService(ExecutorService.class, "(sourcepond.io.fileobserver.observerexecutor=*)");
+        handler = new DefaultObserverHandlerFactory(rule.getTestFactory()).newHander(delegate);
     }
 
     @Test
-    public void modifyDeletedAccepted() {
+    public void modifyDeletedAccepted() throws Exception {
         when(delegate.accept(ANY_ID, file)).thenReturn(true);
         handler.modified(ANY_ID, file);
         verify(delegate, timeout(1000)).modified(ANY_ID, file);
