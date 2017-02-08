@@ -20,10 +20,10 @@ import java.util.concurrent.ExecutorService;
 /**
  *
  */
-class ObserverHandlerFactory {
+class DefaultObserverHandlerFactory {
     private final ExecutorService observerExecutor;
 
-    ObserverHandlerFactory(final ExecutorService pObserverExecutor) {
+    DefaultObserverHandlerFactory(final ExecutorService pObserverExecutor) {
         observerExecutor = pObserverExecutor;
     }
 

@@ -25,9 +25,9 @@ import java.util.concurrent.ConcurrentMap;
  */
 class CompoundObserverHandler implements ObserverHandler {
     private final ConcurrentMap<ResourceObserver, ObserverHandler> handlers = new ConcurrentHashMap<>();
-    private final ObserverHandlerFactory handlerFactory;
+    private final DefaultObserverHandlerFactory handlerFactory;
 
-    CompoundObserverHandler(final ObserverHandlerFactory pHandlerFactory) {
+    CompoundObserverHandler(final DefaultObserverHandlerFactory pHandlerFactory) {
         handlerFactory = pHandlerFactory;
     }
 

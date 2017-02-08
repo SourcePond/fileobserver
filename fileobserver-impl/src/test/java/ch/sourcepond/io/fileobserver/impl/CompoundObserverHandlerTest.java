@@ -19,7 +19,7 @@ public class CompoundObserverHandlerTest {
     private final ResourceObserver observer2 = mock(ResourceObserver.class);
     private final ObserverHandler handler1 = mock(ObserverHandler.class);
     private final ObserverHandler handler2 = mock(ObserverHandler.class);
-    private final ObserverHandlerFactory factory = mock(ObserverHandlerFactory.class);
+    private final DefaultObserverHandlerFactory factory = mock(DefaultObserverHandlerFactory.class);
     private final FsDirectories fsdirs = mock(FsDirectories.class);
     private final Collection<FsDirectories> directories = asList(fsdirs);
     private final Path file = mock(Path.class);

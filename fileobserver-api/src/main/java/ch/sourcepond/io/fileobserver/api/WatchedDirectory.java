@@ -33,12 +33,12 @@ public interface WatchedDirectory {
         return new WatchedDirectory() {
             @Override
             public Enum<?> getKey() {
-                return null;
+                return pKey;
             }
 
             @Override
             public Path getDirectory() {
-                return null;
+                return pDirectory;
             }
         };
     }

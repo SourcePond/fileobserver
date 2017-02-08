@@ -34,11 +34,11 @@ class DefaultObserverHandler implements ObserverHandler {
     }
 
     private boolean accept(final String pId, final Path pFile) {
-        if (delegate.accept(pId, pFile)) {
+        final boolean accepted = delegate.accept(pId, pFile);
+        if (accepted) {
             acceptedIds.add(pId);
-            return true;
         }
-        return false;
+        return accepted;
     }
 
     @Override
