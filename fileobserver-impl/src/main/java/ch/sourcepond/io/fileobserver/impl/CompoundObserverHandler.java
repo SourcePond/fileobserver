@@ -48,7 +48,7 @@ class CompoundObserverHandler implements ObserverHandler {
         handlers.values().forEach(h -> h.deleted(pId));
     }
 
-    public void remove(final ResourceObserver pObserver) {
+    void remove(final ResourceObserver pObserver) {
         handlers.remove(pObserver);
     }
 }
