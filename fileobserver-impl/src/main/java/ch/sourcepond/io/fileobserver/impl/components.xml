@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0">
 
-    <bean id="roots" class="java.util.concurrent.CopyOnWriteArrayList"/>
-
     <bean id="defaultObserverHandlerFactory" class="ch.sourcepond.io.fileobserver.impl.DefaultObserverHandlerFactory"
           destroy-method="close">
         <argument ref="OSGi_service.smartSwitch"/>
@@ -21,6 +19,8 @@
     </bean>
 
     <bean id="fsDirectoriesFactory" class="ch.sourcepond.io.fileobserver.impl.FsDirectoriesFactory"/>
+
+    <bean id="roots" class="java.util.concurrent.CopyOnWriteArrayList"/>
 
     <bean id="directories" class="ch.sourcepond.io.fileobserver.impl.Directories" destroy-method="close">
         <argument ref="registrarFactory"/>
