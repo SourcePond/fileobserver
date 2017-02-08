@@ -5,9 +5,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -28,12 +32,12 @@ public class DirectoriesTest {
     private final BasicFileAttributes attrs = mock(BasicFileAttributes.class);
     private final Path testPath = mock(Path.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
-    private final WatchKeyProcessor processor = mock(WatchKeyProcessor.class);
     private final WatchKey watchKey = mock(WatchKey.class);
     private final RegistrarFactory registrarFactory = mock(RegistrarFactory.class);
     private final Registrar registrar = mock(Registrar.class);
     private final CompoundObserverHandler compoundObserverHandler = mock(CompoundObserverHandler.class);
-    private Directories directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory);
+    private final List<FsDirectories> roots = mock(List.class);
+    private Directories directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory, roots);
 
     @Before
     public void setup() throws IOException {
@@ -51,7 +55,7 @@ public class DirectoriesTest {
 
     @Test
     public void addRootIOExceptionOccurred() throws IOException {
-        directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory);
+        directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory, roots);
 
         final IOException expected = new IOException();
         doThrow(expected).when(registrarFactory).newRegistrar(fs);
@@ -66,7 +70,7 @@ public class DirectoriesTest {
 
     @Test
     public void addRootPathIsNotADirectory() throws IOException {
-        directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory);
+        directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory, roots);
         when(rootDirectoryAttrs.isDirectory()).thenReturn(false);
 
         try {
@@ -95,7 +99,7 @@ public class DirectoriesTest {
         directories.addObserver(observer);
         directories.addObserver(observer);
 
-        directories.pathCreated(testPath);
+        directories.pathModified(testPath);
         verify(fsDirectory).informIfChanged(compoundObserverHandler, testPath);
     }
 
@@ -109,7 +113,7 @@ public class DirectoriesTest {
     public void pathCreatedPathIsADirectory() throws Exception {
         when(attrs.isDirectory()).thenReturn(true);
         directories.addObserver(observer);
-        directories.pathCreated(testPath);
+        directories.pathModified(testPath);
         verify(fsDirectories).directoryCreated(testPath, compoundObserverHandler);
     }
 
@@ -142,43 +146,20 @@ public class DirectoriesTest {
     }
 
     @Test
-    public void processFsEvents() throws Exception {
-        directories.addRoot(rootDirectory);
-        when(fsDirectories.poll()).thenReturn(watchKey);
-        directories.processFsEvents(processor);
-        verify(processor).processEvent(watchKey);
-    }
-
-    @Test
-    public void processFsEventsNoKeyAvailable() throws Exception {
-        directories.addRoot(rootDirectory);
-        directories.processFsEvents(processor);
-        verify(processor, never()).processEvent(watchKey);
-    }
-
-    @Test
-    public void processFsEventsIOExceptionOccurred() throws Exception {
-        final IOException expected = new IOException();
-        doThrow(expected).when(processor).processEvent(watchKey);
-        directories.addRoot(rootDirectory);
-        when(fsDirectories.poll()).thenReturn(watchKey);
-        directories.processFsEvents(processor);
-
+    public void closeFsDirectoriesIsNull() throws Exception {
+        // Should not cause an exception
+        directories.close(null);
         directories.addRoot(rootDirectory);
 
-        // Should have been called only once
+        // Should have been called exactly once
         verify(registrarFactory).newRegistrar(fs);
     }
 
     @Test
-    public void closeFsDirectoriesIfWatchServiceIsClosed() throws Exception {
-        final ClosedWatchServiceException expected = new ClosedWatchServiceException();
-        doThrow(expected).when(processor).processEvent(watchKey);
-        directories.addRoot(rootDirectory);
-        when(fsDirectories.poll()).thenReturn(watchKey);
-        directories.processFsEvents(processor);
-
+    public void closeFsDirectories() throws Exception {
+        directories.close(fsDirectories);
         verify(fsDirectories).close();
+        verify(roots).remove(fsDirectories);
 
         directories.addRoot(rootDirectory);
 

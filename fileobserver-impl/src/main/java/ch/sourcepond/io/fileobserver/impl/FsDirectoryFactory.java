@@ -13,20 +13,21 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
-import java.io.IOException;
-import java.nio.file.FileSystem;
+import ch.sourcepond.io.checksum.api.ResourcesFactory;
+
+import java.nio.file.WatchKey;
 
 /**
- *
+ * Created by rolandhauser on 08.02.17.
  */
-class RegistrarFactory {
-    private final FsDirectoryFactory directoryFactory;
+class FsDirectoryFactory {
+    private final ResourcesFactory resourcesFactory;
 
-    RegistrarFactory(final FsDirectoryFactory pDirectoryFactory) {
-        directoryFactory = pDirectoryFactory;
+    FsDirectoryFactory(final ResourcesFactory pResourcesFactory) {
+        resourcesFactory = pResourcesFactory;
     }
 
-    Registrar newRegistrar(final FileSystem pFs) throws IOException {
-        return new Registrar(directoryFactory, pFs.newWatchService());
+    FsDirectory newDirectory(final FsDirectory pParent, final WatchKey pKey) {
+        return new FsDirectory(resourcesFactory, pParent, pKey);
     }
 }

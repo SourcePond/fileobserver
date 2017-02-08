@@ -17,14 +17,15 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.nio.file.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
+import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -32,14 +33,44 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * <p>This thread-safe class manages watch-service instances and their associated watch-keys.
  */
-class DirectoryScanner implements Runnable, Closeable, WatchKeyProcessor {
+class DirectoryScanner implements Runnable, Closeable {
+
+    private static class DelayedWatchKey {
+        private final long delayedUntilInMilliseconds;
+        private final WatchKey key;
+
+        DelayedWatchKey(final WatchKey pKey) {
+            // TODO: Replace constant delay value with a configurable value.
+            delayedUntilInMilliseconds = currentTimeMillis() + 2000;
+            key = pKey;
+        }
+
+        public WatchKey getKey() {
+            return key;
+        }
+
+        boolean isDue() {
+            return 0 > delayedUntilInMilliseconds - currentTimeMillis();
+        }
+    }
+
     private static final Logger LOG = getLogger(DirectoryScanner.class);
     private final AtomicBoolean running = new AtomicBoolean(true);
+
+    /**
+     * We do <em>not</em> work with a {@link DelayQueue} here because the
+     * timeout of the elements will always be linear. Furthermore, we do
+     * not not need synchronization because the queue will always be accessed
+     * from the same thread (runner thread).
+     */
+    private final List<DelayedWatchKey> delayQueue = new LinkedList<>();
+    private final List<FsDirectories> roots;
     private final ExecutorService executor;
     private final Directories directories;
 
-    DirectoryScanner(final ExecutorService pExecutor, final Directories pDirectories) {
+    DirectoryScanner(final ExecutorService pExecutor, final List<FsDirectories> pRoots, final Directories pDirectories) {
         executor = pExecutor;
+        roots = pRoots;
         directories = pDirectories;
     }
 
@@ -60,17 +91,20 @@ class DirectoryScanner implements Runnable, Closeable, WatchKeyProcessor {
     }
 
     private void processPath(final WatchEvent.Kind pKind, final Path child) {
-        // The filename is the
-        // context of the event.
-        if (ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) {
-            directories.pathCreated(child);
-        } else if (ENTRY_DELETE == pKind)  {
-            directories.pathDeleted(child);
+        try {
+            // The filename is the
+            // context of the event.
+            if (ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) {
+                directories.pathModified(child);
+            } else if (ENTRY_DELETE == pKind) {
+                directories.pathDeleted(child);
+            }
+        } catch (final Exception e) {
+            LOG.error(e.getMessage(), e);
         }
     }
 
-    @Override
-    public void processEvent(final WatchKey pWatchKey) throws IOException {
+    private void processEvent(final WatchKey pWatchKey) throws IOException {
         final Path directory = (Path) pWatchKey.watchable();
 
         for (final WatchEvent<?> event : pWatchKey.pollEvents()) {
@@ -89,7 +123,10 @@ class DirectoryScanner implements Runnable, Closeable, WatchKeyProcessor {
                 continue;
             }
 
-            processPath(kind, directory.resolve((Path) event.context()));
+            // Only process if it's not a repeated event.
+            if (event.count() == 1) {
+                processPath(kind, directory.resolve((Path) event.context()));
+            }
         }
 
         if (!pWatchKey.reset()) {
@@ -97,10 +134,50 @@ class DirectoryScanner implements Runnable, Closeable, WatchKeyProcessor {
         }
     }
 
+    private boolean queueWatchKeys() {
+        FsDirectories next = null;
+        WatchKey key;
+
+        // We intentionally use a traditional for-loop to keep object creation
+        // count as low as possible. Therefore, do not use an iterator here.
+        for (int i = 0; i < roots.size(); i++) {
+            try {
+                next = roots.get(i);
+                key = next.poll();
+                if (null != key) {
+                    delayQueue.add(new DelayedWatchKey(key));
+                }
+            } catch (final ClosedWatchServiceException e) {
+                directories.close(next);
+                LOG.debug(e.getMessage(), e);
+            }
+        }
+
+        return !delayQueue.isEmpty();
+    }
+
+    private boolean processIfDue(final DelayedWatchKey delayedKey) {
+        final boolean due = delayedKey.isDue();
+        if (due) {
+            try {
+                processEvent(delayedKey.getKey());
+            } catch (final IOException e) {
+                LOG.warn(e.getMessage(), e);
+            }
+        }
+        return due;
+    }
+
     @Override
     public void run() {
         while (running.get() && !currentThread().isInterrupted()) {
-            directories.processFsEvents(this);
+
+            // Add new keys to the queue for delayed execution
+            if (queueWatchKeys()) {
+
+                // Process events if available
+                delayQueue.removeIf(this::processIfDue);
+            }
         }
     }
 }

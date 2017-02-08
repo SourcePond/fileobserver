@@ -13,14 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,20 +38,20 @@ import static org.slf4j.LoggerFactory.getLogger;
 class Registrar implements Closeable, Iterable<FsDirectory> {
     private static final Logger LOG = getLogger(Registrar.class);
     private final ConcurrentMap<Path, FsDirectory> children = new ConcurrentHashMap<>();
-    private final ResourcesFactory resourcesFactory;
+    private final FsDirectoryFactory directoryFactory;
     private final WatchService watchService;
 
-    Registrar(final ResourcesFactory pResourcesFactory, final WatchService pWatchService) {
-        resourcesFactory = pResourcesFactory;
+    Registrar(final FsDirectoryFactory pDirectoryFactory, final WatchService pWatchService) {
+        directoryFactory = pDirectoryFactory;
         watchService = pWatchService;
     }
 
-    private WatchKey register(final Path pDirectory) throws WatchServiceException {
+    private WatchKey register(final Path pDirectory) {
         try {
             return pDirectory.register(watchService, new WatchEvent.Kind[]{
                     ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY}, HIGH);
         } catch (final IOException e) {
-            throw new WatchServiceException(e);
+            throw new UncheckedIOException(e);
         } finally {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(format("Added Directory %s", pDirectory));
@@ -73,8 +72,8 @@ class Registrar implements Closeable, Iterable<FsDirectory> {
             public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                 try {
                     children.computeIfAbsent(dir,
-                            p -> new FsDirectory(resourcesFactory, children.get(dir.getParent()), register(dir)));
-                } catch (final WatchServiceException e) {
+                            p -> directoryFactory.newDirectory(children.get(dir.getParent()), register(dir)));
+                } catch (final UncheckedIOException e) {
                     throw new IOException(e.getMessage(), e);
                 }
                 return CONTINUE;
@@ -82,19 +81,22 @@ class Registrar implements Closeable, Iterable<FsDirectory> {
         });
     }
 
-    public FsDirectory remove(final Path pDirectory) {
-        return children.remove(pDirectory);
-    }
-
-    public Collection<Map.Entry<Path, FsDirectory>> entrySet() {
-        return children.entrySet();
-    }
-
-    public boolean isEmpty() {
+    boolean directoryDeleted(final Path pDirectory) {
+        final FsDirectory dir = children.remove(pDirectory);
+        if (null != dir) {
+            dir.cancelKey();
+            for (final Iterator<Map.Entry<Path, FsDirectory>> it = children.entrySet().iterator(); it.hasNext(); ) {
+                final Map.Entry<Path, FsDirectory> entry = it.next();
+                if (entry.getKey().startsWith(pDirectory)) {
+                    entry.getValue().cancelKey();
+                    it.remove();
+                }
+            }
+        }
         return children.isEmpty();
     }
 
-    public FsDirectory get(final Path parent) {
+    FsDirectory get(final Path parent) {
         return children.get(parent);
     }
 

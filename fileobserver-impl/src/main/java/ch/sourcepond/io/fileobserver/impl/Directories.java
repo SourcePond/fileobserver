@@ -18,11 +18,10 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.ClosedWatchServiceException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.WatchKey;
-import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -36,16 +35,27 @@ import static org.slf4j.LoggerFactory.getLogger;
 class Directories implements Closeable {
     private static final Logger LOG = getLogger(Directories.class);
     private final ConcurrentMap<FileSystem, FsDirectories> children = new ConcurrentHashMap<>();
+
+    /**
+     * We intentionally do <em>not</em> use {@code children.values()} because we need to iterate
+     * over the children in the scanner-thread loop. If we used {@code children.values()} directly
+     * we must create a new iterator during every loop iteration. This is a potential memory leak
+     * and causes unnecessary GC activity.
+     */
+    private final List<FsDirectories> roots;
+
     private final RegistrarFactory registrarFactory;
     private final CompoundObserverHandler observers;
     private final FsDirectoriesFactory fsDirectoriesFactory;
 
     public Directories(final RegistrarFactory pRegistrarFactory,
                        final CompoundObserverHandler pObservers,
-                       final FsDirectoriesFactory pFsDirectories) {
+                       final FsDirectoriesFactory pFsDirectories,
+                       final List<FsDirectories> pRoots) {
         registrarFactory = pRegistrarFactory;
         observers = pObservers;
         fsDirectoriesFactory = pFsDirectories;
+        roots = pRoots;
     }
 
     void addObserver(final ResourceObserver pObserver) {
@@ -60,8 +70,15 @@ class Directories implements Closeable {
         try {
             return registrarFactory.newRegistrar(pFs);
         } catch (final IOException e) {
-            throw new WatchServiceException(e);
+            throw new UncheckedIOException(e.getMessage(), e);
         }
+    }
+
+    private FsDirectories newDirectories(final FileSystem pFs) {
+        final FsDirectories fsdirs = fsDirectoriesFactory.newDirectories(
+                newRegistrar(pFs));
+        roots.add(fsdirs);
+        return fsdirs;
     }
 
     void addRoot(final Path pDirectory) throws IOException {
@@ -69,10 +86,9 @@ class Directories implements Closeable {
             throw new IllegalArgumentException(format("%s is not a directory!", pDirectory));
         }
         try {
-            children.computeIfAbsent(pDirectory.getFileSystem(), fs ->
-                    fsDirectoriesFactory.newDirectories(
-                            newRegistrar(fs))).directoryCreated(pDirectory, observers);
-        } catch (final WatchServiceException e) {
+            children.computeIfAbsent(pDirectory.getFileSystem(),
+                    fs -> newDirectories(fs)).directoryCreated(pDirectory, observers);
+        } catch (final UncheckedIOException e) {
             throw new IOException(e.getMessage(), e);
         }
     }
@@ -96,7 +112,7 @@ class Directories implements Closeable {
         return getFsDirectories(pPath).getDirectory(pPath).relativize(pPath);
     }
 
-    void pathCreated(final Path pPath) {
+    void pathModified(final Path pPath) {
         if (isDirectory(pPath)) {
             getFsDirectories(pPath).directoryCreated(pPath, observers);
         } else {
@@ -122,22 +138,13 @@ class Directories implements Closeable {
         children.clear();
     }
 
-    void processFsEvents(final WatchKeyProcessor pProcessor) {
-        for (final Iterator<FsDirectories> it = children.values().iterator(); it.hasNext(); ) {
-            final FsDirectories next = it.next();
-            final WatchKey key = next.poll();
-            if (null != key) {
-                try {
-                    pProcessor.processEvent(key);
-                } catch (final IOException e) {
-                    LOG.warn(e.getMessage(), e);
-                } catch (final ClosedWatchServiceException e) {
-                    next.close();
-                    // Remove closed watch-service from map
-                    it.remove();
-                    LOG.debug(e.getMessage(), e);
-                }
-            }
+    void close(final FsDirectories pFsDirectories) {
+        if (null != pFsDirectories) {
+            pFsDirectories.close();
+
+            // Remove closed watch-service from the roots-list and children-map
+            roots.remove(pFsDirectories);
+            children.values().remove(pFsDirectories);
         }
     }
 }

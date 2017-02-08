@@ -19,8 +19,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
-import java.util.Iterator;
-import java.util.Map;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.list;
@@ -58,22 +56,7 @@ class FsDirectories implements Closeable {
     }
 
     boolean directoryDeleted(final Path pDirectory) {
-        final FsDirectory dir = registrar.remove(pDirectory);
-        if (null != dir) {
-            dir.cancelKey();
-            for (final Iterator<Map.Entry<Path, FsDirectory>> it = registrar.entrySet().iterator() ; it.hasNext() ; ) {
-                final Map.Entry<Path, FsDirectory> entry = it.next();
-                if (entry.getKey().startsWith(pDirectory)) {
-                    entry.getValue().cancelKey();
-                    it.remove();
-                }
-            }
-        }
-        return registrar.isEmpty();
-    }
-
-    boolean isEmpty() {
-        return registrar.isEmpty();
+        return registrar.directoryDeleted(pDirectory);
     }
 
     FsDirectory getDirectory(final Path pFile) {

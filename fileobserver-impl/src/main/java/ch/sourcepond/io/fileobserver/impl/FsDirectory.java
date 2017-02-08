@@ -29,8 +29,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-class FsDirectory  {
+class FsDirectory {
     private static final Logger LOG = getLogger(FsDirectory.class);
+    static final long TIMEOUT = 2000;
     private final ConcurrentMap<Path, Resource> resources = new ConcurrentHashMap<>();
     private final ResourcesFactory resourcesFactory;
     private final FsDirectory parent;
@@ -67,7 +68,7 @@ class FsDirectory  {
     public void informIfChanged(final ObserverHandler pObserver, final Path pFile) {
         // TODO: Replace interval with configurable value
         resources.computeIfAbsent(pFile,
-                f -> resourcesFactory.create(SHA256, pFile)).update(2000, (
+                f -> resourcesFactory.create(SHA256, pFile)).update(TIMEOUT, (
                         (pPrevious, pCurrent) -> informObservers(pPrevious, pCurrent, pObserver, pFile)));
     }
 
