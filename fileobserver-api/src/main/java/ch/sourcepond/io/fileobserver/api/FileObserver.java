@@ -18,7 +18,7 @@ import java.nio.file.Path;
 /**
  * Observer interface to receive notifications about changes on a watched (file-) paths.
  */
-public interface ResourceObserver {
+public interface FileObserver {
 
     Enum<?>[] getKeys();
 

@@ -1,6 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.ResourceObserver;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,8 +15,8 @@ import static org.mockito.Mockito.*;
  */
 public class CompoundObserverHandlerTest {
     private static final String ANY_ID = "anyId";
-    private final ResourceObserver observer1 = mock(ResourceObserver.class);
-    private final ResourceObserver observer2 = mock(ResourceObserver.class);
+    private final FileObserver observer1 = mock(FileObserver.class);
+    private final FileObserver observer2 = mock(FileObserver.class);
     private final ObserverHandler handler1 = mock(ObserverHandler.class);
     private final ObserverHandler handler2 = mock(ObserverHandler.class);
     private final DefaultObserverHandlerFactory factory = mock(DefaultObserverHandlerFactory.class);

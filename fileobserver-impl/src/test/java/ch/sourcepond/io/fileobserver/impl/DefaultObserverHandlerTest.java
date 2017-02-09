@@ -1,7 +1,7 @@
 package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.commons.smartswitch.testing.SmartSwitchRule;
-import ch.sourcepond.io.fileobserver.api.ResourceObserver;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
  */
 public class DefaultObserverHandlerTest {
     private static final String ANY_ID = "anyId";
-    private final ResourceObserver delegate = mock(ResourceObserver.class);
+    private final FileObserver delegate = mock(FileObserver.class);
     private final Path file = mock(Path.class);
 
     @Rule

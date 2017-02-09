@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.ResourceObserver;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -24,14 +24,14 @@ import java.util.concurrent.ConcurrentMap;
  *
  */
 class CompoundObserverHandler implements ObserverHandler {
-    private final ConcurrentMap<ResourceObserver, ObserverHandler> handlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<FileObserver, ObserverHandler> handlers = new ConcurrentHashMap<>();
     private final DefaultObserverHandlerFactory handlerFactory;
 
     CompoundObserverHandler(final DefaultObserverHandlerFactory pHandlerFactory) {
         handlerFactory = pHandlerFactory;
     }
 
-    void putIfAbsent(final ResourceObserver pObserver, final Collection<FsDirectories> pFsdirs) {
+    void putIfAbsent(final FileObserver pObserver, final Collection<FsDirectories> pFsdirs) {
         final ObserverHandler handler = handlerFactory.newHander(pObserver);
         if (null == handlers.putIfAbsent(pObserver, handler)) {
             pFsdirs.forEach(f -> f.initialyInformHandler(handler));
@@ -48,7 +48,7 @@ class CompoundObserverHandler implements ObserverHandler {
         handlers.values().forEach(h -> h.deleted(pId));
     }
 
-    void remove(final ResourceObserver pObserver) {
+    void remove(final FileObserver pObserver) {
         handlers.remove(pObserver);
     }
 }

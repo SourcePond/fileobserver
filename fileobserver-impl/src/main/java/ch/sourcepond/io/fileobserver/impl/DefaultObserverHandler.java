@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.ResourceObserver;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 
 import java.nio.file.Path;
 import java.util.Set;
@@ -26,9 +26,9 @@ import java.util.concurrent.ExecutorService;
 class DefaultObserverHandler implements ObserverHandler {
     private final Set<String> acceptedIds = ConcurrentHashMap.newKeySet();
     private final ExecutorService observerExecutor;
-    private final ResourceObserver delegate;
+    private final FileObserver delegate;
 
-    DefaultObserverHandler(final ExecutorService pObserverExecutor, final ResourceObserver pDelegate) {
+    DefaultObserverHandler(final ExecutorService pObserverExecutor, final FileObserver pDelegate) {
         observerExecutor = pObserverExecutor;
         delegate = pDelegate;
     }

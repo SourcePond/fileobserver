@@ -1,6 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.ResourceObserver;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,7 +24,7 @@ public class DirectoriesTest {
     private final FsDirectoriesFactory fsDirectoriesFactory = mock(FsDirectoriesFactory.class);
     private final FsDirectories fsDirectories = mock(FsDirectories.class);
     private final FsDirectory fsDirectory = mock(FsDirectory.class);
-    private final ResourceObserver observer = mock(ResourceObserver.class);
+    private final FileObserver observer = mock(FileObserver.class);
     private final WatchService watchService = mock(WatchService.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path rootDirectory = mock(Path.class);

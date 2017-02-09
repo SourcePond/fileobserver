@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchFactory;
-import ch.sourcepond.io.fileobserver.api.ResourceObserver;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
@@ -46,7 +46,7 @@ class DefaultObserverHandlerFactory implements Closeable {
         }
     }
 
-    ObserverHandler newHander(final ResourceObserver pObserver) {
+    ObserverHandler newHander(final FileObserver pObserver) {
         return new DefaultObserverHandler(observerExecutor, pObserver);
     }
 }

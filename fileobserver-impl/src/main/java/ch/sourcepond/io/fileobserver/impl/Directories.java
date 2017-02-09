@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.ResourceObserver;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
@@ -58,11 +58,11 @@ class Directories implements Closeable {
         roots = pRoots;
     }
 
-    void addObserver(final ResourceObserver pObserver) {
+    void addObserver(final FileObserver pObserver) {
         observers.putIfAbsent(pObserver, children.values());
     }
 
-    void removeObserver(final ResourceObserver pObserver) {
+    void removeObserver(final FileObserver pObserver) {
         observers.remove(pObserver);
     }
 
