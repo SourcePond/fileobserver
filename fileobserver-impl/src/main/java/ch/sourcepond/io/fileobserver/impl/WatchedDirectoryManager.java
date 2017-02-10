@@ -13,7 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.WatchedDirectory;
+import ch.sourcepond.io.fileobserver.impl.directory.Directories;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -62,7 +63,7 @@ public class WatchedDirectoryManager {
 
                 // If the key is newly added, open a watch-service for the directory
                 if (keys.add(key) && keys.size() == 1) {
-                    directories.addRoot(directory);
+                    directories.addRoot(key, directory);
                 }
 
                 // The previous directory is not null. This means, that we watch a new target

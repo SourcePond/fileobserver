@@ -15,15 +15,15 @@ import static java.nio.file.Files.*;
  *
  */
 public abstract class CopyResourcesTest {
-    static final String TEST_FILE_TXT_NAME = "testfile.txt";
-    static final String TEST_FILE_XML_NAME = "testfile.xml";
-    static final String SUB_DIR_NAME = "subdir";
-    final FileSystem fs = FileSystems.getDefault();
-    private final Path sourceDir = fs.getPath(System.getProperty("user.dir"), "src", "test", "resources");
-    final Path directory = fs.getPath(System.getProperty("java.io.tmpdir"), getClass().getName(), UUID.randomUUID().toString());
-    Path subDirectory;
-    Path testfileTxt;
-    Path testfileXml;
+    protected static final String TEST_FILE_TXT_NAME = "testfile.txt";
+    protected static final String TEST_FILE_XML_NAME = "testfile.xml";
+    protected static final String SUB_DIR_NAME = "subdir";
+    protected final FileSystem fs = FileSystems.getDefault();
+    private final Path sourceDir = fs.getPath(System.getProperty("user.directory"), "src", "test", "resources");
+    protected final Path directory = fs.getPath(System.getProperty("java.io.tmpdir"), getClass().getName(), UUID.randomUUID().toString());
+    protected Path subDirectory;
+    protected Path testfileTxt;
+    protected Path testfileXml;
 
     @Before
     public final void copyResources() throws Exception {

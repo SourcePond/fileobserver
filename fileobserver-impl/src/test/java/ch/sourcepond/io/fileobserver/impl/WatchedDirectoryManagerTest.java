@@ -1,6 +1,8 @@
 package ch.sourcepond.io.fileobserver.impl;
 
-import ch.sourcepond.io.fileobserver.api.WatchedDirectory;
+
+import ch.sourcepond.io.fileobserver.impl.directory.Directories;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -11,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 
+import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static org.mockito.Mockito.*;
 
 /**
@@ -74,7 +77,7 @@ public class WatchedDirectoryManagerTest {
     @Test
     public void bindFailed() throws IOException {
         final IOException expected = new IOException();
-        doThrow(expected).when(directories).addRoot(directory);
+        doThrow(expected).when(directories).addRoot(TEST_KEY, directory);
 
         // This should not cause an exception
         manager.bind(watchedDirectory);
@@ -88,9 +91,9 @@ public class WatchedDirectoryManagerTest {
         manager.unbind(watchedDirectory);
 
         final InOrder order = inOrder(directories);
-        order.verify(directories).addRoot(directory);
+        order.verify(directories).addRoot(TEST_KEY, directory);
         order.verify(directories).removeRoot(directory);
-        order.verify(directories).addRoot(directory);
+        order.verify(directories).addRoot(TEST_KEY, directory);
         order.verify(directories).removeRoot(directory);
     }
 
@@ -101,7 +104,7 @@ public class WatchedDirectoryManagerTest {
 
         // Because the directory was the same, this should have been
         // called only once
-        verify(directories).addRoot(directory);
+        verify(directories).addRoot(TEST_KEY, directory);
     }
 
     @Test
@@ -110,8 +113,8 @@ public class WatchedDirectoryManagerTest {
         when(watchedDirectory.getDirectory()).thenReturn(differentDirectory);
         manager.bind(watchedDirectory);
 
-        verify(directories).addRoot(directory);
-        verify(directories).addRoot(differentDirectory);
+        verify(directories).addRoot(TEST_KEY, directory);
+        verify(directories).addRoot(TEST_KEY, differentDirectory);
         verify(directories).removeRoot(directory);
     }
 }
