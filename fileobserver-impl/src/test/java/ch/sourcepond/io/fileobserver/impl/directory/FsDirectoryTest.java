@@ -44,11 +44,14 @@ public class FsDirectoryTest {
 
     @Before
     public void setup() {
+        when(fileKeyFactory.newKey(TEST_KEY, relativePath)).thenReturn(key);
         when(parentWatchKey.watchable()).thenReturn(parentPath);
         when(watchKey.watchable()).thenReturn(childPath);
         when(parentPath.relativize(path)).thenReturn(relativePath);
         when(relativePath.toString()).thenReturn(ANY_RELATIVIZED_PATH);
         when(resourcesFactory.create(SHA256, path)).thenReturn(resource);
+        when(child.getPath()).thenReturn(childPath);
+        parent.setWatchKey(parentWatchKey);
     }
 
     @Test
