@@ -11,7 +11,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
@@ -25,7 +24,6 @@ import static org.mockito.Mockito.*;
  * Created by rolandhauser on 06.02.17.
  */
 public class DirectoriesTest {
-    private final Path relativePath = mock(Path.class);
     private final FsDirectoriesFactory fsDirectoriesFactory = mock(FsDirectoriesFactory.class);
     private final FsDirectories fsDirectories = mock(FsDirectories.class);
     private final FsDirectory fsDirectory = mock(FsDirectory.class);
@@ -37,7 +35,6 @@ public class DirectoriesTest {
     private final BasicFileAttributes attrs = mock(BasicFileAttributes.class);
     private final Path testPath = mock(Path.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
-    private final WatchKey watchKey = mock(WatchKey.class);
     private final FileKey fileKey = mock(FileKey.class);
     private final RegistrarFactory registrarFactory = mock(RegistrarFactory.class);
     private final Registrar registrar = mock(Registrar.class);
@@ -56,12 +53,12 @@ public class DirectoriesTest {
         when(rootDirectoryAttrs.isDirectory()).thenReturn(true);
         when(provider.readAttributes(testPath, BasicFileAttributes.class)).thenReturn(attrs);
         when(registrarFactory.newRegistrar(fs)).thenReturn(registrar);
+        when(fsDirectory.newKey(testPath)).thenReturn(fileKey);
         directories.addRoot(TEST_KEY, rootDirectory);
     }
 
     @Test
     public void addRoot() throws IOException {
-        directories.addRoot(TEST_KEY, rootDirectory);
         verify(fsDirectories).rootAdded(TEST_KEY, rootDirectory, compoundObserverHandler);
     }
 
@@ -76,20 +73,6 @@ public class DirectoriesTest {
             fail("Exception expected");
         } catch (final IOException e) {
             assertSame(expected, e.getCause().getCause());
-        }
-    }
-
-
-    @Test
-    public void addRootPathIsNotADirectory() throws IOException {
-        directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory, roots);
-        when(rootDirectoryAttrs.isDirectory()).thenReturn(false);
-
-        try {
-            directories.addRoot(TEST_KEY,rootDirectory);
-            fail("Exception expected");
-        } catch (final IllegalArgumentException e) {
-            // noop
         }
     }
 
@@ -169,5 +152,19 @@ public class DirectoriesTest {
 
         // Should have been called twice
         verify(registrarFactory, times(2)).newRegistrar(fs);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void noAppropriateRootDirFound() {
+        when(fsDirectories.directoryDeleted(rootDirectory)).thenReturn(true);
+        directories.removeRoot(rootDirectory);
+        directories.pathModified(rootDirectory);
+    }
+
+    @Test
+    public void fileModified() {
+        when(fsDirectories.getDirectory(testPath)).thenReturn(fsDirectory);
+        directories.pathModified(testPath);
+        verify(fsDirectory).informIfChanged(compoundObserverHandler, testPath);
     }
 }
