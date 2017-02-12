@@ -5,6 +5,7 @@ import ch.sourcepond.io.checksum.api.Checksum;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.impl.filekey.FileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,9 +25,10 @@ import static org.mockito.Mockito.*;
  */
 public class FsDirectoryTest {
     private static final String ANY_RELATIVIZED_PATH = "anyPath";
+    private final FileKeyFactory fileKeyFactory = mock(FileKeyFactory.class);
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final ObserverHandler handler = mock(ObserverHandler.class);
-    private final FsDirectoryFactory factory = new FsDirectoryFactory(resourcesFactory);
+    private final FsDirectoryFactory factory = new FsDirectoryFactory(resourcesFactory, fileKeyFactory);
     private final WatchKey watchKey = mock(WatchKey.class);
     private final WatchKey parentWatchKey = mock(WatchKey.class);
     private final Path parentPath = mock(Path.class);
@@ -37,8 +39,8 @@ public class FsDirectoryTest {
     private final Checksum checksum2 = mock(Checksum.class);
     private final Resource resource = mock(Resource.class);
     private final FileKey key = mock(FileKey.class);
-    private final FsBaseDirectory parent = factory.newDirectory(TEST_KEY, null, parentWatchKey);
-    private final FsBaseDirectory child = factory.newDirectory(null, parent, watchKey);
+    private final FsRootDirectory parent = factory.newRoot(TEST_KEY);
+    private final FsDirectory child = factory.newBranch(parent, watchKey);
 
     @Before
     public void setup() {
@@ -52,11 +54,6 @@ public class FsDirectoryTest {
     @Test
     public void getPath() {
         assertSame(childPath, child.getPath());
-    }
-
-    @Test
-    public void relativize() {
-        assertEquals(ANY_RELATIVIZED_PATH, child.relativize(path));
     }
 
     @Test

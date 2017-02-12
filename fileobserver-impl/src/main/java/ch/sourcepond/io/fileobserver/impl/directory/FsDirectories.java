@@ -53,7 +53,7 @@ public class FsDirectories implements Closeable {
     }
 
     public FsBaseDirectory getDirectory(final Path pFile) {
-        final FsBaseDirectory dir = registrar.get(pFile.getParent());
+        final FsBaseDirectory dir = registrar.getDirectory(pFile.getParent());
         if (null == dir) {
             throw new NullPointerException(format("No directory object found for file %s", pFile));
         }

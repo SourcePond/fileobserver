@@ -14,7 +14,6 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,7 +50,7 @@ public class FsDirectoriesTest {
     @Test
     public void initialyInformHandler() throws IOException {
         fsDirectories.initiallyInformHandler(handler);
-        verify(registrar).directoryCreated(TEST_KEY, subDirectory, handler);
+        verify(registrar).directoryCreated(subDirectory, handler);
     }
 
     @Test
@@ -66,7 +65,7 @@ public class FsDirectoriesTest {
     @Test
     public void initialyInformHandlerExceptionOccurred() throws IOException {
         final IOException expected = new IOException();
-        doThrow(expected).when(registrar).directoryCreated(TEST_KEY, subDirectory, handler);
+        doThrow(expected).when(registrar).directoryCreated(subDirectory, handler);
 
         // This should not cause an exception
         fsDirectories.initiallyInformHandler(handler);
@@ -74,17 +73,17 @@ public class FsDirectoriesTest {
 
     @Test
     public void directoryCreated() throws IOException {
-        fsDirectories.directoryCreated(TEST_KEY, directory, handler);
-        verify(registrar).directoryCreated(TEST_KEY, directory, handler);
+        fsDirectories.directoryCreated(directory, handler);
+        verify(registrar).directoryCreated(directory, handler);
     }
 
     @Test
     public void directoryCreatedIOExceptionOccurred() throws IOException {
         final IOException expected = new IOException();
-        doThrow(expected).when(registrar).directoryCreated(TEST_KEY, directory, handler);
+        doThrow(expected).when(registrar).directoryCreated(directory, handler);
 
         // Should not cause an exception
-        fsDirectories.directoryCreated(TEST_KEY, directory, handler);
+        fsDirectories.directoryCreated(directory, handler);
     }
 
     @Test
@@ -102,7 +101,7 @@ public class FsDirectoriesTest {
     @Test
     public void getDirectory() {
         when(subDirectory.getParent()).thenReturn(directory);
-        when(registrar.get(directory)).thenReturn(fsDirectory);
+        when(registrar.getDirectory(directory)).thenReturn(fsDirectory);
         assertSame(fsDirectory, fsDirectories.getDirectory(subDirectory));
     }
 

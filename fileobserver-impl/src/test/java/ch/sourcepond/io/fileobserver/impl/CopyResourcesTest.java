@@ -19,7 +19,7 @@ public abstract class CopyResourcesTest {
     protected static final String TEST_FILE_XML_NAME = "testfile.xml";
     protected static final String SUB_DIR_NAME = "subdir";
     protected final FileSystem fs = FileSystems.getDefault();
-    private final Path sourceDir = fs.getPath(System.getProperty("user.directory"), "src", "test", "resources");
+    private final Path sourceDir = fs.getPath(System.getProperty("user.dir"), "src", "test", "resources");
     protected final Path directory = fs.getPath(System.getProperty("java.io.tmpdir"), getClass().getName(), UUID.randomUUID().toString());
     protected Path subDirectory;
     protected Path testfileTxt;
@@ -46,18 +46,20 @@ public abstract class CopyResourcesTest {
 
     @After
     public void deleteResources() throws IOException {
-        walkFileTree(directory, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                delete(file);
-                return CONTINUE;
-            }
+        if (Files.exists(directory)) {
+            walkFileTree(directory, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                    delete(file);
+                    return CONTINUE;
+                }
 
-            @Override
-            public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
-                delete(dir);
-                return CONTINUE;
-            }
-        });
+                @Override
+                public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
+                    delete(dir);
+                    return CONTINUE;
+                }
+            });
+        }
     }
 }

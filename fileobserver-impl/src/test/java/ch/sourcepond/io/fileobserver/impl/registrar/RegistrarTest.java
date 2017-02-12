@@ -1,25 +1,27 @@
 package ch.sourcepond.io.fileobserver.impl.registrar;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.directory.FsRootDirectory;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
-import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
+import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -27,86 +29,123 @@ import static org.mockito.Mockito.*;
  */
 public class RegistrarTest extends CopyResourcesTest {
 
-    private static class PathMatcher implements ArgumentMatcher<WatchKey> {
-        private final Path path;
-
-        PathMatcher(final Path pPath) {
-            path = pPath;
-        }
+    private class RootWatchKeyMatcher implements ArgumentMatcher<WatchKey> {
 
         @Override
-        public boolean matches(final WatchKey key) {
-            return null != key && path.equals(key.watchable());
+        public boolean matches(final WatchKey argument) {
+            return directory.equals(argument.watchable());
         }
     }
 
+
+    private class SubDirWatchKeyMatcher implements ArgumentMatcher<WatchKey> {
+
+        @Override
+        public boolean matches(final WatchKey argument) {
+            return subDirectory.equals(argument.watchable());
+        }
+    }
+
+
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final FsDirectoryFactory directoryFactory = mock(FsDirectoryFactory.class);
+    private RegistrarFactory registrarFactory = new RegistrarFactory(executorService, directoryFactory);
     private final ObserverHandler handler = mock(ObserverHandler.class);
-    private final FsDirectory fsDirectory = mock(FsDirectory.class);
-    private final FsDirectory fsSubDirectory = mock(FsDirectory.class);
-
-    private final FileKey key = mock(FileKey.class);
-    private final FileKey subKey = mock(FileKey.class);
-
-    private final RegistrarFactory registrarFactory = new RegistrarFactory(directoryFactory);
+    private final FsRootDirectory rootFsDir = mock(FsRootDirectory.class);
+    private final FsDirectory subFsDir = mock(FsDirectory.class);
+    private WatchService watchService;
     private Registrar registrar;
 
-    private PathMatcher hasPath(final Path pPath) {
-        return new PathMatcher(pPath);
-    }
-
     @Before
-    public void setup() throws IOException {
-        when(directoryFactory.newDirectory(TEST_KEY, isNull(), argThat(hasPath(directory)))).thenReturn(fsDirectory);
-        when(directoryFactory.newDirectory(TEST_KEY, eq(fsDirectory), argThat(hasPath(subDirectory)))).thenReturn(fsSubDirectory);
+    public void setup() throws Exception {
+        when(directoryFactory.newRoot(TEST_KEY)).thenReturn(rootFsDir);
+        when(directoryFactory.newBranch(same(rootFsDir), argThat(new SubDirWatchKeyMatcher()))).thenReturn(subFsDir);
+        watchService = fs.newWatchService();
         registrar = registrarFactory.newRegistrar(fs);
-        registrar.directoryCreated(TEST_KEY, directory, handler);
+        registrar.rootAdded(TEST_KEY, directory, handler);
+        sleep(500);
     }
 
     @Test
-    public void directoryCreated() throws IOException {
-        verify(handler).modified(key, testfileTxt);
-        verify(handler).modified(subKey, testfileXml);
-        assertSame(fsDirectory, registrar.get(directory));
-        assertSame(fsSubDirectory, registrar.get(subDirectory));
-        verifyNoMoreInteractions(handler);
+    public void ignoreSameRoot() {
+        registrar.rootAdded(TEST_KEY, directory, handler);
+
+        // Should have been called exactly once
+        verify(directoryFactory).newRoot(TEST_KEY);
     }
 
     @Test
-    public void subDirDirectoryDeleted() {
-        assertFalse(registrar.directoryDeleted(subDirectory));
-        verify(fsSubDirectory).cancelKey();
-        assertNull(registrar.get(subDirectory));
-        verifyZeroInteractions(fsDirectory);
+    public void rootAddedFirstWins() throws Exception {
+        when(directoryFactory.newRoot(TEST_KEY)).thenAnswer(new Answer<FsRootDirectory>() {
+            @Override
+            public FsRootDirectory answer(final InvocationOnMock invocation) throws Throwable {
+                sleep(500);
+                return rootFsDir;
+            }
+        });
+        executorService.execute(() -> registrar.rootAdded(TEST_KEY, directory, handler));
+        executorService.execute(() -> registrar.rootAdded(TEST_KEY, directory, handler));
+
+        sleep(1000);
+
+        // Should have been called only once
+        verify(rootFsDir).setWatchKey(argThat(new RootWatchKeyMatcher()));
     }
 
     @Test
-    public void directoryDeleted() {
+    public void directoryWalkFailed() throws IOException {
+        // Delete directory to provocate an IOException
+        deleteResources();
+
+        // This should not cause an exception
+        registrar.directoryCreated(directory, handler);
+    }
+
+    @Test
+    public void rootAdded() throws Exception {
+        verify(rootFsDir).setWatchKey(argThat(new RootWatchKeyMatcher()));
+        verify(rootFsDir, timeout(500)).forceInform(handler, testfileTxt);
+        verify(subFsDir, timeout(500)).forceInform(handler, testfileXml);
+    }
+
+    @Test
+    public void initiallyInformHandler() {
+        registrar.initiallyInformHandler(handler);
+        verify(rootFsDir).forceInform(handler);
+        verify(subFsDir).forceInform(handler);
+    }
+
+    @Test
+    public void rootDirectoryDeleted() {
         assertTrue(registrar.directoryDeleted(directory));
-        verify(fsDirectory).cancelKey();
-        assertNull(registrar.get(directory));
-        assertNull(registrar.get(subDirectory));
+        verify(rootFsDir).cancelKey();
+        verify(subFsDir).cancelKey();
+    }
+
+    @Test
+    public void subDirectoryDeleted() {
+        assertFalse(registrar.directoryDeleted(subDirectory));
+        verify(rootFsDir, never()).cancelKey();
+        verify(subFsDir).cancelKey();
+    }
+
+    @Test
+    public void getDirectory() {
+        assertNotNull(registrar.getDirectory(directory));
+        assertNotNull(registrar.getDirectory(subDirectory));
     }
 
     @Test
     public void close() throws IOException {
         registrar.close();
-        try {
-            registrar.poll();
-            fail("Exception expected");
-        } catch (final ClosedWatchServiceException e) {
-            // expected
-        }
-        assertNull(registrar.get(directory));
-        assertNull(registrar.get(subDirectory));
+        assertTrue(registrar.directoryDeleted(directory));
+        verify(rootFsDir, never()).cancelKey();
     }
 
     @Test
-    public void poll() throws Exception{
+    public void poll() throws Exception {
         Files.delete(testfileTxt);
-        Thread.sleep(5000);
-        WatchKey key = registrar.poll();
-        assertNotNull(key);
+        sleep(5000);
+        assertNotNull(registrar.poll());
     }
-
 }

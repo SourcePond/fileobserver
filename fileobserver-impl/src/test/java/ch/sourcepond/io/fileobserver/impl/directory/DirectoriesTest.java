@@ -2,10 +2,6 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.directory.Directories;
-import ch.sourcepond.io.fileobserver.impl.directory.FsDirectories;
-import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoriesFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.FsDirectory;
 import ch.sourcepond.io.fileobserver.impl.observer.CompoundObserverHandler;
 import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
 import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
@@ -64,6 +60,12 @@ public class DirectoriesTest {
     }
 
     @Test
+    public void addRoot() throws IOException {
+        directories.addRoot(TEST_KEY, rootDirectory);
+        verify(fsDirectories).rootAdded(TEST_KEY, rootDirectory, compoundObserverHandler);
+    }
+
+    @Test
     public void addRootIOExceptionOccurred() throws IOException {
         directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory, roots);
 
@@ -102,15 +104,8 @@ public class DirectoriesTest {
     @Test
     public void addObserver() {
         when(fsDirectories.getDirectory(testPath)).thenReturn(fsDirectory);
-        when(fsDirectory.relativize(testPath)).thenReturn(relativePath);
         directories.addObserver(observer);
-
-        // This should not have an effect
-        directories.addObserver(observer);
-        directories.addObserver(observer);
-
-        directories.pathModified(testPath);
-        verify(fsDirectory).informIfChanged(compoundObserverHandler, testPath);
+//        verify(compoundObserverHandler).putIfAbsent(observer, );
     }
 
     @Test
@@ -124,13 +119,12 @@ public class DirectoriesTest {
         when(attrs.isDirectory()).thenReturn(true);
         directories.addObserver(observer);
         directories.pathModified(testPath);
-        verify(fsDirectories).directoryCreated(TEST_KEY,testPath, compoundObserverHandler);
+        verify(fsDirectories).directoryCreated(testPath, compoundObserverHandler);
     }
 
     @Test
     public void pathDeleted() throws Exception {
         when(fsDirectories.getDirectory(testPath)).thenReturn(fsDirectory);
-        when(fsDirectory.relativize(testPath)).thenReturn(relativePath);
         when(fsDirectories.directoryDeleted(testPath)).thenReturn(true);
 
         directories.addObserver(observer);

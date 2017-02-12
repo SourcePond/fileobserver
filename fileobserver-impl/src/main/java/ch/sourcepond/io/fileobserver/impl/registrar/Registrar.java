@@ -118,7 +118,7 @@ public class Registrar implements Closeable {
         return children.isEmpty();
     }
 
-    public FsBaseDirectory get(final Path parent) {
+    public FsBaseDirectory getDirectory(final Path parent) {
         return children.get(parent);
     }
 
