@@ -21,14 +21,6 @@ import static org.mockito.Mockito.*;
  */
 public class WatchedDirectoryManagerTest {
 
-    public enum TestKey1 {
-        TEST_KEY1
-    }
-
-    public enum TestKey2 {
-        TEST_KEY2
-    }
-
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final BasicFileAttributes attrs = mock(BasicFileAttributes.class);
@@ -46,7 +38,7 @@ public class WatchedDirectoryManagerTest {
         when(provider.readAttributes(directory, BasicFileAttributes.class)).thenReturn(attrs);
         when(provider.readAttributes(differentDirectory, BasicFileAttributes.class)).thenReturn(attrs);
         when(attrs.isDirectory()).thenReturn(true);
-        when(watchedDirectory.getKey()).thenReturn((Enum) TestKey1.TEST_KEY1);
+        when(watchedDirectory.getKey()).thenReturn((Enum) TestKey.TEST_KEY);
         when(watchedDirectory.getDirectory()).thenReturn(directory);
     }
 
