@@ -7,17 +7,20 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.filekey.FileKeyFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static ch.sourcepond.io.fileobserver.impl.directory.FsDirectory.TIMEOUT;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
@@ -27,11 +30,12 @@ import static org.mockito.Mockito.*;
  */
 public class FsDirectoryTest {
     private static final String ANY_RELATIVIZED_PATH = "anyPath";
+    private final ExecutorService observerExecutor = newSingleThreadExecutor();
     private final FileKeyFactory fileKeyFactory = mock(FileKeyFactory.class);
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
-    private final FsDirectoryFactory factory = new FsDirectoryFactory(resourcesFactory, fileKeyFactory);
+    private final FsDirectoryFactory factory = new FsDirectoryFactory(resourcesFactory, fileKeyFactory, observerExecutor);
     private final WatchKey watchKey = mock(WatchKey.class);
     private final WatchKey parentWatchKey = mock(WatchKey.class);
     private final Path parentPath = mock(Path.class);
@@ -55,6 +59,11 @@ public class FsDirectoryTest {
         when(resourcesFactory.create(SHA256, path)).thenReturn(resource);
         when(child.getPath()).thenReturn(childPath);
         parent.setWatchKey(parentWatchKey);
+    }
+
+    @After
+    public void tearDown() {
+        observerExecutor.shutdown();
     }
 
     @Test
@@ -89,7 +98,7 @@ public class FsDirectoryTest {
         });
 
         child.informIfChanged(observers, path);
-        verify(observer).modified(key, path);
+        verify(observer, timeout(500)).modified(key, path);
     }
 
     @Test
@@ -109,6 +118,6 @@ public class FsDirectoryTest {
     @Test
     public void forceInform() {
         child.forceInformObservers(observers, path);
-        verify(observer).modified(key, path);
+        verify(observer, timeout(500)).modified(key, path);
     }
 }

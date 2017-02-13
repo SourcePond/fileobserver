@@ -21,6 +21,7 @@ import ch.sourcepond.io.fileobserver.impl.filekey.FileKeyFactory;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Created by rolandhauser on 08.02.17.
@@ -28,10 +29,14 @@ import java.nio.file.WatchKey;
 public class FsDirectoryFactory {
     private final ResourcesFactory resourcesFactory;
     private final FileKeyFactory fileKeyFactory;
+    private final ExecutorService observerExecutor;
 
-    FsDirectoryFactory(final ResourcesFactory pResourcesFactory, final FileKeyFactory pFileKeyFactory) {
+    FsDirectoryFactory(final ResourcesFactory pResourcesFactory,
+                       final FileKeyFactory pFileKeyFactory,
+                       final ExecutorService pObserverExecutor) {
         resourcesFactory = pResourcesFactory;
         fileKeyFactory = pFileKeyFactory;
+        observerExecutor = pObserverExecutor;
     }
 
     public FsRootDirectory newRoot(final Enum<?> pWatchedDirectoryKeyOrNull) {
@@ -48,5 +53,9 @@ public class FsDirectoryFactory {
 
     FileKey newKey(final Enum<?> pWatchedDirectoryKey, final Path pRelativePath) {
         return fileKeyFactory.newKey(pWatchedDirectoryKey, pRelativePath);
+    }
+
+    void execute(final Runnable pRunnable) {
+        observerExecutor.execute(pRunnable);
     }
 }

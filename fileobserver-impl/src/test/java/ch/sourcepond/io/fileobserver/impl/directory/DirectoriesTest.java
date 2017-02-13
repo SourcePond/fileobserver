@@ -4,6 +4,7 @@ import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
 import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -16,6 +17,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static org.junit.Assert.*;
@@ -51,7 +54,8 @@ public class DirectoriesTest {
     private final FileObserver observer = mock(FileObserver.class);
     private final ArgumentMatcher<Collection<FileObserver>> observerMatcher = c -> c.size() == 1 && c.contains(observer);
     private final List<FsDirectories> roots = mock(List.class);
-    private Directories directories = new Directories(registrarFactory, fsDirectoriesFactory, roots);
+    private final ExecutorService observerExecutor = Executors.newSingleThreadExecutor();
+    private Directories directories = new Directories(registrarFactory, fsDirectoriesFactory, observerExecutor, roots);
 
     @Before
     public void setup() throws IOException {
@@ -68,6 +72,11 @@ public class DirectoriesTest {
         directories.addRoot(TEST_KEY, rootDirectory);
     }
 
+    @After
+    public void tearDown() {
+        observerExecutor.shutdown();
+    }
+
     @Test
     public void addRoot() throws IOException {
         directories.addObserver(observer);
@@ -76,7 +85,7 @@ public class DirectoriesTest {
 
     @Test
     public void addRootIOExceptionOccurred() throws IOException {
-        directories = new Directories(registrarFactory, fsDirectoriesFactory, roots);
+        directories = new Directories(registrarFactory, fsDirectoriesFactory, observerExecutor, roots);
 
         final IOException expected = new IOException();
         doThrow(expected).when(registrarFactory).newRegistrar(fs);
@@ -127,7 +136,7 @@ public class DirectoriesTest {
 
         directories.addObserver(observer);
         directories.pathDeleted(testPath);
-        verify(observer).deleted(fileKey);
+        verify(observer, timeout(500)).deleted(fileKey);
 
         // Root should still be the same
         directories.addRoot(TEST_KEY, rootDirectory);

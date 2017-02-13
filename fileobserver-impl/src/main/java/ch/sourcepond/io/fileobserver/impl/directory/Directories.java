@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
@@ -36,6 +37,11 @@ import static java.nio.file.Files.isDirectory;
  */
 public class Directories implements Closeable {
     private final ConcurrentMap<FileSystem, FsDirectories> children = new ConcurrentHashMap<>();
+    private final Set<FileObserver> observers = ConcurrentHashMap.newKeySet();
+
+    private final RegistrarFactory registrarFactory;
+    private final FsDirectoriesFactory fsDirectoriesFactory;
+    private final ExecutorService observerExecutor;
 
     /**
      * We intentionally do <em>not</em> use {@code children.values()} because we need to iterate
@@ -45,15 +51,13 @@ public class Directories implements Closeable {
      */
     private final List<FsDirectories> roots;
 
-    private final RegistrarFactory registrarFactory;
-    private final Set<FileObserver> observers = ConcurrentHashMap.newKeySet();
-    private final FsDirectoriesFactory fsDirectoriesFactory;
-
     public Directories(final RegistrarFactory pRegistrarFactory,
                        final FsDirectoriesFactory pFsDirectories,
+                       final ExecutorService pObserverExecutor,
                        final List<FsDirectories> pRoots) {
         registrarFactory = pRegistrarFactory;
         fsDirectoriesFactory = pFsDirectories;
+        observerExecutor = pObserverExecutor;
         roots = pRoots;
     }
 
@@ -123,7 +127,7 @@ public class Directories implements Closeable {
         }
 
         final FileKey key = fsdir.newKey(pPath);
-        observers.forEach(o -> o.deleted(key));
+        observers.forEach(o -> observerExecutor.execute(() -> o.deleted(key)));
     }
 
     @Override

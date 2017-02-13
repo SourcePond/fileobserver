@@ -51,13 +51,13 @@ public class FsRootDirectory extends FsBaseDirectory {
     void informObservers(final Checksum pPrevious, final Checksum pCurrent, final Collection<FileObserver> pObservers, final Path pFile) {
         if (!pPrevious.equals(pCurrent)) {
             final FileKey key = newKey(pFile);
-            pObservers.forEach(o -> o.modified(key, pFile));
+            pObservers.forEach(o -> factory.execute(() -> o.modified(key, pFile)));
         }
     }
 
     @Override
     public void forceInformObservers(final Collection<FileObserver> pObservers, final Path pFile) {
         final FileKey key = newKey(pFile);
-        pObservers.forEach(o -> o.modified(key, pFile));
+        pObservers.forEach(o -> factory.execute(() -> o.modified(key, pFile)));
     }
 }

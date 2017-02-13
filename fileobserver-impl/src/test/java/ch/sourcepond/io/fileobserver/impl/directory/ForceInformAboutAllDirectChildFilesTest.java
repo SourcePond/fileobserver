@@ -6,6 +6,7 @@ import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.nio.file.WatchKey;
@@ -33,6 +34,10 @@ public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws IOException {
+        doAnswer(i -> {
+            ((Runnable)i.getArgument(0)).run();
+            return null;
+        }).when(factory).execute(Mockito.any());
         when(factory.newKey(TEST_KEY, directory.relativize(testfileXml))).thenReturn(fileKey);
         watchService = fs.newWatchService();
         parentWatchKey = directory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
@@ -50,8 +55,7 @@ public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
     @Test
     public void forceInformAboutAllDirectChildFiles() {
         fsDir.forceInformAboutAllDirectChildFiles(observers);
-        verify(observer).modified(fileKey, testfileXml);
+        verify(observer, timeout(500)).modified(fileKey, testfileXml);
         verifyNoMoreInteractions(observer);
     }
-
 }
