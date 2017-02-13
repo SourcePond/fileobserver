@@ -20,7 +20,6 @@ import static org.mockito.Mockito.*;
  * Created by rolandhauser on 08.02.17.
  */
 public class WatchedDirectoryManagerTest {
-
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final BasicFileAttributes attrs = mock(BasicFileAttributes.class);
