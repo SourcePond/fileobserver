@@ -12,6 +12,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Collection;
 
+import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.*;
@@ -20,19 +21,24 @@ import static org.mockito.Mockito.*;
  * Created by rolandhauser on 13.02.17.
  */
 public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
+    private final FsDirectoryFactory factory = mock(FsDirectoryFactory.class);
     private final FileKey fileKey = mock(FileKey.class);
-    private final FsBaseDirectory parent = mock(FsBaseDirectory.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
     private WatchService watchService;
+    private WatchKey parentWatchKey;
     private WatchKey key;
+    private FsRootDirectory parent;
     private FsDirectory fsDir;
 
     @Before
     public void setup() throws IOException {
-        when(parent.newKey(testfileTxt)).thenReturn(fileKey);
+        when(factory.newKey(TEST_KEY, directory.relativize(testfileXml))).thenReturn(fileKey);
         watchService = fs.newWatchService();
-        key = directory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        parentWatchKey = directory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        key = subDirectory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        parent = new FsRootDirectory(factory, TEST_KEY);
+        parent.setWatchKey(parentWatchKey);
         fsDir = new FsDirectory(parent, key);
     }
 
@@ -44,7 +50,7 @@ public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
     @Test
     public void forceInformAboutAllDirectChildFiles() {
         fsDir.forceInformAboutAllDirectChildFiles(observers);
-        verify(observer).modified(fileKey, testfileTxt);
+        verify(observer).modified(fileKey, testfileXml);
         verifyNoMoreInteractions(observer);
     }
 

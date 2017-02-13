@@ -14,11 +14,14 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Algorithm;
+import ch.sourcepond.io.checksum.api.Checksum;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.util.Collection;
 
 /**
  *
@@ -50,5 +53,15 @@ public class FsDirectory extends FsBaseDirectory {
     @Override
     public FileKey newKey(final Path pFile) {
         return parent.newKey(pFile);
+    }
+
+    @Override
+    void informObservers(final Checksum pPrevious, final Checksum pCurrent, final Collection<FileObserver> pObservers, final Path pFile) {
+        parent.informObservers(pPrevious, pCurrent, pObservers, pFile);
+    }
+
+    @Override
+    public void forceInformObservers(final Collection<FileObserver> pObservers, final Path pFile) {
+        parent.forceInformObservers(pObservers, pFile);
     }
 }

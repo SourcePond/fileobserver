@@ -65,16 +65,13 @@ public abstract class FsBaseDirectory {
 
     public void forceInformAboutAllDirectChildFiles(final Collection<FileObserver> pObservers) {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
-            stream.forEach(f -> forceInform(pObservers, f));
+            stream.forEach(f -> forceInformObservers(pObservers, f));
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         }
     }
 
-    public void forceInform(final Collection<FileObserver> pObservers, final Path pFile) {
-        final FileKey key = newKey(pFile);
-        pObservers.forEach(o -> o.modified(key, pFile));
-    }
+    public abstract void forceInformObservers(Collection<FileObserver> pObservers, Path pFile);
 
     void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
         // TODO: Replace interval with configurable value
@@ -83,10 +80,5 @@ public abstract class FsBaseDirectory {
                 (pPrevious, pCurrent) -> informObservers(pPrevious, pCurrent, pObservers, pFile));
     }
 
-    private void informObservers(final Checksum pPrevious, final Checksum pCurrent, final Collection<FileObserver> pObservers, final Path pFile) {
-        if (!pPrevious.equals(pCurrent)) {
-            final FileKey key = newKey(pFile);
-            pObservers.forEach(o -> o.modified(key, pFile));
-        }
-    }
+    abstract void informObservers(Checksum pPrevious, Checksum pCurrent, Collection<FileObserver> pObservers, Path pFile);
 }

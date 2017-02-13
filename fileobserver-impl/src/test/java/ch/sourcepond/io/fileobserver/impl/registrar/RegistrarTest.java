@@ -107,8 +107,8 @@ public class RegistrarTest extends CopyResourcesTest {
     @Test
     public void rootAdded() throws Exception {
         verify(rootFsDir).setWatchKey(argThat(new RootWatchKeyMatcher()));
-        verify(rootFsDir, timeout(500)).forceInform(observers, testfileTxt);
-        verify(subFsDir, timeout(500)).forceInform(observers, testfileXml);
+        verify(rootFsDir, timeout(500)).forceInformObservers(observers, testfileTxt);
+        verify(subFsDir, timeout(500)).forceInformObservers(observers, testfileXml);
     }
 
     @Test

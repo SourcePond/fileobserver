@@ -87,7 +87,7 @@ public class Registrar implements Closeable {
 
                 @Override
                 public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                    children.get(file.getParent()).forceInform(pObserver, file);
+                    children.get(file.getParent()).forceInformObservers(pObserver, file);
                     return CONTINUE;
                 }
 

@@ -108,7 +108,7 @@ public class FsDirectoryTest {
 
     @Test
     public void forceInform() {
-        child.forceInform(observers, path);
+        child.forceInformObservers(observers, path);
         verify(observer).modified(key, path);
     }
 }
