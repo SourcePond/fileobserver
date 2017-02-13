@@ -2,11 +2,11 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.observer.CompoundObserverHandler;
 import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
 import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Collection;
 import java.util.List;
 
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
@@ -24,10 +25,19 @@ import static org.mockito.Mockito.*;
  * Created by rolandhauser on 06.02.17.
  */
 public class DirectoriesTest {
+
+    private class ObserverCollectionMatcher implements ArgumentMatcher<Collection<FileObserver>> {
+
+
+        @Override
+        public boolean matches(final Collection<FileObserver> argument) {
+            return argument.size() == 1;
+        }
+    }
+
     private final FsDirectoriesFactory fsDirectoriesFactory = mock(FsDirectoriesFactory.class);
     private final FsDirectories fsDirectories = mock(FsDirectories.class);
     private final FsDirectory fsDirectory = mock(FsDirectory.class);
-    private final FileObserver observer = mock(FileObserver.class);
     private final WatchService watchService = mock(WatchService.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path rootDirectory = mock(Path.class);
@@ -38,9 +48,10 @@ public class DirectoriesTest {
     private final FileKey fileKey = mock(FileKey.class);
     private final RegistrarFactory registrarFactory = mock(RegistrarFactory.class);
     private final Registrar registrar = mock(Registrar.class);
-    private final CompoundObserverHandler compoundObserverHandler = mock(CompoundObserverHandler.class);
+    private final FileObserver observer = mock(FileObserver.class);
+    private final ArgumentMatcher<Collection<FileObserver>> observerMatcher = c -> c.size() == 1 && c.contains(observer);
     private final List<FsDirectories> roots = mock(List.class);
-    private Directories directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory, roots);
+    private Directories directories = new Directories(registrarFactory, fsDirectoriesFactory, roots);
 
     @Before
     public void setup() throws IOException {
@@ -59,12 +70,13 @@ public class DirectoriesTest {
 
     @Test
     public void addRoot() throws IOException {
-        verify(fsDirectories).rootAdded(TEST_KEY, rootDirectory, compoundObserverHandler);
+        directories.addObserver(observer);
+        verify(fsDirectories).rootAdded(same(TEST_KEY), same(rootDirectory), argThat(observerMatcher));
     }
 
     @Test
     public void addRootIOExceptionOccurred() throws IOException {
-        directories = new Directories(registrarFactory, compoundObserverHandler, fsDirectoriesFactory, roots);
+        directories = new Directories(registrarFactory, fsDirectoriesFactory, roots);
 
         final IOException expected = new IOException();
         doThrow(expected).when(registrarFactory).newRegistrar(fs);
@@ -85,16 +97,19 @@ public class DirectoriesTest {
     }
 
     @Test
-    public void addObserver() {
+    public void addRemoveObserver() {
         when(fsDirectories.getDirectory(testPath)).thenReturn(fsDirectory);
         directories.addObserver(observer);
-//        verify(compoundObserverHandler).putIfAbsent(observer, );
-    }
+        verify(fsDirectories).initiallyInformHandler(observer);
 
-    @Test
-    public void removeObserver() {
+        // This should not cause an action
+        directories.addObserver(observer);
+        verifyNoMoreInteractions(observer);
+
+        // After remove we should get an action again
         directories.removeObserver(observer);
-        verify(compoundObserverHandler).remove(observer);
+        directories.addObserver(observer);
+        verify(fsDirectories, times(2)).initiallyInformHandler(observer);
     }
 
     @Test
@@ -102,7 +117,7 @@ public class DirectoriesTest {
         when(attrs.isDirectory()).thenReturn(true);
         directories.addObserver(observer);
         directories.pathModified(testPath);
-        verify(fsDirectories).directoryCreated(testPath, compoundObserverHandler);
+        verify(fsDirectories).directoryCreated(same(testPath), argThat(observerMatcher));
     }
 
     @Test
@@ -112,7 +127,7 @@ public class DirectoriesTest {
 
         directories.addObserver(observer);
         directories.pathDeleted(testPath);
-        verify(compoundObserverHandler).deleted(fileKey);
+        verify(observer).deleted(fileKey);
 
         // Root should still be the same
         directories.addRoot(TEST_KEY, rootDirectory);
@@ -164,7 +179,8 @@ public class DirectoriesTest {
     @Test
     public void fileModified() {
         when(fsDirectories.getDirectory(testPath)).thenReturn(fsDirectory);
+        directories.addObserver(observer);
         directories.pathModified(testPath);
-        verify(fsDirectory).informIfChanged(compoundObserverHandler, testPath);
+        verify(fsDirectory).informIfChanged(argThat(observerMatcher), same(testPath));
     }
 }

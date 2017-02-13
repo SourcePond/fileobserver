@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.registrar;
 
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.FsBaseDirectory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsRootDirectory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,27 +67,27 @@ public class Registrar implements Closeable {
         }
     }
 
-    public void initiallyInformHandler(final ObserverHandler pHandler) {
-        children.values().forEach(d -> d.forceInform(pHandler));
+    public void initiallyInformHandler(final Collection<FileObserver> pObservers) {
+        children.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObservers));
     }
 
-    public void rootAdded(final Enum<?> pWatchedDirectoryKey, final Path pDirectory, final ObserverHandler pHandler)  {
+    public void rootAdded(final Enum<?> pWatchedDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers)  {
         if (!children.containsKey(pDirectory)) {
             final FsRootDirectory rootDir = directoryFactory.newRoot(pWatchedDirectoryKey);
             if (null == children.putIfAbsent(pDirectory, rootDir)) {
                 rootDir.setWatchKey(register(pDirectory));
-                directoryWalkerExecutor.execute(() -> directoryCreated(pDirectory, pHandler));
+                directoryWalkerExecutor.execute(() -> directoryCreated(pDirectory, pObservers));
             }
         }
     }
 
-    public void directoryCreated(final Path pDirectory, final ObserverHandler pHandler) {
+    public void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObserver) {
         try {
             walkFileTree(pDirectory, new SimpleFileVisitor<Path>() {
 
                 @Override
                 public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                    children.get(file.getParent()).forceInform(pHandler, file);
+                    children.get(file.getParent()).forceInform(pObserver, file);
                     return CONTINUE;
                 }
 

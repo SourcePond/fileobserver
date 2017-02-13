@@ -5,17 +5,19 @@ import ch.sourcepond.io.checksum.api.Checksum;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.filekey.FileKeyFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.util.Collection;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static ch.sourcepond.io.fileobserver.impl.directory.FsDirectory.TIMEOUT;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
@@ -27,7 +29,8 @@ public class FsDirectoryTest {
     private static final String ANY_RELATIVIZED_PATH = "anyPath";
     private final FileKeyFactory fileKeyFactory = mock(FileKeyFactory.class);
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
-    private final ObserverHandler handler = mock(ObserverHandler.class);
+    private final FileObserver observer = mock(FileObserver.class);
+    private final Collection<FileObserver> observers = asList(observer);
     private final FsDirectoryFactory factory = new FsDirectoryFactory(resourcesFactory, fileKeyFactory);
     private final WatchKey watchKey = mock(WatchKey.class);
     private final WatchKey parentWatchKey = mock(WatchKey.class);
@@ -55,6 +58,11 @@ public class FsDirectoryTest {
     }
 
     @Test
+    public void getWatchedDirectoryKey() {
+        assertSame(TEST_KEY, child.getWatchedDirectoryKey());
+    }
+
+    @Test
     public void getPath() {
         assertSame(childPath, child.getPath());
     }
@@ -67,8 +75,8 @@ public class FsDirectoryTest {
 
     @Test
     public void createResourceOnlyOnce() {
-        child.informIfChanged(handler, path);
-        child.informIfChanged(handler, path);
+        child.informIfChanged(observers, path);
+        child.informIfChanged(observers, path);
         verify(resourcesFactory).create(SHA256, path);
     }
 
@@ -80,8 +88,8 @@ public class FsDirectoryTest {
             return null;
         });
 
-        child.informIfChanged(handler, path);
-        verify(handler).modified(key, path);
+        child.informIfChanged(observers, path);
+        verify(observer).modified(key, path);
     }
 
     @Test
@@ -94,7 +102,13 @@ public class FsDirectoryTest {
             return null;
         });
 
-        child.informIfChanged(handler, path);
-        verify(handler, never()).modified(key, path);
+        child.informIfChanged(observers, path);
+        verify(observer, never()).modified(key, path);
+    }
+
+    @Test
+    public void forceInform() {
+        child.forceInform(observers, path);
+        verify(observer).modified(key, path);
     }
 }

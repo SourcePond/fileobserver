@@ -17,18 +17,19 @@ import ch.sourcepond.io.checksum.api.Algorithm;
 import ch.sourcepond.io.checksum.api.Checksum;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
-import static java.nio.file.Files.isRegularFile;
 import static java.nio.file.Files.newDirectoryStream;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -51,7 +52,7 @@ public abstract class FsBaseDirectory {
     abstract Enum<?> getWatchedDirectoryKey();
 
     Path getPath() {
-        return (Path)getWatchKey().watchable();
+        return (Path) getWatchKey().watchable();
     }
 
     abstract Resource newResource(Algorithm pAlgorithm, Path pFile);
@@ -62,28 +63,30 @@ public abstract class FsBaseDirectory {
         getWatchKey().cancel();
     }
 
-    public void forceInform(final ObserverHandler pObserver) {
-        try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(),p -> isRegularFile(p))) {
-            stream.forEach(f -> forceInform(pObserver, f));
+    public void forceInformAboutAllDirectChildFiles(final Collection<FileObserver> pObservers) {
+        try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
+            stream.forEach(f -> forceInform(pObservers, f));
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         }
     }
 
-    public void forceInform(final ObserverHandler pObserver,final Path pFile) {
-        pObserver.modified(newKey(pFile), pFile);
+    public void forceInform(final Collection<FileObserver> pObservers, final Path pFile) {
+        final FileKey key = newKey(pFile);
+        pObservers.forEach(o -> o.modified(key, pFile));
     }
 
-    public void informIfChanged(final ObserverHandler pObserver, final Path pFile) {
+    void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
         // TODO: Replace interval with configurable value
         resources.computeIfAbsent(pFile,
-                f -> newResource(SHA256, pFile)).update(TIMEOUT, (
-                (pPrevious, pCurrent) -> informObservers(pPrevious, pCurrent, pObserver, pFile)));
+                f -> newResource(SHA256, pFile)).update(TIMEOUT,
+                (pPrevious, pCurrent) -> informObservers(pPrevious, pCurrent, pObservers, pFile));
     }
 
-    private void informObservers(final Checksum pPrevious, final Checksum pCurrent, final ObserverHandler pObserver, final Path pFile) {
+    private void informObservers(final Checksum pPrevious, final Checksum pCurrent, final Collection<FileObserver> pObservers, final Path pFile) {
         if (!pPrevious.equals(pCurrent)) {
-            pObserver.modified(newKey(pFile), pFile);
+            final FileKey key = newKey(pFile);
+            pObservers.forEach(o -> o.modified(key, pFile));
         }
     }
 }

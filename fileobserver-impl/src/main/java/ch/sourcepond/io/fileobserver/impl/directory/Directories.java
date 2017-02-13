@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
+import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.observer.CompoundObserverHandler;
 import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
 import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
 
@@ -24,6 +24,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -45,21 +46,21 @@ public class Directories implements Closeable {
     private final List<FsDirectories> roots;
 
     private final RegistrarFactory registrarFactory;
-    private final CompoundObserverHandler observers;
+    private final Set<FileObserver> observers = ConcurrentHashMap.newKeySet();
     private final FsDirectoriesFactory fsDirectoriesFactory;
 
     public Directories(final RegistrarFactory pRegistrarFactory,
-                       final CompoundObserverHandler pObservers,
                        final FsDirectoriesFactory pFsDirectories,
                        final List<FsDirectories> pRoots) {
         registrarFactory = pRegistrarFactory;
-        observers = pObservers;
         fsDirectoriesFactory = pFsDirectories;
         roots = pRoots;
     }
 
     void addObserver(final FileObserver pObserver) {
-        observers.putIfAbsent(pObserver, children.values());
+        if (observers.add(pObserver)) {
+            children.values().forEach(f -> f.initiallyInformHandler(pObserver));
+        }
     }
 
     void removeObserver(final FileObserver pObserver) {
@@ -121,7 +122,8 @@ public class Directories implements Closeable {
             children.remove(pPath.getFileSystem());
         }
 
-        observers.deleted(fsdir.newKey(pPath));
+        final FileKey key = fsdir.newKey(pPath);
+        observers.forEach(o -> o.deleted(key));
     }
 
     @Override

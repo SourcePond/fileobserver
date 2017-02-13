@@ -1,6 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,10 +9,12 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -24,7 +26,8 @@ public class FsDirectoriesTest {
     private final Registrar registrar = mock(Registrar.class);
     private final FsDirectory fsDirectory = mock(FsDirectory.class);
     private final FsDirectory fsSubDirectory = mock(FsDirectory.class);
-    private final ObserverHandler handler = mock(ObserverHandler.class);
+    private final FileObserver observer = mock(FileObserver.class);
+    private final Collection<FileObserver> observers = asList(observer);
     private final Path directory = mock(Path.class);
     private final Path subDirectory = mock(Path.class);
     private final WatchKey key = mock(WatchKey.class);
@@ -40,20 +43,20 @@ public class FsDirectoriesTest {
 
     @Test
     public void rootAdded() {
-        fsDirectories.rootAdded(TEST_KEY, directory, handler);
-        verify(registrar).rootAdded(TEST_KEY, directory, handler);
+        fsDirectories.rootAdded(TEST_KEY, directory, observers);
+        verify(registrar).rootAdded(TEST_KEY, directory, observers);
     }
 
     @Test
     public void initialyInformHandler() throws IOException {
-        fsDirectories.initiallyInformHandler(handler);
-        verify(registrar).initiallyInformHandler(handler);
+        fsDirectories.initiallyInformHandler(observer);
+        verify(registrar).initiallyInformHandler(observers);
     }
 
     @Test
     public void directoryCreated() throws IOException {
-        fsDirectories.directoryCreated(directory, handler);
-        verify(registrar).directoryCreated(directory, handler);
+        fsDirectories.directoryCreated(directory, observers);
+        verify(registrar).directoryCreated(directory, observers);
     }
 
     @Test

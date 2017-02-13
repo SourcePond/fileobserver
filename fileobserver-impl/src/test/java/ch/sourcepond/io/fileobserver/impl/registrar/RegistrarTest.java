@@ -1,10 +1,10 @@
 package ch.sourcepond.io.fileobserver.impl.registrar;
 
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsRootDirectory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -15,11 +15,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static java.lang.Thread.sleep;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
@@ -50,7 +52,8 @@ public class RegistrarTest extends CopyResourcesTest {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final FsDirectoryFactory directoryFactory = mock(FsDirectoryFactory.class);
     private RegistrarFactory registrarFactory = new RegistrarFactory(executorService, directoryFactory);
-    private final ObserverHandler handler = mock(ObserverHandler.class);
+    private final FileObserver observer = mock(FileObserver.class);
+    private final Collection<FileObserver> observers = asList(observer);
     private final FsRootDirectory rootFsDir = mock(FsRootDirectory.class);
     private final FsDirectory subFsDir = mock(FsDirectory.class);
     private WatchService watchService;
@@ -62,13 +65,13 @@ public class RegistrarTest extends CopyResourcesTest {
         when(directoryFactory.newBranch(same(rootFsDir), argThat(new SubDirWatchKeyMatcher()))).thenReturn(subFsDir);
         watchService = fs.newWatchService();
         registrar = registrarFactory.newRegistrar(fs);
-        registrar.rootAdded(TEST_KEY, directory, handler);
+        registrar.rootAdded(TEST_KEY, directory, observers);
         sleep(500);
     }
 
     @Test
     public void ignoreSameRoot() {
-        registrar.rootAdded(TEST_KEY, directory, handler);
+        registrar.rootAdded(TEST_KEY, directory, observers);
 
         // Should have been called exactly once
         verify(directoryFactory).newRoot(TEST_KEY);
@@ -83,8 +86,8 @@ public class RegistrarTest extends CopyResourcesTest {
                 return rootFsDir;
             }
         });
-        executorService.execute(() -> registrar.rootAdded(TEST_KEY, directory, handler));
-        executorService.execute(() -> registrar.rootAdded(TEST_KEY, directory, handler));
+        executorService.execute(() -> registrar.rootAdded(TEST_KEY, directory, observers));
+        executorService.execute(() -> registrar.rootAdded(TEST_KEY, directory, observers));
 
         sleep(1000);
 
@@ -98,21 +101,21 @@ public class RegistrarTest extends CopyResourcesTest {
         deleteResources();
 
         // This should not cause an exception
-        registrar.directoryCreated(directory, handler);
+        registrar.directoryCreated(directory, observers);
     }
 
     @Test
     public void rootAdded() throws Exception {
         verify(rootFsDir).setWatchKey(argThat(new RootWatchKeyMatcher()));
-        verify(rootFsDir, timeout(500)).forceInform(handler, testfileTxt);
-        verify(subFsDir, timeout(500)).forceInform(handler, testfileXml);
+        verify(rootFsDir, timeout(500)).forceInform(observers, testfileTxt);
+        verify(subFsDir, timeout(500)).forceInform(observers, testfileXml);
     }
 
     @Test
     public void initiallyInformHandler() {
-        registrar.initiallyInformHandler(handler);
-        verify(rootFsDir).forceInform(handler);
-        verify(subFsDir).forceInform(handler);
+        registrar.initiallyInformHandler(observers);
+        verify(rootFsDir).forceInformAboutAllDirectChildFiles(observers);
+        verify(subFsDir).forceInformAboutAllDirectChildFiles(observers);
     }
 
     @Test

@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverHandler;
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
 import org.slf4j.Logger;
 
@@ -21,8 +21,10 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.util.Collection;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -36,16 +38,16 @@ public class FsDirectories implements Closeable {
         registrar = pRegistrar;
     }
 
-    public void initiallyInformHandler(final ObserverHandler pHandler) {
-        registrar.initiallyInformHandler(pHandler);
+    public void initiallyInformHandler(final FileObserver pHandler) {
+        registrar.initiallyInformHandler(asList(pHandler));
     }
 
-    public void rootAdded(final Enum<?> pWatchedDirectoryKeyOrNull, final Path pDirectory, final ObserverHandler pHandler) {
-        registrar.rootAdded(pWatchedDirectoryKeyOrNull, pDirectory, pHandler);
+    public void rootAdded(final Enum<?> pWatchedDirectoryKeyOrNull, final Path pDirectory, final Collection<FileObserver> pObservers) {
+        registrar.rootAdded(pWatchedDirectoryKeyOrNull, pDirectory, pObservers);
     }
 
-    public void directoryCreated(final Path pDirectory, final ObserverHandler pHandler) {
-        registrar.directoryCreated(pDirectory, pHandler);
+    public void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObservers) {
+        registrar.directoryCreated(pDirectory, pObservers);
     }
 
     public boolean directoryDeleted(final Path pDirectory) {

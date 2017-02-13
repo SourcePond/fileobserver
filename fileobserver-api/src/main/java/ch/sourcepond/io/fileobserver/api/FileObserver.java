@@ -19,16 +19,6 @@ import java.nio.file.Path;
  * Observer interface to receive notifications about changes on a watched (file-) paths.
  */
 public interface FileObserver {
-    
-    /**
-     * Checks whether this observer should handle the path specified. When this method
-     * returns {@code true}, {@link #modified(FileKey, Path)} will be called.
-     *
-     * @param pFile Path of the modified file, never {@code null}.
-     * @return {@code true} if the path should be dispatched, {@code false}
-     * otherwise.
-     */
-    boolean accept(FileKey pKey, Path pFile);
 
     void modified(FileKey pKey, Path pFile);
 
