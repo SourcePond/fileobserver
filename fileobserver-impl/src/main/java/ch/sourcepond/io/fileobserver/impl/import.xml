@@ -6,10 +6,10 @@
     <reference id="OSGi_service.resourceFactory" interface="ch.sourcepond.io.checksum.api.ResourcesFactory" />
 
     <reference-list interface="ch.sourcepond.io.fileobserver.api.FileObserver" availability="optional">
-        <reference-listener ref="directories" bind-method="addObserver" unbind-method="removeObserver" />
+        <reference-listener ref="directory.directories" bind-method="addObserver" unbind-method="removeObserver" />
     </reference-list>
 
-    <reference-list interface="ch.sourcepond.io.fileobserver.api.WatchedDirectory" availability="optional">
+    <reference-list interface="ch.sourcepond.io.fileobserver.spi.WatchedDirectory" availability="optional">
         <reference-listener ref="watchedDirectoryManager" bind-method="bind" unbind-method="unbind" />
     </reference-list>
 </blueprint>

@@ -17,10 +17,10 @@ import static org.mockito.Mockito.mock;
 public class DefaultFileKeyTest {
     private final Path path = mock(Path.class);
     private final Path otherPath = mock(Path.class);
-    private final FileKey key1 = new FileKeyFactory().newKey(TEST_KEY, path);
-    private final FileKey key2 = new FileKeyFactory().newKey(TEST_KEY, path);
-    private final FileKey key3 = new FileKeyFactory().newKey(TEST_KEY, otherPath);
-    private final FileKey key4 = new FileKeyFactory().newKey(TEST_KEY1, otherPath);
+    private final FileKey key1 = new DefaultFileKeyFactory().newKey(TEST_KEY, path);
+    private final FileKey key2 = new DefaultFileKeyFactory().newKey(TEST_KEY, path);
+    private final FileKey key3 = new DefaultFileKeyFactory().newKey(TEST_KEY, otherPath);
+    private final FileKey key4 = new DefaultFileKeyFactory().newKey(TEST_KEY1, otherPath);
 
     @Test
     public void key() {

@@ -1,40 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0">
 
-    <bean id="defaultObserverHandlerFactory" class="ch.sourcepond.io.fileobserver.impl.observer.DefaultObserverHandlerFactory"
-          destroy-method="close">
-        <argument ref="OSGi_service.smartSwitch"/>
-    </bean>
-
-    <bean id="compoundObserverHandler" class="ch.sourcepond.io.fileobserver.impl.observer.CompoundObserverHandler">
-        <argument ref="defaultObserverHandlerFactory"/>
-    </bean>
-
-    <bean id="fsDirectoryFactory" class="ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory">
-        <argument ref="OSGi_service.resourceFactory"/>
-    </bean>
-
-    <bean id="registrarFactory" class="ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory">
-        <argument ref="fsDirectoryFactory"/>
-    </bean>
-
-    <bean id="fsDirectoriesFactory" class="ch.sourcepond.io.fileobserver.impl.directory.FsDirectoriesFactory"/>
-
-    <bean id="roots" class="java.util.concurrent.CopyOnWriteArrayList"/>
-
-    <bean id="directories" class="ch.sourcepond.io.fileobserver.impl.directory.Directories" destroy-method="close">
-        <argument ref="registrarFactory"/>
-        <argument ref="compoundObserverHandler"/>
-        <argument ref="fsDirectoriesFactory"/>
-        <argument ref="roots"/>
-    </bean>
-
-    <bean id="directoryScanner" class="ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner" init-method="start" destroy-method="close">
-        <argument ref="roots" />
-        <argument ref="directories" />
-    </bean>
-
-    <bean id="watchedDirectoryManager" class="ch.sourcepond.io.fileobserver.impl.WatchedDirectoryManager">
-        <argument ref="directories" />
+    <bean id="registrar.registrarFactory" class="ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory" destroy-method="close">
+        <argument ref="directoryWalkerExecutor" />
+        <argument ref="directory.fsDirectoryFactory" />
     </bean>
 </blueprint>

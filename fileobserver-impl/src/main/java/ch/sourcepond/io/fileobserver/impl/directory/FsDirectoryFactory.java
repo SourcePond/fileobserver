@@ -17,7 +17,7 @@ import ch.sourcepond.io.checksum.api.Algorithm;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
-import ch.sourcepond.io.fileobserver.impl.filekey.FileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
@@ -28,11 +28,11 @@ import java.util.concurrent.ExecutorService;
  */
 public class FsDirectoryFactory {
     private final ResourcesFactory resourcesFactory;
-    private final FileKeyFactory fileKeyFactory;
+    private final DefaultFileKeyFactory fileKeyFactory;
     private final ExecutorService observerExecutor;
 
     FsDirectoryFactory(final ResourcesFactory pResourcesFactory,
-                       final FileKeyFactory pFileKeyFactory,
+                       final DefaultFileKeyFactory pFileKeyFactory,
                        final ExecutorService pObserverExecutor) {
         resourcesFactory = pResourcesFactory;
         fileKeyFactory = pFileKeyFactory;
@@ -55,7 +55,7 @@ public class FsDirectoryFactory {
         return fileKeyFactory.newKey(pWatchedDirectoryKey, pRelativePath);
     }
 
-    void execute(final Runnable pRunnable) {
+    public void execute(final Runnable pRunnable) {
         observerExecutor.execute(pRunnable);
     }
 }

@@ -20,7 +20,7 @@ import java.nio.file.Path;
 /**
  *
  */
-public class FileKeyFactory {
+public class DefaultFileKeyFactory {
 
     public FileKey newKey(final Enum<?> pKey, final Path pRelativePath) {
         return new DefaultFileKey(pKey, pRelativePath);

@@ -64,8 +64,11 @@
                 <configuration>
                     <instructions>
                         <Bundle-Blueprint>
-                            ch/sourcepond/io/fileobserver/impl/components.xml,
                             ch/sourcepond/io/fileobserver/impl/import.xml
+                            ch/sourcepond/io/fileobserver/impl/components.xml,
+                            ch/sourcepond/io/fileobserver/impl/directory/components.xml,
+                            ch/sourcepond/io/fileobserver/impl/filekey/components.xml,
+                            ch/sourcepond/io/fileobserver/impl/registrar/components.xml
                         </Bundle-Blueprint>
                     </instructions>
                 </configuration>

@@ -6,7 +6,7 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.filekey.FileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 public class FsDirectoryTest {
     private static final String ANY_RELATIVIZED_PATH = "anyPath";
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
-    private final FileKeyFactory fileKeyFactory = mock(FileKeyFactory.class);
+    private final DefaultFileKeyFactory fileKeyFactory = mock(DefaultFileKeyFactory.class);
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
