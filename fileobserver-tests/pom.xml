@@ -35,6 +35,11 @@
             <artifactId>fileobserver-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ch.sourcepond.io</groupId>
+            <artifactId>fileobserver-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- This dependency is necessary to keep the tests behind the feature
          in the build order -->
