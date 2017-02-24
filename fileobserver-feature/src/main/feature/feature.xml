@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <features xmlns="http://karaf.apache.org/xmlns/features/v1.4.0" name="fileobserver-feature">
-    <repository>mvn:ch.sourcepond.commons/smartswitch-feature/${smartswitch.version}/xml/features</repository>
     <repository>mvn:ch.sourcepond.io/checksum-feature/${checksum.version}/xml/features</repository>
     <feature name="fileobserver-feature" description="fileobserver-feature">
-        <feature prerequisite="true" dependency="true">smartswitch-feature</feature>
-        <feature prerequisite="true" dependency="true">checksum-feature</feature>
+        <feature prerequisite="true">smartswitch-feature</feature>
+        <feature prerequisite="true">checksum-feature</feature>
+        <bundle dependency="true">mvn:ch.sourcepond.commons/smartswitch-lib/${smartswitch.version}</bundle>
+        <bundle dependency="true">mvn:ch.sourcepond.io/checksum-api/${checksum.version}</bundle>
     </feature>
 </features>

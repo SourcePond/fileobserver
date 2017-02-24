@@ -15,10 +15,12 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
 import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
@@ -27,7 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
@@ -35,13 +37,16 @@ import static java.nio.file.Files.isDirectory;
 /**
  *
  */
-public class Directories implements Closeable {
+public class Directories {
+    private static final Logger LOG = LoggerFactory.getLogger(Directories.class);
     private final ConcurrentMap<FileSystem, FsDirectories> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = ConcurrentHashMap.newKeySet();
 
     private final RegistrarFactory registrarFactory;
     private final FsDirectoriesFactory fsDirectoriesFactory;
-    private final ExecutorService observerExecutor;
+
+    // Injected by Felix DM
+    private final ExecutorServices executorServices;
 
     /**
      * We intentionally do <em>not</em> use {@code children.values()} because we need to iterate
@@ -51,24 +56,44 @@ public class Directories implements Closeable {
      */
     private final List<FsDirectories> roots;
 
+    // Constructor for BundleActivator
+    public Directories(final ExecutorServices pExecutorServices, final FsDirectoryFactory pFsDirectoryFactory) {
+        executorServices = pExecutorServices;
+        registrarFactory = new RegistrarFactory(pExecutorServices, pFsDirectoryFactory);
+        fsDirectoriesFactory = new FsDirectoriesFactory();
+        roots = new CopyOnWriteArrayList<>();
+    }
+
+    // Constructor for testing
     public Directories(final RegistrarFactory pRegistrarFactory,
                        final FsDirectoriesFactory pFsDirectories,
-                       final ExecutorService pObserverExecutor,
+                       final ExecutorServices pExecutorServices,
                        final List<FsDirectories> pRoots) {
         registrarFactory = pRegistrarFactory;
         fsDirectoriesFactory = pFsDirectories;
-        observerExecutor = pObserverExecutor;
+        executorServices = pExecutorServices;
         roots = pRoots;
     }
 
-    void addObserver(final FileObserver pObserver) {
-        if (observers.add(pObserver)) {
+    // Composition callback for Felix DM
+    public Object[] getComposition() {
+        return new Object[]{registrarFactory, registrarFactory.getDirectoryFactory()};
+    }
+
+    public void addObserver(final FileObserver pObserver) {
+        if (null == pObserver) {
+            LOG.warn("Observer is null; nothing to add");
+        } else if (observers.add(pObserver)) {
             children.values().forEach(f -> f.initiallyInformHandler(pObserver));
         }
     }
 
-    void removeObserver(final FileObserver pObserver) {
-        observers.remove(pObserver);
+    public void removeObserver(final FileObserver pObserver) {
+        if (null == pObserver) {
+            LOG.warn("Observer is null; nothing to remove");
+        } else {
+            observers.remove(pObserver);
+        }
     }
 
     private Registrar newRegistrar(final FileSystem pFs) {
@@ -127,11 +152,12 @@ public class Directories implements Closeable {
         }
 
         final FileKey key = fsdir.newKey(pPath);
-        observers.forEach(o -> observerExecutor.execute(() -> o.deleted(key)));
+        observers.forEach(o -> executorServices.getObserverExecutor().execute(
+                () -> o.deleted(key)));
     }
 
-    @Override
-    public void close() {
+    // Lifecycle method for Felix DM
+    public void stop() {
         children.values().forEach(FsDirectories::close);
         children.clear();
     }
@@ -144,5 +170,9 @@ public class Directories implements Closeable {
             roots.remove(pFsDirectories);
             children.values().remove(pFsDirectories);
         }
+    }
+
+    public List<FsDirectories> getRoots() {
+        return roots;
     }
 }

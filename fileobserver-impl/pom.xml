@@ -35,9 +35,17 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>ch.sourcepond.commons</groupId>
-            <artifactId>smartswitch-api</artifactId>
+            <artifactId>smartswitch-lib</artifactId>
             <version>${smartswitch.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.dependencymanager</artifactId>
         </dependency>
         <dependency>
             <groupId>ch.sourcepond.io</groupId>
@@ -48,12 +56,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        <dependency>
-            <scope>test</scope>
-            <groupId>ch.sourcepond.commons</groupId>
-            <artifactId>smartswitch-testing</artifactId>
-            <version>${smartswitch.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -63,13 +65,7 @@
                 <artifactId>maven-bundle-plugin</artifactId>
                 <configuration>
                     <instructions>
-                        <Bundle-Blueprint>
-                            ch/sourcepond/io/fileobserver/impl/import.xml
-                            ch/sourcepond/io/fileobserver/impl/components.xml,
-                            ch/sourcepond/io/fileobserver/impl/directory/components.xml,
-                            ch/sourcepond/io/fileobserver/impl/filekey/components.xml,
-                            ch/sourcepond/io/fileobserver/impl/registrar/components.xml
-                        </Bundle-Blueprint>
+                       <Bundle-Activator>ch.sourcepond.io.fileobserver.impl.Activator</Bundle-Activator>
                     </instructions>
                 </configuration>
             </plugin>

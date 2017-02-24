@@ -1,9 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.directory.Directories;
-import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
-import ch.sourcepond.io.fileobserver.impl.directory.FsDirectories;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,12 +26,13 @@ public class DirectoryScannerTest extends CopyResourcesTest {
     private final Directories directories = mock(Directories.class);
     private final FsDirectories child = mock(FsDirectories.class);
     private final List<FsDirectories> roots = asList(child);
-    private final DirectoryScanner scanner = new DirectoryScanner(roots, directories);
+    private final DirectoryScanner scanner = new DirectoryScanner(directories);
     private WatchService watchService;
     private WatchKey key;
 
     @Before
     public void setup() throws Exception {
+        when(directories.getRoots()).thenReturn(roots);
         watchService = fs.newWatchService();
         key = directory.register(watchService, new WatchEvent.Kind[]{
                 ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
@@ -50,7 +48,7 @@ public class DirectoryScannerTest extends CopyResourcesTest {
     public void tearDown() throws IOException {
         watchService.close();
         directories.removeRoot(directory);
-        scanner.close();
+        scanner.stop();
     }
 
     private void changeContent(final Path pPath) throws Exception {

@@ -15,23 +15,22 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import org.slf4j.Logger;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.DelayQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.currentThread;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * <p>This thread-safe class manages watch-service instances and their associated watch-keys.
  */
-class DirectoryScanner extends Thread implements Closeable {
+public class DirectoryScanner implements Runnable {
 
     private static class DelayedWatchKey {
         private final long delayedUntilInMilliseconds;
@@ -53,7 +52,6 @@ class DirectoryScanner extends Thread implements Closeable {
     }
 
     private static final Logger LOG = getLogger(DirectoryScanner.class);
-    private final AtomicBoolean running = new AtomicBoolean(true);
 
     /**
      * We do <em>not</em> work with a {@link DelayQueue} here because the
@@ -62,13 +60,19 @@ class DirectoryScanner extends Thread implements Closeable {
      * from the same thread (runner thread).
      */
     private final List<DelayedWatchKey> delayQueue = new LinkedList<>();
-    private final List<FsDirectories> roots;
     private final Directories directories;
+    private final Thread thread = new Thread(this, "fileobserver.DirectoryScanner");
 
-    DirectoryScanner(final List<FsDirectories> pRoots, final Directories pDirectories) {
-        super("sourcepond.DirectoryScanner");
-        roots = pRoots;
+    // Constructor for testing and BundleActivator
+    public DirectoryScanner(final Directories pDirectories) {
         directories = pDirectories;
+    }
+
+    // Lifecycle method for Felix DM
+    public void start() {
+        thread.setDaemon(true);
+        thread.start();
+        LOG.info("Directory scanner started");
     }
 
     /**
@@ -76,11 +80,10 @@ class DirectoryScanner extends Thread implements Closeable {
      * watch-service. Then, it delegates to the {@link WatchService#close()} method
      * of the managed watch-service.
      */
-    @Override
-    public void close() {
-        if (running.compareAndSet(true, false)) {
-            directories.close();
-        }
+    // Lifecycle method for Felix DM
+    public void stop() {
+        thread.interrupt();
+        LOG.info("Directory scanner stopped");
     }
 
     private void processPath(final WatchEvent.Kind pKind, final Path child) {
@@ -127,15 +130,15 @@ class DirectoryScanner extends Thread implements Closeable {
         }
     }
 
-    private boolean queueWatchKeys() {
+    private boolean queueWatchKeys(final List<FsDirectories> pRoots) {
         FsDirectories next = null;
         WatchKey key;
 
         // We intentionally use a traditional for-loop to keep object creation
         // count as low as possible. Therefore, do not use an iterator here.
-        for (int i = 0; i < roots.size(); i++) {
+        for (int i = 0; i < pRoots.size(); i++) {
             try {
-                next = roots.get(i);
+                next = pRoots.get(i);
                 key = next.poll();
                 if (null != key) {
                     delayQueue.add(new DelayedWatchKey(key));
@@ -163,10 +166,13 @@ class DirectoryScanner extends Thread implements Closeable {
 
     @Override
     public void run() {
-        while (running.get() && !currentThread().isInterrupted()) {
+        // Avoid accessing instance method to often
+        final List<FsDirectories> roots = directories.getRoots();
+
+        while (!currentThread().isInterrupted()) {
 
             // Add new keys to the queue for delayed execution
-            if (queueWatchKeys()) {
+            if (queueWatchKeys(roots)) {
 
                 // Process events if available
                 delayQueue.removeIf(this::processIfDue);

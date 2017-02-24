@@ -14,6 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.registrar;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.FsBaseDirectory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsRootDirectory;
@@ -29,9 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 
-import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
@@ -44,12 +43,12 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class Registrar implements Closeable {
     private static final Logger LOG = getLogger(Registrar.class);
     private final ConcurrentMap<Path, FsBaseDirectory> children = new ConcurrentHashMap<>();
-    private final ExecutorService directoryWalkerExecutor;
+    private final ExecutorServices executorServices;
     private final FsDirectoryFactory directoryFactory;
     private final WatchService watchService;
 
-    Registrar(final ExecutorService pDirectoryWalkerExecutor, final FsDirectoryFactory pDirectoryFactory, final WatchService pWatchService) {
-        directoryWalkerExecutor = pDirectoryWalkerExecutor;
+    Registrar(final ExecutorServices pExecutorServices, final FsDirectoryFactory pDirectoryFactory, final WatchService pWatchService) {
+        executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
         watchService = pWatchService;
     }
@@ -57,7 +56,7 @@ public class Registrar implements Closeable {
     private WatchKey register(final Path pDirectory) {
         try {
             return pDirectory.register(watchService, new WatchEvent.Kind[]{
-                    ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY}, HIGH);
+                    ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY});
         } catch (final IOException e) {
             throw new UncheckedIOException(e);
         } finally {
@@ -71,12 +70,13 @@ public class Registrar implements Closeable {
         children.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObservers));
     }
 
-    public void rootAdded(final Enum<?> pWatchedDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers)  {
+    public void rootAdded(final Enum<?> pWatchedDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
         if (!children.containsKey(pDirectory)) {
             final FsRootDirectory rootDir = directoryFactory.newRoot(pWatchedDirectoryKey);
             if (null == children.putIfAbsent(pDirectory, rootDir)) {
                 rootDir.setWatchKey(register(pDirectory));
-                directoryWalkerExecutor.execute(() -> directoryCreated(pDirectory, pObservers));
+                executorServices.getDirectoryWalkerExecutor().execute(
+                        () -> directoryCreated(pDirectory, pObservers));
             }
         }
     }

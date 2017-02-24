@@ -34,7 +34,7 @@ public class FsDirectories implements Closeable {
     private static final Logger LOG = getLogger(FsDirectories.class);
     private final Registrar registrar;
 
-    FsDirectories(final Registrar pRegistrar) {
+    public FsDirectories(final Registrar pRegistrar) {
         registrar = pRegistrar;
     }
 

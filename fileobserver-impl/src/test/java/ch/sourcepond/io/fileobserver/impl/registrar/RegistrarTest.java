@@ -2,6 +2,7 @@ package ch.sourcepond.io.fileobserver.impl.registrar;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsRootDirectory;
@@ -49,9 +50,10 @@ public class RegistrarTest extends CopyResourcesTest {
     }
 
 
+    private final ExecutorServices executorServices = mock(ExecutorServices.class);
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final FsDirectoryFactory directoryFactory = mock(FsDirectoryFactory.class);
-    private RegistrarFactory registrarFactory = new RegistrarFactory(executorService, directoryFactory);
+    private RegistrarFactory registrarFactory = new RegistrarFactory(executorServices, directoryFactory);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
     private final FsRootDirectory rootFsDir = mock(FsRootDirectory.class);
@@ -61,6 +63,7 @@ public class RegistrarTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws Exception {
+        when(executorServices.getDirectoryWalkerExecutor()).thenReturn(executorService);
         when(directoryFactory.newRoot(TEST_KEY)).thenReturn(rootFsDir);
         when(directoryFactory.newBranch(same(rootFsDir), argThat(new SubDirWatchKeyMatcher()))).thenReturn(subFsDir);
         watchService = fs.newWatchService();
@@ -148,7 +151,7 @@ public class RegistrarTest extends CopyResourcesTest {
     @Test
     public void poll() throws Exception {
         Files.delete(testfileTxt);
-        sleep(5000);
+        sleep(15000);
         assertNotNull(registrar.poll());
     }
 }

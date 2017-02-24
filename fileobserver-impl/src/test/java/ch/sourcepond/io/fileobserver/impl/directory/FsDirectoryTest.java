@@ -6,6 +6,7 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -30,12 +31,13 @@ import static org.mockito.Mockito.*;
  */
 public class FsDirectoryTest {
     private static final String ANY_RELATIVIZED_PATH = "anyPath";
+    private final ExecutorServices executorServices = mock(ExecutorServices.class);
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
     private final DefaultFileKeyFactory fileKeyFactory = mock(DefaultFileKeyFactory.class);
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
-    private final FsDirectoryFactory factory = new FsDirectoryFactory(resourcesFactory, fileKeyFactory, observerExecutor);
+    private final FsDirectoryFactory factory = new FsDirectoryFactory(resourcesFactory, fileKeyFactory, executorServices);
     private final WatchKey watchKey = mock(WatchKey.class);
     private final WatchKey parentWatchKey = mock(WatchKey.class);
     private final Path parentPath = mock(Path.class);
@@ -51,6 +53,7 @@ public class FsDirectoryTest {
 
     @Before
     public void setup() {
+        when(executorServices.getObserverExecutor()).thenReturn(observerExecutor);
         when(fileKeyFactory.newKey(TEST_KEY, relativePath)).thenReturn(key);
         when(parentWatchKey.watchable()).thenReturn(parentPath);
         when(watchKey.watchable()).thenReturn(childPath);

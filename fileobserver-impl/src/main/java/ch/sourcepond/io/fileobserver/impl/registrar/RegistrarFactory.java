@@ -13,25 +13,30 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.registrar;
 
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
-import java.util.concurrent.ExecutorService;
 
 /**
  *
  */
 public class RegistrarFactory {
-    private final ExecutorService directoryWalkerExecutor;
     private final FsDirectoryFactory directoryFactory;
+    private final ExecutorServices executorServices;
 
-    RegistrarFactory(final ExecutorService pDirectoryWalkerExecutor, final FsDirectoryFactory pDirectoryFactory) {
-        directoryWalkerExecutor = pDirectoryWalkerExecutor;
+    // Constructor for BundleActivator
+    public RegistrarFactory(final ExecutorServices pExecutorServices, final FsDirectoryFactory pDirectoryFactory) {
+        executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
     }
 
+    public FsDirectoryFactory getDirectoryFactory() {
+        return directoryFactory;
+    }
+
     public Registrar newRegistrar(final FileSystem pFs) throws IOException {
-        return new Registrar(directoryWalkerExecutor, directoryFactory, pFs.newWatchService());
+        return new Registrar(executorServices, directoryFactory, pFs.newWatchService());
     }
 }

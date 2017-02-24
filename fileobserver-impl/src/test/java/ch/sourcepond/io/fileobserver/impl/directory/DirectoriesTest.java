@@ -2,6 +2,7 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
 import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
 import org.junit.After;
@@ -54,11 +55,13 @@ public class DirectoriesTest {
     private final FileObserver observer = mock(FileObserver.class);
     private final ArgumentMatcher<Collection<FileObserver>> observerMatcher = c -> c.size() == 1 && c.contains(observer);
     private final List<FsDirectories> roots = mock(List.class);
+    private final ExecutorServices executorServices = mock(ExecutorServices.class);
     private final ExecutorService observerExecutor = Executors.newSingleThreadExecutor();
-    private Directories directories = new Directories(registrarFactory, fsDirectoriesFactory, observerExecutor, roots);
+    private Directories directories = new Directories(registrarFactory, fsDirectoriesFactory, executorServices, roots);
 
     @Before
     public void setup() throws IOException {
+        when(executorServices.getObserverExecutor()).thenReturn(observerExecutor);
         when(rootDirectory.getFileSystem()).thenReturn(fs);
         when(testPath.getFileSystem()).thenReturn(fs);
         when(fs.newWatchService()).thenReturn(watchService);
@@ -85,7 +88,7 @@ public class DirectoriesTest {
 
     @Test
     public void addRootIOExceptionOccurred() throws IOException {
-        directories = new Directories(registrarFactory, fsDirectoriesFactory, observerExecutor, roots);
+        directories = new Directories(registrarFactory, fsDirectoriesFactory, executorServices, roots);
 
         final IOException expected = new IOException();
         doThrow(expected).when(registrarFactory).newRegistrar(fs);
@@ -146,8 +149,8 @@ public class DirectoriesTest {
     }
 
     @Test
-    public void close() throws Exception {
-        directories.close();
+    public void destroy() throws Exception {
+        directories.stop();
         verify(fsDirectories).close();
 
         directories.addRoot(TEST_KEY, rootDirectory);

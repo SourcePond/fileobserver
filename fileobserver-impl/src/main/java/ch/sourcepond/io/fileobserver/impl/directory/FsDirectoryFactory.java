@@ -17,26 +17,35 @@ import ch.sourcepond.io.checksum.api.Algorithm;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Created by rolandhauser on 08.02.17.
  */
 public class FsDirectoryFactory {
-    private final ResourcesFactory resourcesFactory;
     private final DefaultFileKeyFactory fileKeyFactory;
-    private final ExecutorService observerExecutor;
+    private final ExecutorServices executorServices;
 
-    FsDirectoryFactory(final ResourcesFactory pResourcesFactory,
+    // Injected by Felix DM
+    private volatile ResourcesFactory resourcesFactory;
+
+    // Constructor for BundleActivator
+    public FsDirectoryFactory(final ExecutorServices pExecutorServices) {
+        executorServices = pExecutorServices;
+        fileKeyFactory = new DefaultFileKeyFactory();
+    }
+
+    // Constructor for testing
+    public FsDirectoryFactory(final ResourcesFactory pResourcesFactory,
                        final DefaultFileKeyFactory pFileKeyFactory,
-                       final ExecutorService pObserverExecutor) {
+                       final ExecutorServices pExecutorServices) {
         resourcesFactory = pResourcesFactory;
         fileKeyFactory = pFileKeyFactory;
-        observerExecutor = pObserverExecutor;
+        executorServices = pExecutorServices;
     }
 
     public FsRootDirectory newRoot(final Enum<?> pWatchedDirectoryKeyOrNull) {
@@ -56,6 +65,6 @@ public class FsDirectoryFactory {
     }
 
     public void execute(final Runnable pRunnable) {
-        observerExecutor.execute(pRunnable);
+        executorServices.getObserverExecutor().execute(pRunnable);
     }
 }

@@ -16,9 +16,9 @@
 	</description>
 
 	<properties>
-		<repo.domain>${artifactId}</repo.domain>
-		<checksum.version>[1.0.0,2.0.0]</checksum.version>
-		<smartswitch.version>[1.0.0,2.0.0)</smartswitch.version>
+		<repo.domain>${project.artifactId}</repo.domain>
+		<checksum.version>1.0.3</checksum.version>
+		<smartswitch.version>3.0.0</smartswitch.version>
 	</properties>
 
 	<modules>

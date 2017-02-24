@@ -2,6 +2,9 @@ package ch.sourcepond.io.fileobserver.impl;
 
 
 import ch.sourcepond.io.fileobserver.impl.directory.Directories;
+import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
+import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +22,10 @@ import static org.mockito.Mockito.*;
 /**
  * Created by rolandhauser on 08.02.17.
  */
-public class WatchedDirectoryManagerTest {
+public class ActivatorTest {
+    private final FsDirectoryFactory fsDirectoryFactory = mock(FsDirectoryFactory.class);
+    private final RegistrarFactory registrarFactory = mock(RegistrarFactory.class);
+    private final DirectoryScanner directoryScanner = mock(DirectoryScanner.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final BasicFileAttributes attrs = mock(BasicFileAttributes.class);
@@ -27,7 +33,8 @@ public class WatchedDirectoryManagerTest {
     private final Path differentDirectory = mock(Path.class);
     private final Directories directories = mock(Directories.class);
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
-    private final WatchedDirectoryManager manager = new WatchedDirectoryManager(directories);
+    private final ExecutorServices executorServices = mock(ExecutorServices.class);
+    private final Activator manager = new Activator(executorServices, fsDirectoryFactory, registrarFactory, directories, directoryScanner);
 
     @Before
     public void setup() throws IOException {
@@ -41,9 +48,16 @@ public class WatchedDirectoryManagerTest {
         when(watchedDirectory.getDirectory()).thenReturn(directory);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void bindNull() {
+        // No exception should be caused to be thrown
         manager.bind(null);
+    }
+
+    @Test
+    public void unbindNull() {
+        // No exception should be caused to be thrown
+        manager.unbind(null);
     }
 
     @Test(expected = NullPointerException.class)

@@ -26,7 +26,7 @@
     </scm>
 
     <properties>
-        <repo.project>podescoin</repo.project>
+        <repo.project>fileobserver</repo.project>
     </properties>
 
     <dependencies>
@@ -39,14 +39,48 @@
         <!-- This dependency is necessary to keep the tests behind the feature
          in the build order -->
         <dependency>
-            <scope>provided</scope>
+            <scope>runtime</scope>
             <type>xml</type>
             <classifier>features</classifier>
             <groupId>ch.sourcepond.io</groupId>
             <artifactId>fileobserver-feature</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <scope>runtime</scope>
+            <groupId>org.apache.karaf</groupId>
+            <artifactId>apache-karaf</artifactId>
+            <version>${karaf.version}</version>
+            <type>tar.gz</type>
+        </dependency>
+        <dependency>
+            <scope>runtime</scope>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>standard</artifactId>
+            <version>${karaf.version}</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+        </dependency>
+        <dependency>
+            <scope>runtime</scope>
+            <groupId>org.apache.karaf</groupId>
+            <artifactId>org.apache.karaf.exception</artifactId>
+        </dependency>
+        <dependency>
+            <scope>test</scope>
+            <groupId>ch.sourcepond.testing</groupId>
+            <artifactId>bundle-test-support</artifactId>
+        </dependency>
+        <dependency>
+            <scope>test</scope>
+            <groupId>org.apache.servicemix.bundles</groupId>
+            <artifactId>org.apache.servicemix.bundles.javax-inject</artifactId>
+        </dependency>
+        <dependency>
+            <scope>test</scope>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-spi</artifactId>
+        </dependency>
         <dependency>
             <scope>test</scope>
             <groupId>org.ops4j.pax.exam</groupId>
