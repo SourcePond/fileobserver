@@ -79,6 +79,11 @@
             <version>${org.eclipse.osgi.version}</version>
         </dependency>
         <dependency>
+            <scope>runtime</scope>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.framework</artifactId>
+        </dependency>
+        <dependency>
             <scope>test</scope>
             <groupId>ch.sourcepond.testing</groupId>
             <artifactId>bundle-test-support</artifactId>
