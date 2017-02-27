@@ -28,12 +28,14 @@ public interface FileObserver {
      * Indicates, that the file specified has been modified. Modified means,
      * that the file has been created or updated. This method takes two parameters:
      * </p>
+     * <p>
      * <h3>Relative path</h3>
      * This path is relative to the watched directory. This path <em>cannot</em> be used to read any data.
      * The relative path always remains the same for a specific file, even when the underlying
      * watched directory (and therefore the absolute file) has been updated to point to another location.
      * Because this, use the relative path for any caching of objects created out of the file data.
      * </p>
+     * <p>
      * <h3>Readable Path</h3>
      * This is the (absolute) path which can be opened for reading. The readable path of a file can change in
      * case when the underlying watched directory (and therefore the absolute file) is updated to point to another
@@ -56,14 +58,11 @@ public interface FileObserver {
 
     /**
      * <p>Indicates, that the file or directory with the relative path specified has been discarded for some reason
-     * (file/directory has been deleted, watched directory is being unregistered etc.).
-     *
-     * In case a directory is being discarded, only that directory will be delivered to this method. This means,
+     * (file/directory has been deleted, watched directory is being unregistered etc.). In case a directory is being discarded, only that directory will be delivered to this method. This means,
      * that this method will <em>not</em> be called for any file or sub-directory within the discarded directory.</p>
      *
      * <p>Following code snipped should give an idea how to properly remove all resources which are related to
      * the path specified from a cache:
-     * </p>
      * <pre>
      *      final Map&lt;FileKey, Object&gt; cache = ...
      *
