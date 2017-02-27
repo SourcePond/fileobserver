@@ -61,20 +61,20 @@ public interface WatchedDirectory {
      * (see {@link #addObserver(RelocationObserver)}).
      *
      * @param pDirectory Directory which should be watched from now on; must not be {@code null}.
-     * @throws NullPointerException Thrown, if the directory specified is {@code null}.
-     * @throws IllegalArgumentException, Thrown, if the path specified is not a directory.
+     * @throws NullPointerException     Thrown, if the directory specified is {@code null}.
+     * @throws IllegalArgumentException Thrown, if the path specified is not a directory.
      */
     void relocate(Path pDirectory);
 
     /**
      * <p>Creates a new {@link WatchedDirectory} instance. The directory specified can later
      * be changed through {@link #relocate(Path)} if necessary.</p>
-     *
+     * <p>
      * <p>Note: the key specified should not be changed during the lifetime
      * of the returned {@link WatchedDirectory}, otherwise unpredictable behavior
      * is very likely to occur. To avoid this, use an immutable object like an {@link Enum} or a {@link String}.</p>
      *
-     * @param pKey Key of the watched-directory, must not be {@code null}.
+     * @param pKey       Key of the watched-directory, must not be {@code null}.
      * @param pDirectory Initial directory to be watched, must not be {@code null}.
      * @return New {@link WatchedDirectory} instance, never {@code null}
      * @throws NullPointerException     Thrown, if either to key or the path specified is {@code null}.
