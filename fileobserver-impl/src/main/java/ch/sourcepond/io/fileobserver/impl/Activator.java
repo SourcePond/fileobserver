@@ -28,8 +28,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class Activator extends SmartSwitchActivatorBase {
     private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
-    private final ConcurrentMap<Enum<?>, Path> keyToPaths = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Path, Collection<Enum<?>>> pathToKeys = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Object, Path> keyToPaths = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Path, Collection<Object>> pathToKeys = new ConcurrentHashMap<>();
     private final ExecutorServices executorServices;
     private final FsDirectoryFactory fsDirectoryFactory;
     private final RegistrarFactory registrarFactory;
@@ -105,7 +105,7 @@ public class Activator extends SmartSwitchActivatorBase {
             LOG.warn("Watched directory is null; nothing to bind");
         } else {
             try {
-                final Enum<?> key = pWatchedDirectory.getKey();
+                final Object key = pWatchedDirectory.getKey();
                 final Path directory = pWatchedDirectory.getDirectory();
                 requireNonNull(key, "Key is null");
                 requireNonNull(directory, "Directory is null");
@@ -118,7 +118,7 @@ public class Activator extends SmartSwitchActivatorBase {
                 final Path previous = keyToPaths.put(key, directory);
 
                 if (!directory.equals(previous)) {
-                    final Collection<Enum<?>> keys = pathToKeys.computeIfAbsent(directory, d -> new CopyOnWriteArraySet<>());
+                    final Collection<Object> keys = pathToKeys.computeIfAbsent(directory, d -> new CopyOnWriteArraySet<>());
 
                     // If the key is newly added, open a watch-service for the directory
                     if (keys.add(key) && keys.size() == 1) {
@@ -139,15 +139,15 @@ public class Activator extends SmartSwitchActivatorBase {
         if (null == pWatchedDirectory) {
             LOG.warn("Watched directory is null; nothing to unbind");
         } else {
-            final Enum<?> key = pWatchedDirectory.getKey();
+            final Object key = pWatchedDirectory.getKey();
             requireNonNull(key, "Key is null");
             disableIfNecessary(key, keyToPaths.remove(key));
         }
     }
 
-    private void disableIfNecessary(final Enum<?> pKey, final Path pToBeDisabled) {
+    private void disableIfNecessary(final Object pKey, final Path pToBeDisabled) {
         if (null != pToBeDisabled) {
-            final Collection<Enum<?>> keys = pathToKeys.getOrDefault(pToBeDisabled, emptyList());
+            final Collection<Object> keys = pathToKeys.getOrDefault(pToBeDisabled, emptyList());
 
             // If no more keys are registered for the previous directory, its watch-key
             // needs to be cancelled.

@@ -16,7 +16,18 @@ package ch.sourcepond.io.fileobserver.api;
 import java.nio.file.Path;
 
 /**
+ * A file key combines a watched root directory (see {@link #key()}) and relative path within
+ * that directory (see {@link #relativePath()}) to a unique identifier. Use a file key to associate a resource
+ * to a specific file.
  *
+ * The reason why not only the relative path is used as unique file key is simple: the fileobserver implementation
+ * must be able to watch more than one directory at once. This means that the same relative path possibly exists in
+ * more than one watched root directory.
+ *
+ * Another question may rise why an {@link Object} identifies a watched directory instead of an (absolute) {@link Path}.
+ * The answer is that it must be possible to relocate a watched root directory during runtime. If a path would be used
+ * to identify a watched root directory, it would not be possible for a {@link FileObserver} to determine which
+ * resource is associated with the relocated directory.
  */
 public interface FileKey {
 
@@ -25,7 +36,9 @@ public interface FileKey {
      *
      * @return
      */
-    Enum<?> key();
+    Object key();
 
     Path relativePath();
+
+    boolean isSubKey(FileKey pOther);
 }

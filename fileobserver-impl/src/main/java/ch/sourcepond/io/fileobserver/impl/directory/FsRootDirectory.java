@@ -15,10 +15,10 @@ import java.util.Collection;
  */
 public class FsRootDirectory extends FsBaseDirectory {
     private final FsDirectoryFactory factory;
-    private final Enum<?> watchedDirectoryKey;
+    private final Object watchedDirectoryKey;
     private volatile WatchKey watchKey;
 
-    FsRootDirectory(final FsDirectoryFactory pFactory, final Enum<?> pWatchedDirectoryKey) {
+    FsRootDirectory(final FsDirectoryFactory pFactory, final Object pWatchedDirectoryKey) {
         factory = pFactory;
         watchedDirectoryKey = pWatchedDirectoryKey;
     }
@@ -33,7 +33,7 @@ public class FsRootDirectory extends FsBaseDirectory {
     }
 
     @Override
-    Enum<?> getWatchedDirectoryKey() {
+    Object getWatchedDirectoryKey() {
         return watchedDirectoryKey;
     }
 

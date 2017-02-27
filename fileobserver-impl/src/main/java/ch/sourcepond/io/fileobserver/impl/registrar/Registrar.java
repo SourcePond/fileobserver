@@ -70,7 +70,7 @@ public class Registrar implements Closeable {
         children.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObservers));
     }
 
-    public void rootAdded(final Enum<?> pWatchedDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
+    public void rootAdded(final Object pWatchedDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
         if (!children.containsKey(pDirectory)) {
             final FsRootDirectory rootDir = directoryFactory.newRoot(pWatchedDirectoryKey);
             if (null == children.putIfAbsent(pDirectory, rootDir)) {

@@ -42,7 +42,7 @@ public class FsDirectories implements Closeable {
         registrar.initiallyInformHandler(asList(pHandler));
     }
 
-    public void rootAdded(final Enum<?> pWatchedDirectoryKeyOrNull, final Path pDirectory, final Collection<FileObserver> pObservers) {
+    public void rootAdded(final Object pWatchedDirectoryKeyOrNull, final Path pDirectory, final Collection<FileObserver> pObservers) {
         registrar.rootAdded(pWatchedDirectoryKeyOrNull, pDirectory, pObservers);
     }
 

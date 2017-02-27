@@ -41,7 +41,7 @@ public class FsDirectory extends FsBaseDirectory {
     }
 
     @Override
-    Enum<?> getWatchedDirectoryKey() {
+    Object getWatchedDirectoryKey() {
         return parent.getWatchedDirectoryKey();
     }
 

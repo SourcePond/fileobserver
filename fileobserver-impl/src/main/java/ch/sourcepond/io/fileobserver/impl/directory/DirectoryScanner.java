@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.DelayQueue;
 
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -86,7 +85,7 @@ public class DirectoryScanner implements Runnable {
         LOG.info("Directory scanner stopped");
     }
 
-    private void processPath(final WatchEvent.Kind pKind, final Path child) {
+    private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
         try {
             // The filename is the
             // context of the event.

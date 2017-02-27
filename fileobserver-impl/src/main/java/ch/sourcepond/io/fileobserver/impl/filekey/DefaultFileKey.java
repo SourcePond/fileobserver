@@ -22,16 +22,16 @@ import java.util.Objects;
  *
  */
 final class DefaultFileKey implements FileKey {
-    private final Enum<?> key;
+    private final Object key;
     private final Path relativePath;
 
-    public DefaultFileKey(final Enum<?> pKey, final Path pRelativePath) {
+    public DefaultFileKey(final Object pKey, final Path pRelativePath) {
         key = pKey;
         relativePath = pRelativePath;
     }
 
     @Override
-    public Enum<?> key() {
+    public Object key() {
         return key;
     }
 
@@ -47,6 +47,11 @@ final class DefaultFileKey implements FileKey {
         final DefaultFileKey that = (DefaultFileKey) o;
         return Objects.equals(key, that.key) &&
                 Objects.equals(relativePath, that.relativePath);
+    }
+
+    @Override
+    public boolean isSubKey(final FileKey pOther) {
+        return key().equals(pOther.key()) && pOther.relativePath().startsWith(relativePath());
     }
 
     @Override

@@ -48,7 +48,7 @@ public class FsDirectoryFactory {
         executorServices = pExecutorServices;
     }
 
-    public FsRootDirectory newRoot(final Enum<?> pWatchedDirectoryKeyOrNull) {
+    public FsRootDirectory newRoot(final Object pWatchedDirectoryKeyOrNull) {
         return new FsRootDirectory(this, pWatchedDirectoryKeyOrNull);
     }
 
@@ -60,7 +60,7 @@ public class FsDirectoryFactory {
         return resourcesFactory.create(pAlgorithm, pFile);
     }
 
-    FileKey newKey(final Enum<?> pWatchedDirectoryKey, final Path pRelativePath) {
+    FileKey newKey(final Object pWatchedDirectoryKey, final Path pRelativePath) {
         return fileKeyFactory.newKey(pWatchedDirectoryKey, pRelativePath);
     }
 

@@ -49,7 +49,7 @@ public abstract class FsBaseDirectory {
      *
      * @return Watched directory key, never {@code null}
      */
-    abstract Enum<?> getWatchedDirectoryKey();
+    abstract Object getWatchedDirectoryKey();
 
     Path getPath() {
         return (Path) getWatchKey().watchable();

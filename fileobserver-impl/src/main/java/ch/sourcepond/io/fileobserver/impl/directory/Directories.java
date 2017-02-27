@@ -111,7 +111,7 @@ public class Directories {
         return fsdirs;
     }
 
-    public void addRoot(final Enum<?> pWatchedDirectoryKey, final Path pDirectory) throws IOException {
+    public void addRoot(final Object pWatchedDirectoryKey, final Path pDirectory) throws IOException {
         try {
             children.computeIfAbsent(pDirectory.getFileSystem(),
                     this::newDirectories).rootAdded(pWatchedDirectoryKey, pDirectory, observers);
@@ -153,7 +153,7 @@ public class Directories {
 
         final FileKey key = fsdir.newKey(pPath);
         observers.forEach(o -> executorServices.getObserverExecutor().execute(
-                () -> o.deleted(key)));
+                () -> o.discard(key)));
     }
 
     // Lifecycle method for Felix DM

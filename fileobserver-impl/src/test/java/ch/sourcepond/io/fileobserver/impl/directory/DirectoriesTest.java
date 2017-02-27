@@ -139,7 +139,7 @@ public class DirectoriesTest {
 
         directories.addObserver(observer);
         directories.pathDeleted(testPath);
-        verify(observer, timeout(500)).deleted(fileKey);
+        verify(observer, timeout(500)).discard(fileKey);
 
         // Root should still be the same
         directories.addRoot(TEST_KEY, rootDirectory);
