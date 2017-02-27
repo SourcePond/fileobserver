@@ -32,9 +32,9 @@ import java.nio.file.Path;
 public interface FileKey {
 
     /**
-     * The key represents a watched root directory.
+     * The key which represents a watched root directory.
      *
-     * @return
+     * @return Key, never {@code null}
      */
     Object key();
 
