@@ -26,6 +26,7 @@
     </scm>
 
     <properties>
+        <org.eclipse.osgi.version>3.10.101.v20150820-1432</org.eclipse.osgi.version>
         <repo.project>fileobserver</repo.project>
     </properties>
 
@@ -70,6 +71,12 @@
             <scope>runtime</scope>
             <groupId>org.apache.karaf</groupId>
             <artifactId>org.apache.karaf.exception</artifactId>
+        </dependency>
+        <dependency>
+            <scope>runtime</scope>
+            <groupId>org.eclipse.tycho</groupId>
+            <artifactId>org.eclipse.osgi</artifactId>
+            <version>${org.eclipse.osgi.version}</version>
         </dependency>
         <dependency>
             <scope>test</scope>
