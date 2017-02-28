@@ -42,7 +42,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
-    private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Path, Directory> roots = new ConcurrentHashMap<>();
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
     private final WatchService watchService;
@@ -67,7 +67,7 @@ public class DedicatedFileSystem implements Closeable {
     }
 
     public void initiallyInformHandler(final FileObserver pObserver) {
-        dirs.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObserver));
+        roots.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObserver));
     }
 
     /**
@@ -79,17 +79,17 @@ public class DedicatedFileSystem implements Closeable {
      */
     public void rootAdded(final Object pDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
         // Check if there is already a directory available for the path specified.
-        Directory dir = dirs.get(pDirectory);
+        Directory dir = roots.get(pDirectory);
 
         if (dir == null) {
             // If no directory is registered for the path specified, create a new root-directory.
             dir = directoryFactory.newRoot();
 
-            if (null == dirs.putIfAbsent(pDirectory, dir)) {
+            if (null == roots.putIfAbsent(pDirectory, dir)) {
                 // Register the path with the watch-service and set the watch-key on the
                 // newly create root-directory
                 ((RootDirectory) dir).setWatchKey(register(pDirectory));
-                dirs.put(pDirectory, dir);
+                roots.put(pDirectory, dir);
 
                 // Asynchronously register all sub-directories with the watch-service, and,
                 // inform the registered FileObservers
@@ -108,14 +108,14 @@ public class DedicatedFileSystem implements Closeable {
 
                 @Override
                 public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                    dirs.get(file.getParent()).forceInformObservers(pObserver, file);
+                    roots.get(file.getParent()).forceInformObservers(pObserver, file);
                     return CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                    dirs.computeIfAbsent(dir,
-                            p -> directoryFactory.newBranch(dirs.get(dir.getParent()), register(dir)));
+                    roots.computeIfAbsent(dir,
+                            p -> directoryFactory.newBranch(roots.get(dir.getParent()), register(dir)));
                     return CONTINUE;
                 }
             });
@@ -126,10 +126,10 @@ public class DedicatedFileSystem implements Closeable {
     }
 
     public boolean directoryDeleted(final Path pDirectory) {
-        final Directory dir = dirs.remove(pDirectory);
+        final Directory dir = roots.remove(pDirectory);
         if (null != dir) {
             dir.cancelKey();
-            for (final Iterator<Map.Entry<Path, Directory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
+            for (final Iterator<Map.Entry<Path, Directory>> it = roots.entrySet().iterator(); it.hasNext(); ) {
                 final Map.Entry<Path, Directory> entry = it.next();
                 if (entry.getKey().startsWith(pDirectory)) {
                     entry.getValue().cancelKey();
@@ -137,11 +137,11 @@ public class DedicatedFileSystem implements Closeable {
                 }
             }
         }
-        return dirs.isEmpty();
+        return roots.isEmpty();
     }
 
     public Directory getParentDirectory(final Path pFile) {
-        final Directory dir = dirs.get(pFile.getParent());
+        final Directory dir = roots.get(pFile.getParent());
         if (null == dir) {
             throw new NullPointerException(format("No parent directory found for file %s", pFile));
         }
@@ -155,7 +155,7 @@ public class DedicatedFileSystem implements Closeable {
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         } finally {
-            dirs.clear();
+            roots.clear();
         }
     }
 
