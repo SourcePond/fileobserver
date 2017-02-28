@@ -29,18 +29,18 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  *
  */
-public class FsDirectory extends FsBaseDirectory {
-    private final FsBaseDirectory parent;
+public class ChildDirectory extends Directory {
+    private final Directory parent;
     private final WatchKey watchKey;
     private volatile Set<Object> directoryKeysOrNull;
 
-    FsDirectory(final FsBaseDirectory pParent, final WatchKey pWatchKey) {
+    ChildDirectory(final Directory pParent, final WatchKey pWatchKey) {
         parent = pParent;
         watchKey = pWatchKey;
     }
 
     @Override
-    void addDirectoryKey(final Object pKey) {
+    public void addDirectoryKey(final Object pKey) {
         if (directoryKeysOrNull == null) {
             synchronized (this) {
                 if (directoryKeysOrNull == null) {

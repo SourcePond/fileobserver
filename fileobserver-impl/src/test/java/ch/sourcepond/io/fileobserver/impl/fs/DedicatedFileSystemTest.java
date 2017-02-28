@@ -1,8 +1,11 @@
-package ch.sourcepond.io.fileobserver.impl.directory;
+package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+import ch.sourcepond.io.fileobserver.impl.directory.ChildDirectory;
+import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -26,7 +29,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by rolandhauser on 06.02.17.
  */
-public class FsDirectoriesTest extends CopyResourcesTest {
+public class DedicatedFileSystemTest extends CopyResourcesTest {
     private class RootWatchKeyMatcher implements ArgumentMatcher<WatchKey> {
 
         @Override
@@ -47,29 +50,29 @@ public class FsDirectoriesTest extends CopyResourcesTest {
 
     private final ExecutorServices executorServices = mock(ExecutorServices.class);
     private final ExecutorService executorService = Executors.newCachedThreadPool();
-    private final FsDirectoryFactory directoryFactory = mock(FsDirectoryFactory.class);
-    private final FsDirectoriesFactory fsDirectoriesFactory = new FsDirectoriesFactory(executorServices, directoryFactory);
+    private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
+    private final DedicatedFileSystemFactory dedicatedFileSystemFactory = new DedicatedFileSystemFactory(executorServices, directoryFactory);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
-    private final FsRootDirectory rootFsDir = mock(FsRootDirectory.class);
-    private final FsDirectory subFsDir = mock(FsDirectory.class);
+    private final RootDirectory rootFsDir = mock(RootDirectory.class);
+    private final ChildDirectory subFsDir = mock(ChildDirectory.class);
     private WatchService watchService;
-    private FsDirectories fsDirectories;
+    private DedicatedFileSystem dedicatedFileSystem;
 
     @Before
     public void setup() throws Exception {
         when(executorServices.getDirectoryWalkerExecutor()).thenReturn(executorService);
         when(directoryFactory.newRoot()).thenReturn(rootFsDir);
-        when(directoryFactory.newBranch(same(rootFsDir), argThat(new FsDirectoriesTest.SubDirWatchKeyMatcher()))).thenReturn(subFsDir);
+        when(directoryFactory.newBranch(same(rootFsDir), argThat(new DedicatedFileSystemTest.SubDirWatchKeyMatcher()))).thenReturn(subFsDir);
         watchService = fs.newWatchService();
-        fsDirectories = fsDirectoriesFactory.newDirectories(fs);
-        fsDirectories.rootAdded(TEST_KEY, directory, observers);
+        dedicatedFileSystem = dedicatedFileSystemFactory.newDirectories(fs);
+        dedicatedFileSystem.rootAdded(TEST_KEY, directory, observers);
         sleep(500);
     }
 
     @Test
     public void ignoreSameRoot() {
-        fsDirectories.rootAdded(TEST_KEY, directory, observers);
+        dedicatedFileSystem.rootAdded(TEST_KEY, directory, observers);
 
         // Should have been called exactly once
         verify(directoryFactory).newRoot();
@@ -77,20 +80,20 @@ public class FsDirectoriesTest extends CopyResourcesTest {
 
     @Test
     public void rootAddedFirstWins() throws Exception {
-        when(directoryFactory.newRoot()).thenAnswer(new Answer<FsRootDirectory>() {
+        when(directoryFactory.newRoot()).thenAnswer(new Answer<RootDirectory>() {
             @Override
-            public FsRootDirectory answer(final InvocationOnMock invocation) throws Throwable {
+            public RootDirectory answer(final InvocationOnMock invocation) throws Throwable {
                 sleep(500);
                 return rootFsDir;
             }
         });
-        executorService.execute(() -> fsDirectories.rootAdded(TEST_KEY, directory, observers));
-        executorService.execute(() -> fsDirectories.rootAdded(TEST_KEY, directory, observers));
+        executorService.execute(() -> dedicatedFileSystem.rootAdded(TEST_KEY, directory, observers));
+        executorService.execute(() -> dedicatedFileSystem.rootAdded(TEST_KEY, directory, observers));
 
         sleep(1000);
 
         // Should have been called only once
-        verify(rootFsDir).setWatchKey(argThat(new FsDirectoriesTest.RootWatchKeyMatcher()));
+        verify(rootFsDir).setWatchKey(argThat(new DedicatedFileSystemTest.RootWatchKeyMatcher()));
     }
 
     @Test
@@ -99,52 +102,52 @@ public class FsDirectoriesTest extends CopyResourcesTest {
         deleteResources();
 
         // This should not cause an exception
-        fsDirectories.directoryCreated(directory, observers);
+        dedicatedFileSystem.directoryCreated(directory, observers);
     }
 
     @Test
     public void rootAdded() throws Exception {
-        verify(rootFsDir).setWatchKey(argThat(new FsDirectoriesTest.RootWatchKeyMatcher()));
+        verify(rootFsDir).setWatchKey(argThat(new DedicatedFileSystemTest.RootWatchKeyMatcher()));
         verify(rootFsDir, timeout(500)).forceInformObservers(observers, testfileTxt);
         verify(subFsDir, timeout(500)).forceInformObservers(observers, testfileXml);
     }
 
     @Test
     public void initiallyInformHandler() {
-        fsDirectories.initiallyInformHandler(observer);
+        dedicatedFileSystem.initiallyInformHandler(observer);
         verify(rootFsDir).forceInformAboutAllDirectChildFiles(observer);
         verify(subFsDir).forceInformAboutAllDirectChildFiles(observer);
     }
 
     @Test
     public void rootDirectoryDeleted() {
-        assertTrue(fsDirectories.directoryDeleted(directory));
+        assertTrue(dedicatedFileSystem.directoryDeleted(directory));
         verify(rootFsDir).cancelKey();
         verify(subFsDir).cancelKey();
     }
 
     @Test
     public void subDirectoryDeleted() {
-        assertFalse(fsDirectories.directoryDeleted(subDirectory));
+        assertFalse(dedicatedFileSystem.directoryDeleted(subDirectory));
         verify(rootFsDir, never()).cancelKey();
         verify(subFsDir).cancelKey();
     }
 
     @Test(expected = NullPointerException.class)
     public void getParentDirectoryParentNotExistent() {
-        fsDirectories.getParentDirectory(directory);
+        dedicatedFileSystem.getParentDirectory(directory);
     }
 
     @Test
     public void getParentDirectory() {
-        assertSame(rootFsDir, fsDirectories.getParentDirectory(subDirectory));
-        assertSame(subFsDir, fsDirectories.getParentDirectory(testfileXml));
+        assertSame(rootFsDir, dedicatedFileSystem.getParentDirectory(subDirectory));
+        assertSame(subFsDir, dedicatedFileSystem.getParentDirectory(testfileXml));
     }
 
     @Test
     public void close() throws IOException {
-        fsDirectories.close();
-        assertTrue(fsDirectories.directoryDeleted(directory));
+        dedicatedFileSystem.close();
+        assertTrue(dedicatedFileSystem.directoryDeleted(directory));
         verify(rootFsDir, never()).cancelKey();
     }
 
@@ -152,6 +155,6 @@ public class FsDirectoriesTest extends CopyResourcesTest {
     public void poll() throws Exception {
         Files.delete(testfileTxt);
         sleep(15000);
-        assertNotNull(fsDirectories.poll());
+        assertNotNull(dedicatedFileSystem.poll());
     }
 }

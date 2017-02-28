@@ -20,14 +20,14 @@ import static org.mockito.Mockito.*;
  * Created by rolandhauser on 13.02.17.
  */
 public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
-    private final FsDirectoryFactory factory = mock(FsDirectoryFactory.class);
+    private final DirectoryFactory factory = mock(DirectoryFactory.class);
     private final FileKey fileKey = mock(FileKey.class);
     private final FileObserver observer = mock(FileObserver.class);
     private WatchService watchService;
     private WatchKey parentWatchKey;
     private WatchKey key;
-    private FsRootDirectory parent;
-    private FsDirectory fsDir;
+    private RootDirectory parent;
+    private ChildDirectory fsDir;
 
     @Before
     public void setup() throws IOException {
@@ -39,10 +39,10 @@ public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
         watchService = fs.newWatchService();
         parentWatchKey = directory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         key = subDirectory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-        parent = new FsRootDirectory(factory);
+        parent = new RootDirectory(factory);
         parent.addDirectoryKey(TEST_KEY);
         parent.setWatchKey(parentWatchKey);
-        fsDir = new FsDirectory(parent, key);
+        fsDir = new ChildDirectory(parent, key);
     }
 
     @After

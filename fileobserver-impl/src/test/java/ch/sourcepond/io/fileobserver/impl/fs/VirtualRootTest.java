@@ -1,8 +1,12 @@
-package ch.sourcepond.io.fileobserver.impl.directory;
+package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+import ch.sourcepond.io.fileobserver.impl.directory.ChildDirectory;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +31,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by rolandhauser on 06.02.17.
  */
-public class DirectoriesTest {
+public class VirtualRootTest {
 
     private class ObserverCollectionMatcher implements ArgumentMatcher<Collection<FileObserver>> {
 
@@ -38,9 +42,9 @@ public class DirectoriesTest {
         }
     }
 
-    private final FsDirectoriesFactory fsDirectoriesFactory = mock(FsDirectoriesFactory.class);
-    private final FsDirectories fsDirectories = mock(FsDirectories.class);
-    private final FsDirectory fsDirectory = mock(FsDirectory.class);
+    private final DedicatedFileSystemFactory dedicatedFileSystemFactory = mock(DedicatedFileSystemFactory.class);
+    private final DedicatedFileSystem dedicatedFileSystem = mock(DedicatedFileSystem.class);
+    private final ChildDirectory childDirectory = mock(ChildDirectory.class);
     private final WatchService watchService = mock(WatchService.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path rootDirectory = mock(Path.class);
@@ -52,10 +56,10 @@ public class DirectoriesTest {
     private final Collection<FileKey> fileKeys = asList(fileKey);
     private final FileObserver observer = mock(FileObserver.class);
     private final ArgumentMatcher<Collection<FileObserver>> observerMatcher = c -> c.size() == 1 && c.contains(observer);
-    private final List<FsDirectories> roots = mock(List.class);
+    private final List<DedicatedFileSystem> roots = mock(List.class);
     private final ExecutorServices executorServices = mock(ExecutorServices.class);
     private final ExecutorService observerExecutor = Executors.newSingleThreadExecutor();
-    private Directories directories = new Directories(fsDirectoriesFactory, executorServices, roots);
+    private VirtualRoot virtualRoot = new VirtualRoot(dedicatedFileSystemFactory, executorServices, roots);
 
     @Before
     public void setup() throws IOException {
@@ -63,13 +67,13 @@ public class DirectoriesTest {
         when(rootDirectory.getFileSystem()).thenReturn(fs);
         when(testPath.getFileSystem()).thenReturn(fs);
         when(fs.newWatchService()).thenReturn(watchService);
-        when(fsDirectoriesFactory.newDirectories(fs)).thenReturn(fsDirectories);
+        when(dedicatedFileSystemFactory.newDirectories(fs)).thenReturn(dedicatedFileSystem);
         when(fs.provider()).thenReturn(provider);
         when(provider.readAttributes(rootDirectory, BasicFileAttributes.class)).thenReturn(rootDirectoryAttrs);
         when(rootDirectoryAttrs.isDirectory()).thenReturn(true);
         when(provider.readAttributes(testPath, BasicFileAttributes.class)).thenReturn(attrs);
-        when(fsDirectory.createKeys(testPath)).thenReturn(fileKeys);
-        directories.addRoot(TEST_KEY, rootDirectory);
+        when(childDirectory.createKeys(testPath)).thenReturn(fileKeys);
+        virtualRoot.addRoot(TEST_KEY, rootDirectory);
     }
 
     @After
@@ -79,18 +83,18 @@ public class DirectoriesTest {
 
     @Test
     public void addRoot() throws IOException {
-        directories.addObserver(observer);
-        verify(fsDirectories).rootAdded(same(TEST_KEY), same(rootDirectory), argThat(observerMatcher));
+        virtualRoot.addObserver(observer);
+        verify(dedicatedFileSystem).rootAdded(same(TEST_KEY), same(rootDirectory), argThat(observerMatcher));
     }
 
     @Test
     public void addRootIOExceptionOccurred() throws IOException {
-        directories = new Directories(fsDirectoriesFactory, executorServices, roots);
+        virtualRoot = new VirtualRoot(dedicatedFileSystemFactory, executorServices, roots);
 
         final IOException expected = new IOException();
-        doThrow(expected).when(fsDirectoriesFactory).newDirectories(fs);
+        doThrow(expected).when(dedicatedFileSystemFactory).newDirectories(fs);
         try {
-            directories.addRoot(TEST_KEY, rootDirectory);
+            virtualRoot.addRoot(TEST_KEY, rootDirectory);
             fail("Exception expected");
         } catch (final IOException e) {
             assertSame(expected, e.getCause().getCause());
@@ -99,82 +103,82 @@ public class DirectoriesTest {
 
     @Test
     public void addRemoveObserver() {
-        when(fsDirectories.getParentDirectory(testPath)).thenReturn(fsDirectory);
-        directories.addObserver(observer);
-        verify(fsDirectories).initiallyInformHandler(observer);
+        when(dedicatedFileSystem.getParentDirectory(testPath)).thenReturn(childDirectory);
+        virtualRoot.addObserver(observer);
+        verify(dedicatedFileSystem).initiallyInformHandler(observer);
 
         // This should not cause an action
-        directories.addObserver(observer);
+        virtualRoot.addObserver(observer);
         verifyNoMoreInteractions(observer);
 
         // After remove we should get an action again
-        directories.removeObserver(observer);
-        directories.addObserver(observer);
-        verify(fsDirectories, times(2)).initiallyInformHandler(observer);
+        virtualRoot.removeObserver(observer);
+        virtualRoot.addObserver(observer);
+        verify(dedicatedFileSystem, times(2)).initiallyInformHandler(observer);
     }
 
     @Test
     public void pathCreatedPathIsADirectory() throws Exception {
         when(attrs.isDirectory()).thenReturn(true);
-        directories.addObserver(observer);
-        directories.pathModified(testPath);
-        verify(fsDirectories).directoryCreated(same(testPath), argThat(observerMatcher));
+        virtualRoot.addObserver(observer);
+        virtualRoot.pathModified(testPath);
+        verify(dedicatedFileSystem).directoryCreated(same(testPath), argThat(observerMatcher));
     }
 
     @Test
     public void pathDeleted() throws Exception {
-        when(fsDirectories.getParentDirectory(testPath)).thenReturn(fsDirectory);
-        when(fsDirectories.directoryDeleted(testPath)).thenReturn(true);
+        when(dedicatedFileSystem.getParentDirectory(testPath)).thenReturn(childDirectory);
+        when(dedicatedFileSystem.directoryDeleted(testPath)).thenReturn(true);
 
-        directories.addObserver(observer);
-        directories.pathDeleted(testPath);
+        virtualRoot.addObserver(observer);
+        virtualRoot.pathDeleted(testPath);
         verify(observer, timeout(500)).discard(fileKey);
 
         // Root should still be the same
-        directories.addRoot(TEST_KEY, rootDirectory);
+        virtualRoot.addRoot(TEST_KEY, rootDirectory);
 
         // Should have been called twice
-        verify(fsDirectoriesFactory, times(2)).newDirectories(fs);
+        verify(dedicatedFileSystemFactory, times(2)).newDirectories(fs);
     }
 
     @Test
     public void destroy() throws Exception {
-        directories.stop();
-        verify(fsDirectories).close();
+        virtualRoot.stop();
+        verify(dedicatedFileSystem).close();
 
-        directories.addRoot(TEST_KEY, rootDirectory);
+        virtualRoot.addRoot(TEST_KEY, rootDirectory);
 
         // Should have been called twice
-        verify(fsDirectoriesFactory, times(2)).newDirectories(fs);
+        verify(dedicatedFileSystemFactory, times(2)).newDirectories(fs);
     }
 
     @Test
     public void closeFsDirectoriesIsNull() throws Exception {
         // Should not cause an exception
-        directories.close(null);
-        directories.addRoot(TEST_KEY, rootDirectory);
+        virtualRoot.close(null);
+        virtualRoot.addRoot(TEST_KEY, rootDirectory);
 
         // Should have been called exactly once
-        verify(fsDirectoriesFactory).newDirectories(fs);
+        verify(dedicatedFileSystemFactory).newDirectories(fs);
     }
 
     @Test
     public void closeFsDirectories() throws Exception {
-        directories.close(fsDirectories);
-        verify(fsDirectories).close();
-        verify(roots).remove(fsDirectories);
+        virtualRoot.close(dedicatedFileSystem);
+        verify(dedicatedFileSystem).close();
+        verify(roots).remove(dedicatedFileSystem);
 
-        directories.addRoot(TEST_KEY, rootDirectory);
+        virtualRoot.addRoot(TEST_KEY, rootDirectory);
 
         // Should have been called twice
-        verify(fsDirectoriesFactory, times(2)).newDirectories(fs);
+        verify(dedicatedFileSystemFactory, times(2)).newDirectories(fs);
     }
 
     @Test
     public void fileModified() {
-        when(fsDirectories.getParentDirectory(testPath)).thenReturn(fsDirectory);
-        directories.addObserver(observer);
-        directories.pathModified(testPath);
-        verify(fsDirectory).informIfChanged(argThat(observerMatcher), same(testPath));
+        when(dedicatedFileSystem.getParentDirectory(testPath)).thenReturn(childDirectory);
+        virtualRoot.addObserver(observer);
+        virtualRoot.pathModified(testPath);
+        verify(childDirectory).informIfChanged(argThat(observerMatcher), same(testPath));
     }
 }

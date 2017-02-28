@@ -17,17 +17,17 @@ import static java.util.stream.Collectors.toList;
 /**
  * Created by rolandhauser on 10.02.17.
  */
-public class FsRootDirectory extends FsBaseDirectory {
+public class RootDirectory extends Directory {
     private final Set<Object> directoryKeys = new CopyOnWriteArraySet<>();
-    private final FsDirectoryFactory factory;
+    private final DirectoryFactory factory;
     private volatile WatchKey watchKey;
 
-    FsRootDirectory(final FsDirectoryFactory pFactory) {
+    RootDirectory(final DirectoryFactory pFactory) {
         factory = pFactory;
     }
 
     @Override
-    void addDirectoryKey(final Object pKey) {
+    public void addDirectoryKey(final Object pKey) {
         directoryKeys.add(pKey);
     }
 

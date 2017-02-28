@@ -37,12 +37,12 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-public abstract class FsBaseDirectory {
-    private static final Logger LOG = getLogger(FsDirectory.class);
+public abstract class Directory {
+    private static final Logger LOG = getLogger(ChildDirectory.class);
     static final long TIMEOUT = 2000;
     private final ConcurrentMap<Path, Resource> resources = new ConcurrentHashMap<>();
 
-    abstract void addDirectoryKey(Object pKey);
+    public abstract void addDirectoryKey(Object pKey);
 
     abstract Collection<Object> getDirectoryKeys();
 
@@ -70,7 +70,7 @@ public abstract class FsBaseDirectory {
 
     public abstract void forceInformObservers(Collection<FileObserver> pObservers, Path pFile);
 
-    void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
+    public void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
         // TODO: Replace interval with configurable value
         resources.computeIfAbsent(pFile,
                 f -> newResource(SHA256, pFile)).update(TIMEOUT,

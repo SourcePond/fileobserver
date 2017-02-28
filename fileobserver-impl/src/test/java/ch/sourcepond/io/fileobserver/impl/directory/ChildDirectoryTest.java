@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutorService;
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY1;
-import static ch.sourcepond.io.fileobserver.impl.directory.FsDirectory.TIMEOUT;
+import static ch.sourcepond.io.fileobserver.impl.directory.ChildDirectory.TIMEOUT;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.*;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by rolandhauser on 08.02.17.
  */
-public class FsDirectoryTest {
+public class ChildDirectoryTest {
     private static final String ANY_RELATIVIZED_PATH = "anyPath";
     private final ExecutorServices executorServices = mock(ExecutorServices.class);
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
@@ -38,7 +38,7 @@ public class FsDirectoryTest {
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
-    private final FsDirectoryFactory factory = new FsDirectoryFactory(resourcesFactory, fileKeyFactory, executorServices);
+    private final DirectoryFactory factory = new DirectoryFactory(resourcesFactory, fileKeyFactory, executorServices);
     private final WatchKey watchKey = mock(WatchKey.class);
     private final WatchKey parentWatchKey = mock(WatchKey.class);
     private final Path parentPath = mock(Path.class);
@@ -49,8 +49,8 @@ public class FsDirectoryTest {
     private final Checksum checksum2 = mock(Checksum.class);
     private final Resource resource = mock(Resource.class);
     private final FileKey key = mock(FileKey.class);
-    private final FsRootDirectory parent = factory.newRoot();
-    private final FsDirectory child = factory.newBranch(parent, watchKey);
+    private final RootDirectory parent = factory.newRoot();
+    private final ChildDirectory child = factory.newBranch(parent, watchKey);
 
     @Before
     public void setup() {

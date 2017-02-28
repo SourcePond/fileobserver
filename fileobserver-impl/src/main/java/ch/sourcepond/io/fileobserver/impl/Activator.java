@@ -16,10 +16,10 @@ package ch.sourcepond.io.fileobserver.impl;
 import ch.sourcepond.commons.smartswitch.lib.SmartSwitchActivatorBase;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.directory.Directories;
+import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
-import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoriesFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
+import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.apache.felix.dm.DependencyManager;
 import org.osgi.framework.BundleContext;
@@ -53,30 +53,30 @@ public class Activator extends SmartSwitchActivatorBase {
     private final Map<Path, Collection<Object>> pathToKeys = new HashMap<>();
 
     private final ExecutorServices executorServices;
-    private final FsDirectoryFactory fsDirectoryFactory;
-    private final FsDirectoriesFactory fsDirectoriesFactory;
-    private final Directories directories;
+    private final DirectoryFactory directoryFactory;
+    private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
+    private final VirtualRoot virtualRoot;
     private final DirectoryScanner directoryScanner;
 
     // Constructor for OSGi framework
     public Activator() {
         executorServices = new ExecutorServices();
-        fsDirectoryFactory = new FsDirectoryFactory(executorServices);
-        fsDirectoriesFactory = new FsDirectoriesFactory(executorServices, fsDirectoryFactory);
-        directories = new Directories(executorServices, fsDirectoryFactory);
-        directoryScanner = new DirectoryScanner(directories);
+        directoryFactory = new DirectoryFactory(executorServices);
+        dedicatedFileSystemFactory = new DedicatedFileSystemFactory(executorServices, directoryFactory);
+        virtualRoot = new VirtualRoot(executorServices, directoryFactory);
+        directoryScanner = new DirectoryScanner(virtualRoot);
     }
 
     // Constructor for testing
     public Activator(final ExecutorServices pExecutorServices,
-                     final FsDirectoryFactory pFsDirectoryFactory,
-                     final FsDirectoriesFactory pRegistrarFactory,
-                     final Directories pDirectories,
+                     final DirectoryFactory pDirectoryFactory,
+                     final DedicatedFileSystemFactory pRegistrarFactory,
+                     final VirtualRoot pVirtualRoot,
                      final DirectoryScanner pDirectoryScanner) {
         executorServices = pExecutorServices;
-        fsDirectoryFactory = pFsDirectoryFactory;
-        fsDirectoriesFactory = pRegistrarFactory;
-        directories = pDirectories;
+        directoryFactory = pDirectoryFactory;
+        dedicatedFileSystemFactory = pRegistrarFactory;
+        virtualRoot = pVirtualRoot;
         directoryScanner = pDirectoryScanner;
     }
 
@@ -84,7 +84,7 @@ public class Activator extends SmartSwitchActivatorBase {
     public void destroy(final BundleContext context, final DependencyManager manager) throws Exception {
         super.destroy(context, manager);
         directoryScanner.stop();
-        directories.stop();
+        virtualRoot.stop();
     }
 
     @Override
@@ -102,13 +102,13 @@ public class Activator extends SmartSwitchActivatorBase {
                         build(() -> Executors.newCachedThreadPool()).setAutoConfig("directoryWalkerExecutor")
                 ));
         dependencyManager.add(createComponent().
-                setImplementation(fsDirectoryFactory).
+                setImplementation(directoryFactory).
                 add(createServiceDependency().
                         setService(ResourcesFactory.class).
                         setRequired(true)
                 ));
         dependencyManager.add(createComponent().
-                setImplementation(directories).
+                setImplementation(virtualRoot).
                 add(createServiceDependency().
                         setService(FileObserver.class).
                         setCallbacks("addObserver", "removeObserver")
@@ -156,7 +156,7 @@ public class Activator extends SmartSwitchActivatorBase {
 
         // If the key is newly added, open a watch-service for the directory
         if (isNew) {
-            directories.addRoot(key, directory);
+            virtualRoot.addRoot(key, directory);
         }
     }
 
@@ -182,7 +182,7 @@ public class Activator extends SmartSwitchActivatorBase {
         }
 
         if (noMoreKeys) {
-            directories.pathDeleted(directory);
+            virtualRoot.pathDeleted(directory);
         }
     }
 }

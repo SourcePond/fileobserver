@@ -1,6 +1,8 @@
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
+import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,16 +25,16 @@ import static org.mockito.Mockito.*;
  */
 public class DirectoryScannerTest extends CopyResourcesTest {
     private static final String NEW_FILE_NAME = "newfile.txt";
-    private final Directories directories = mock(Directories.class);
-    private final FsDirectories child = mock(FsDirectories.class);
-    private final List<FsDirectories> roots = asList(child);
-    private final DirectoryScanner scanner = new DirectoryScanner(directories);
+    private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
+    private final DedicatedFileSystem child = mock(DedicatedFileSystem.class);
+    private final List<DedicatedFileSystem> roots = asList(child);
+    private final DirectoryScanner scanner = new DirectoryScanner(virtualRoot);
     private WatchService watchService;
     private WatchKey key;
 
     @Before
     public void setup() throws Exception {
-        when(directories.getRoots()).thenReturn(roots);
+        when(virtualRoot.getRoots()).thenReturn(roots);
         watchService = fs.newWatchService();
         key = directory.register(watchService, new WatchEvent.Kind[]{
                 ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
@@ -40,14 +42,14 @@ public class DirectoryScannerTest extends CopyResourcesTest {
             Thread.sleep(1000);
             return watchService.poll();
         });
-        directories.addRoot(TEST_KEY, directory);
+        virtualRoot.addRoot(TEST_KEY, directory);
         scanner.start();
     }
 
     @After
     public void tearDown() throws IOException {
         watchService.close();
-        directories.pathDeleted(directory);
+        virtualRoot.pathDeleted(directory);
         scanner.stop();
     }
 
@@ -56,8 +58,8 @@ public class DirectoryScannerTest extends CopyResourcesTest {
             writer.write(UUID.randomUUID().toString());
             Thread.sleep(5000);
         }
-        verify(directories, timeout(15000)).pathModified(pPath);
-        reset(directories);
+        verify(virtualRoot, timeout(15000)).pathModified(pPath);
+        reset(virtualRoot);
     }
 
     @Test
@@ -76,6 +78,6 @@ public class DirectoryScannerTest extends CopyResourcesTest {
         changeContent(file);
         Files.delete(file);
         Thread.sleep(5000);
-        verify(directories).pathDeleted(file);
+        verify(virtualRoot).pathDeleted(file);
     }
 }

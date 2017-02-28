@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
+import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -53,18 +55,18 @@ public class DirectoryScanner implements Runnable {
     private static final Logger LOG = getLogger(DirectoryScanner.class);
 
     /**
-     * We do <em>not</em> work with a {@link DelayQueue} here because the
+     * We do <em>not</em> work with a {@link java.util.concurrent.DelayQueue} here because the
      * timeout of the elements will always be linear. Furthermore, we do
      * not not need synchronization because the queue will always be accessed
      * from the same thread (runner thread).
      */
     private final List<DelayedWatchKey> delayQueue = new LinkedList<>();
-    private final Directories directories;
+    private final VirtualRoot virtualRoot;
     private final Thread thread = new Thread(this, "fileobserver.DirectoryScanner");
 
     // Constructor for testing and BundleActivator
-    public DirectoryScanner(final Directories pDirectories) {
-        directories = pDirectories;
+    public DirectoryScanner(final VirtualRoot pVirtualRoot) {
+        virtualRoot = pVirtualRoot;
     }
 
     // Lifecycle method for Felix DM
@@ -90,9 +92,9 @@ public class DirectoryScanner implements Runnable {
             // The filename is the
             // context of the event.
             if (ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) {
-                directories.pathModified(child);
+                virtualRoot.pathModified(child);
             } else if (ENTRY_DELETE == pKind) {
-                directories.pathDeleted(child);
+                virtualRoot.pathDeleted(child);
             }
         } catch (final Exception e) {
             LOG.error(e.getMessage(), e);
@@ -125,12 +127,12 @@ public class DirectoryScanner implements Runnable {
         }
 
         if (!pWatchKey.reset()) {
-            directories.pathDeleted((Path) pWatchKey.watchable());
+            virtualRoot.pathDeleted((Path) pWatchKey.watchable());
         }
     }
 
-    private boolean queueWatchKeys(final List<FsDirectories> pRoots) {
-        FsDirectories next = null;
+    private boolean queueWatchKeys(final List<DedicatedFileSystem> pRoots) {
+        DedicatedFileSystem next = null;
         WatchKey key;
 
         // We intentionally use a traditional for-loop to keep object creation
@@ -143,7 +145,7 @@ public class DirectoryScanner implements Runnable {
                     delayQueue.add(new DelayedWatchKey(key));
                 }
             } catch (final ClosedWatchServiceException e) {
-                directories.close(next);
+                virtualRoot.close(next);
                 LOG.debug(e.getMessage(), e);
             }
         }
@@ -166,7 +168,7 @@ public class DirectoryScanner implements Runnable {
     @Override
     public void run() {
         // Avoid accessing instance method to often
-        final List<FsDirectories> roots = directories.getRoots();
+        final List<DedicatedFileSystem> roots = virtualRoot.getRoots();
 
         while (!currentThread().isInterrupted()) {
 

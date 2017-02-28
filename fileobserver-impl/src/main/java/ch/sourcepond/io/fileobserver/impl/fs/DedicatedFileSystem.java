@@ -11,10 +11,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.directory;
+package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+import ch.sourcepond.io.fileobserver.impl.directory.Directory;
+import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
@@ -37,14 +40,14 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-public class FsDirectories implements Closeable {
-    private static final Logger LOG = getLogger(FsDirectories.class);
-    private final ConcurrentMap<Path, FsBaseDirectory> dirs = new ConcurrentHashMap<>();
+public class DedicatedFileSystem implements Closeable {
+    private static final Logger LOG = getLogger(DedicatedFileSystem.class);
+    private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ExecutorServices executorServices;
-    private final FsDirectoryFactory directoryFactory;
+    private final DirectoryFactory directoryFactory;
     private final WatchService watchService;
 
-    FsDirectories(final ExecutorServices pExecutorServices, final FsDirectoryFactory pDirectoryFactory, final WatchService pWatchService) {
+    DedicatedFileSystem(final ExecutorServices pExecutorServices, final DirectoryFactory pDirectoryFactory, final WatchService pWatchService) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
         watchService = pWatchService;
@@ -76,7 +79,7 @@ public class FsDirectories implements Closeable {
      */
     public void rootAdded(final Object pDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
         // Check if there is already a directory available for the path specified.
-        FsBaseDirectory dir = dirs.get(pDirectory);
+        Directory dir = dirs.get(pDirectory);
 
         if (dir == null) {
             // If no directory is registered for the path specified, create a new root-directory.
@@ -85,7 +88,7 @@ public class FsDirectories implements Closeable {
             if (null == dirs.putIfAbsent(pDirectory, dir)) {
                 // Register the path with the watch-service and set the watch-key on the
                 // newly create root-directory
-                ((FsRootDirectory) dir).setWatchKey(register(pDirectory));
+                ((RootDirectory) dir).setWatchKey(register(pDirectory));
                 dirs.put(pDirectory, dir);
 
                 // Asynchronously register all sub-directories with the watch-service, and,
@@ -123,11 +126,11 @@ public class FsDirectories implements Closeable {
     }
 
     public boolean directoryDeleted(final Path pDirectory) {
-        final FsBaseDirectory dir = dirs.remove(pDirectory);
+        final Directory dir = dirs.remove(pDirectory);
         if (null != dir) {
             dir.cancelKey();
-            for (final Iterator<Map.Entry<Path, FsBaseDirectory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
-                final Map.Entry<Path, FsBaseDirectory> entry = it.next();
+            for (final Iterator<Map.Entry<Path, Directory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
+                final Map.Entry<Path, Directory> entry = it.next();
                 if (entry.getKey().startsWith(pDirectory)) {
                     entry.getValue().cancelKey();
                     it.remove();
@@ -137,8 +140,8 @@ public class FsDirectories implements Closeable {
         return dirs.isEmpty();
     }
 
-    public FsBaseDirectory getParentDirectory(final Path pFile) {
-        final FsBaseDirectory dir = dirs.get(pFile.getParent());
+    public Directory getParentDirectory(final Path pFile) {
+        final Directory dir = dirs.get(pFile.getParent());
         if (null == dir) {
             throw new NullPointerException(format("No parent directory found for file %s", pFile));
         }

@@ -11,11 +11,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.directory;
+package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+import ch.sourcepond.io.fileobserver.impl.directory.Directory;
+import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,11 +39,11 @@ import static java.nio.file.Files.isDirectory;
 /**
  *
  */
-public class Directories {
-    private static final Logger LOG = LoggerFactory.getLogger(Directories.class);
-    private final ConcurrentMap<FileSystem, FsDirectories> children = new ConcurrentHashMap<>();
+public class VirtualRoot {
+    private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
+    private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = ConcurrentHashMap.newKeySet();
-    private final FsDirectoriesFactory fsDirectoriesFactory;
+    private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
 
     // Injected by Felix DM
     private final ExecutorServices executorServices;
@@ -52,27 +54,27 @@ public class Directories {
      * we must create a new iterator during every loop iteration. This is a potential memory leak
      * and causes unnecessary GC activity.
      */
-    private final List<FsDirectories> roots;
+    private final List<DedicatedFileSystem> roots;
 
     // Constructor for BundleActivator
-    public Directories(final ExecutorServices pExecutorServices, final FsDirectoryFactory pFsDirectoryFactory) {
+    public VirtualRoot(final ExecutorServices pExecutorServices, final DirectoryFactory pDirectoryFactory) {
         executorServices = pExecutorServices;
-        fsDirectoriesFactory = new FsDirectoriesFactory(pExecutorServices, pFsDirectoryFactory);
+        dedicatedFileSystemFactory = new DedicatedFileSystemFactory(pExecutorServices, pDirectoryFactory);
         roots = new CopyOnWriteArrayList<>();
     }
 
     // Constructor for testing
-    public Directories(final FsDirectoriesFactory pFsDirectories,
+    public VirtualRoot(final DedicatedFileSystemFactory pFsDirectories,
                        final ExecutorServices pExecutorServices,
-                       final List<FsDirectories> pRoots) {
-        fsDirectoriesFactory = pFsDirectories;
+                       final List<DedicatedFileSystem> pRoots) {
+        dedicatedFileSystemFactory = pFsDirectories;
         executorServices = pExecutorServices;
         roots = pRoots;
     }
 
     // Composition callback for Felix DM
     public Object[] getComposition() {
-        return new Object[]{ fsDirectoriesFactory, fsDirectoriesFactory.getDirectoryFactory()};
+        return new Object[]{dedicatedFileSystemFactory, dedicatedFileSystemFactory.getDirectoryFactory()};
     }
 
     public void addObserver(final FileObserver pObserver) {
@@ -91,9 +93,9 @@ public class Directories {
         }
     }
 
-    private FsDirectories newDirectories(final FileSystem pFs) {
+    private DedicatedFileSystem newDirectories(final FileSystem pFs) {
         try {
-            final FsDirectories fsdirs = fsDirectoriesFactory.newDirectories(pFs);
+            final DedicatedFileSystem fsdirs = dedicatedFileSystemFactory.newDirectories(pFs);
             roots.add(fsdirs);
             return fsdirs;
         } catch (final IOException e) {
@@ -110,15 +112,15 @@ public class Directories {
         }
     }
 
-    private FsDirectories getFsDirectories(final Path pPath) {
-        final FsDirectories fsdirs = children.get(pPath.getFileSystem());
+    private DedicatedFileSystem getFsDirectories(final Path pPath) {
+        final DedicatedFileSystem fsdirs = children.get(pPath.getFileSystem());
         if (null == fsdirs) {
             throw new IllegalStateException(format("No appropriate root-directory found for %s", pPath));
         }
         return fsdirs;
     }
 
-    void pathModified(final Path pPath) {
+    public void pathModified(final Path pPath) {
         if (isDirectory(pPath)) {
             getFsDirectories(pPath).directoryCreated(pPath, observers);
         } else {
@@ -127,8 +129,8 @@ public class Directories {
     }
 
     public void pathDeleted(final Path pPath) {
-        final FsDirectories fsdirs = getFsDirectories(pPath);
-        final FsBaseDirectory fsdir = fsdirs.getParentDirectory(pPath);
+        final DedicatedFileSystem fsdirs = getFsDirectories(pPath);
+        final Directory fsdir = fsdirs.getParentDirectory(pPath);
 
         if (fsdirs.directoryDeleted(pPath)) {
             children.remove(pPath.getFileSystem());
@@ -145,21 +147,21 @@ public class Directories {
 
     // Lifecycle method for Felix DM
     public void stop() {
-        children.values().forEach(FsDirectories::close);
+        children.values().forEach(DedicatedFileSystem::close);
         children.clear();
     }
 
-    void close(final FsDirectories pFsDirectories) {
-        if (null != pFsDirectories) {
-            pFsDirectories.close();
+    public void close(final DedicatedFileSystem pDedicatedFileSystem) {
+        if (null != pDedicatedFileSystem) {
+            pDedicatedFileSystem.close();
 
             // Remove closed watch-service from the roots-list and children-map
-            roots.remove(pFsDirectories);
-            children.values().remove(pFsDirectories);
+            roots.remove(pDedicatedFileSystem);
+            children.values().remove(pDedicatedFileSystem);
         }
     }
 
-    public List<FsDirectories> getRoots() {
+    public List<DedicatedFileSystem> getRoots() {
         return roots;
     }
 }

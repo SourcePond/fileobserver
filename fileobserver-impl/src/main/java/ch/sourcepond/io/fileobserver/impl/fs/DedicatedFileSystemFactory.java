@@ -11,9 +11,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.directory;
+package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -21,21 +22,21 @@ import java.nio.file.FileSystem;
 /**
  *
  */
-public class FsDirectoriesFactory {
-    private final FsDirectoryFactory directoryFactory;
+public class DedicatedFileSystemFactory {
+    private final DirectoryFactory directoryFactory;
     private final ExecutorServices executorServices;
 
     // Constructor for BundleActivator
-    public FsDirectoriesFactory(final ExecutorServices pExecutorServices, final FsDirectoryFactory pDirectoryFactory) {
+    public DedicatedFileSystemFactory(final ExecutorServices pExecutorServices, final DirectoryFactory pDirectoryFactory) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
     }
 
-    public FsDirectoryFactory getDirectoryFactory() {
+    public DirectoryFactory getDirectoryFactory() {
         return directoryFactory;
     }
 
-    public FsDirectories newDirectories(final FileSystem pFs) throws IOException {
-        return new FsDirectories(executorServices, directoryFactory, pFs.newWatchService());
+    public DedicatedFileSystem newDirectories(final FileSystem pFs) throws IOException {
+        return new DedicatedFileSystem(executorServices, directoryFactory, pFs.newWatchService());
     }
 }

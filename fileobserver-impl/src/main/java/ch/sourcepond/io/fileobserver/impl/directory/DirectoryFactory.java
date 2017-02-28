@@ -26,7 +26,7 @@ import java.nio.file.WatchKey;
 /**
  * Created by rolandhauser on 08.02.17.
  */
-public class FsDirectoryFactory {
+public class DirectoryFactory {
     private final DefaultFileKeyFactory fileKeyFactory;
     private final ExecutorServices executorServices;
 
@@ -34,26 +34,26 @@ public class FsDirectoryFactory {
     private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
-    public FsDirectoryFactory(final ExecutorServices pExecutorServices) {
+    public DirectoryFactory(final ExecutorServices pExecutorServices) {
         executorServices = pExecutorServices;
         fileKeyFactory = new DefaultFileKeyFactory();
     }
 
     // Constructor for testing
-    public FsDirectoryFactory(final ResourcesFactory pResourcesFactory,
-                       final DefaultFileKeyFactory pFileKeyFactory,
-                       final ExecutorServices pExecutorServices) {
+    public DirectoryFactory(final ResourcesFactory pResourcesFactory,
+                            final DefaultFileKeyFactory pFileKeyFactory,
+                            final ExecutorServices pExecutorServices) {
         resourcesFactory = pResourcesFactory;
         fileKeyFactory = pFileKeyFactory;
         executorServices = pExecutorServices;
     }
 
-    public FsRootDirectory newRoot() {
-        return new FsRootDirectory(this);
+    public RootDirectory newRoot() {
+        return new RootDirectory(this);
     }
 
-    public FsDirectory newBranch(final FsBaseDirectory pParent, final WatchKey pKey) {
-        return new FsDirectory(pParent, pKey);
+    public ChildDirectory newBranch(final Directory pParent, final WatchKey pKey) {
+        return new ChildDirectory(pParent, pKey);
     }
 
     Resource newResource(final Algorithm pAlgorithm, final Path pFile) {
