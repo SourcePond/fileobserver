@@ -22,7 +22,7 @@ import java.nio.file.Path;
 public interface WatchedDirectory {
 
     /**
-     * Returns the key of this watched directory instance. The key remains
+     * Returns the unique key of this watched directory instance. The key remains
      * the same over the whole lifetime of this object.
      *
      * @return Watched-directory key, never {@code null}
@@ -72,7 +72,9 @@ public interface WatchedDirectory {
      * <p>
      * <p>Note: the key specified should not be changed during the lifetime
      * of the returned {@link WatchedDirectory}, otherwise unpredictable behavior
-     * is very likely to occur. To avoid this, use an immutable object like an {@link Enum} or a {@link String}.</p>
+     * is very likely to occur. To avoid this, use an immutable object like an {@link Enum} or a {@link String}.
+     * Furthermore, the key must be unique i.e. a key cannot be used for more than one {@link WatchedDirectory}
+     * instance.</p>
      *
      * @param pKey       Key of the watched-directory, must not be {@code null}.
      * @param pDirectory Initial directory to be watched, must not be {@code null}.

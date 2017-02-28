@@ -11,11 +11,9 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.Collection;
 
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static java.nio.file.StandardWatchEventKinds.*;
-import static java.util.Arrays.asList;
 import static org.mockito.Mockito.*;
 
 /**
@@ -25,7 +23,6 @@ public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
     private final FsDirectoryFactory factory = mock(FsDirectoryFactory.class);
     private final FileKey fileKey = mock(FileKey.class);
     private final FileObserver observer = mock(FileObserver.class);
-    private final Collection<FileObserver> observers = asList(observer);
     private WatchService watchService;
     private WatchKey parentWatchKey;
     private WatchKey key;
@@ -42,7 +39,8 @@ public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
         watchService = fs.newWatchService();
         parentWatchKey = directory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         key = subDirectory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-        parent = new FsRootDirectory(factory, TEST_KEY);
+        parent = new FsRootDirectory(factory);
+        parent.addDirectoryKey(TEST_KEY);
         parent.setWatchKey(parentWatchKey);
         fsDir = new FsDirectory(parent, key);
     }

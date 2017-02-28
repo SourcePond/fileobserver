@@ -42,15 +42,11 @@ public abstract class FsBaseDirectory {
     static final long TIMEOUT = 2000;
     private final ConcurrentMap<Path, Resource> resources = new ConcurrentHashMap<>();
 
-    abstract WatchKey getWatchKey();
+    abstract void addDirectoryKey(Object pKey);
 
-    /**
-     * Returns the key of the watched directory i.e. the key of the root-directory (specified
-     * by {@link ch.sourcepond.io.fileobserver.spi.WatchedDirectory})
-     *
-     * @return Watched directory key, never {@code null}
-     */
-    abstract Object getWatchedDirectoryKey();
+    abstract Collection<Object> getDirectoryKeys();
+
+    abstract WatchKey getWatchKey();
 
     Path getPath() {
         return (Path) getWatchKey().watchable();
@@ -58,7 +54,7 @@ public abstract class FsBaseDirectory {
 
     abstract Resource newResource(Algorithm pAlgorithm, Path pFile);
 
-    public abstract FileKey newKey(Path pFile);
+    public abstract Collection<FileKey> createKeys(Path pFile);
 
     public void cancelKey() {
         getWatchKey().cancel();

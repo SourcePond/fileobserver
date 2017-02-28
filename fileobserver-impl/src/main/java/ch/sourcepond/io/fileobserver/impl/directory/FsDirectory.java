@@ -22,6 +22,9 @@ import ch.sourcepond.io.fileobserver.api.FileObserver;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  *
@@ -29,10 +32,36 @@ import java.util.Collection;
 public class FsDirectory extends FsBaseDirectory {
     private final FsBaseDirectory parent;
     private final WatchKey watchKey;
+    private volatile Set<Object> directoryKeysOrNull;
 
     FsDirectory(final FsBaseDirectory pParent, final WatchKey pWatchKey) {
         parent = pParent;
         watchKey = pWatchKey;
+    }
+
+    @Override
+    void addDirectoryKey(final Object pKey) {
+        if (directoryKeysOrNull == null) {
+            synchronized (this) {
+                if (directoryKeysOrNull == null) {
+                    directoryKeysOrNull = new CopyOnWriteArraySet<>();
+                }
+            }
+        }
+        directoryKeysOrNull.add(pKey);
+    }
+
+    @Override
+    Collection<Object> getDirectoryKeys() {
+        final Collection<Object> keys;
+        Collection<Object> keysOrNull = directoryKeysOrNull;
+        if (keysOrNull == null) {
+            keys = parent.getDirectoryKeys();
+        } else {
+            keys = new HashSet<>(parent.getDirectoryKeys());
+            keys.addAll(keysOrNull);
+        }
+        return keys;
     }
 
     @Override
@@ -41,18 +70,13 @@ public class FsDirectory extends FsBaseDirectory {
     }
 
     @Override
-    Object getWatchedDirectoryKey() {
-        return parent.getWatchedDirectoryKey();
-    }
-
-    @Override
     Resource newResource(final Algorithm pAlgorithm, final Path pFile) {
         return parent.newResource(pAlgorithm, pFile);
     }
 
     @Override
-    public FileKey newKey(final Path pFile) {
-        return parent.newKey(pFile);
+    public Collection<FileKey> createKeys(final Path pFile) {
+        return parent.createKeys(pFile);
     }
 
     @Override

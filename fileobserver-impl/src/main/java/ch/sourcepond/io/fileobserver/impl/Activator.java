@@ -1,3 +1,16 @@
+/*Copyright (C) 2017 Roland Hauser, <sourcepond@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.commons.smartswitch.lib.SmartSwitchActivatorBase;
@@ -16,7 +29,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.concurrent.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
@@ -24,12 +43,15 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Created by rolandhauser on 21.02.17.
+ * Bundle activator; this class manages the lifecycle of the bundle.
  */
 public class Activator extends SmartSwitchActivatorBase {
     private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
     private final ConcurrentMap<Object, Path> keyToPaths = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Path, Collection<Object>> pathToKeys = new ConcurrentHashMap<>();
+
+    private final Map<Object, WatchedDirectory> watchedDirectories = new HashMap<>();
+    private final Map<Path, Collection<Object>> pathToKeys = new HashMap<>();
+
     private final ExecutorServices executorServices;
     private final FsDirectoryFactory fsDirectoryFactory;
     private final FsDirectoriesFactory fsDirectoriesFactory;
@@ -78,7 +100,7 @@ public class Activator extends SmartSwitchActivatorBase {
                         setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                         setShutdownHook(e -> e.shutdown()).
                         build(() -> Executors.newCachedThreadPool()).setAutoConfig("directoryWalkerExecutor")
-        ));
+                ));
         dependencyManager.add(createComponent().
                 setImplementation(fsDirectoryFactory).
                 add(createServiceDependency().
@@ -100,61 +122,67 @@ public class Activator extends SmartSwitchActivatorBase {
                 ));
     }
 
-    public void bind(final WatchedDirectory pWatchedDirectory) {
-        if (null == pWatchedDirectory) {
-            LOG.warn("Watched directory is null; nothing to bind");
-        } else {
-            try {
-                final Object key = pWatchedDirectory.getKey();
-                final Path directory = pWatchedDirectory.getDirectory();
-                requireNonNull(key, "Key is null");
-                requireNonNull(directory, "Directory is null");
+    /**
+     * Whiteboard bind-method for {@link WatchedDirectory} services exported by any client bundle. This
+     * method is called when a client exports a service which implements the {@link WatchedDirectory} interface.
+     *
+     * @param pWatchedDirectory Watched-directory service to be registered.
+     * @throws IOException Thrown, if the root directory could not be added.
+     */
+    public void bind(final WatchedDirectory pWatchedDirectory) throws IOException {
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
 
-                if (!isDirectory(directory)) {
-                    throw new IllegalArgumentException(format("[%s]: %s is not a directory!", key, directory));
+        if (!isDirectory(directory)) {
+            throw new IllegalArgumentException(format("[%s]: %s is not a directory!", key, directory));
+        }
+
+        final boolean isNew;
+        synchronized (this) {
+            // It' not allowed to use the same key for more than one WatchedDirectory instance...
+            watchedDirectories.compute(key, (k, v) -> {
+                if (v != null) {
+                    throw new IllegalArgumentException(
+                            format("Key %s cannot be used for directory %s!\nIt is already occupied by %s",
+                                    key, directory, v.getDirectory()));
                 }
+                return pWatchedDirectory;
+            });
 
-                // Put the directory to the registered paths; if the returned value is null, it's a new key.
-                final Path previous = keyToPaths.put(key, directory);
+            //... but it's perfectly allowed that more than WatchDirectory points to the same path
+            final Collection<Object> keys = pathToKeys.computeIfAbsent(directory, d -> new HashSet<>());
+            isNew = keys.add(key) && keys.size() == 1;
+        }
 
-                if (!directory.equals(previous)) {
-                    final Collection<Object> keys = pathToKeys.computeIfAbsent(directory, d -> new CopyOnWriteArraySet<>());
-
-                    // If the key is newly added, open a watch-service for the directory
-                    if (keys.add(key) && keys.size() == 1) {
-                        directories.addRoot(key, directory);
-                    }
-
-                    // The previous directory is not null. This means, that we watch a new target
-                    // directory, and therefore, need to clean-up.
-                    disableIfNecessary(key, previous);
-                }
-            } catch (final IOException e) {
-                LOG.warn(e.getMessage(), e);
-            }
+        // If the key is newly added, open a watch-service for the directory
+        if (isNew) {
+            directories.addRoot(key, directory);
         }
     }
 
+    /**
+     * Whiteboard unbind-method {@link WatchedDirectory} services exported by any client bundle. This method is
+     * called when a client unregisters a service which implements the {@link WatchedDirectory} interface.
+     *
+     * @param pWatchedDirectory Watched-directory service to be unregistered.
+     */
     public void unbind(final WatchedDirectory pWatchedDirectory) {
-        if (null == pWatchedDirectory) {
-            LOG.warn("Watched directory is null; nothing to unbind");
-        } else {
-            final Object key = pWatchedDirectory.getKey();
-            requireNonNull(key, "Key is null");
-            disableIfNecessary(key, keyToPaths.remove(key));
-        }
-    }
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
 
-    private void disableIfNecessary(final Object pKey, final Path pToBeDisabled) {
-        if (null != pToBeDisabled) {
-            final Collection<Object> keys = pathToKeys.getOrDefault(pToBeDisabled, emptyList());
+        final boolean noMoreKeys;
+        synchronized (this) {
+            final Collection<Object> keys = pathToKeys.getOrDefault(directory, emptyList());
 
             // If no more keys are registered for the previous directory, its watch-key
             // needs to be cancelled.
-            if (keys.remove(pKey) && keys.isEmpty()) {
-                directories.removeRoot(pToBeDisabled);
-                pathToKeys.remove(pKey);
+            if ((noMoreKeys = keys.remove(key) && keys.isEmpty())) {
+                pathToKeys.remove(directory);
             }
+        }
+
+        if (noMoreKeys) {
+            directories.removeRoot(directory);
         }
     }
 }

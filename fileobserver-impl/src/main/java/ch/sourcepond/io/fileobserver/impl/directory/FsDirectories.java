@@ -31,9 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -41,7 +39,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class FsDirectories implements Closeable {
     private static final Logger LOG = getLogger(FsDirectories.class);
-    private final ConcurrentMap<Path, FsBaseDirectory> children = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Path, FsBaseDirectory> dirs = new ConcurrentHashMap<>();
     private final ExecutorServices executorServices;
     private final FsDirectoryFactory directoryFactory;
     private final WatchService watchService;
@@ -66,18 +64,39 @@ public class FsDirectories implements Closeable {
     }
 
     public void initiallyInformHandler(final FileObserver pObserver) {
-        children.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObserver));
+        dirs.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObserver));
     }
 
-    public void rootAdded(final Object pWatchedDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
-        if (!children.containsKey(pDirectory)) {
-            final FsRootDirectory rootDir = directoryFactory.newRoot(pWatchedDirectoryKey);
-            if (null == children.putIfAbsent(pDirectory, rootDir)) {
-                rootDir.setWatchKey(register(pDirectory));
+    /**
+     *
+     *
+     * @param pDirectoryKey
+     * @param pDirectory
+     * @param pObservers
+     */
+    public void rootAdded(final Object pDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
+        // Check if there is already a directory available for the path specified.
+        FsBaseDirectory dir = dirs.get(pDirectory);
+
+        if (dir == null) {
+            // If no directory is registered for the path specified, create a new root-directory.
+            dir = directoryFactory.newRoot();
+
+            if (null == dirs.putIfAbsent(pDirectory, dir)) {
+                // Register the path with the watch-service and set the watch-key on the
+                // newly create root-directory
+                ((FsRootDirectory) dir).setWatchKey(register(pDirectory));
+                dirs.put(pDirectory, dir);
+
+                // Asynchronously register all sub-directories with the watch-service, and,
+                // inform the registered FileObservers
                 executorServices.getDirectoryWalkerExecutor().execute(
                         () -> directoryCreated(pDirectory, pObservers));
             }
         }
+
+        // In any case, add the directory key to the directory
+        dir.addDirectoryKey(pDirectoryKey);
     }
 
     public void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObserver) {
@@ -86,14 +105,14 @@ public class FsDirectories implements Closeable {
 
                 @Override
                 public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                    children.get(file.getParent()).forceInformObservers(pObserver, file);
+                    dirs.get(file.getParent()).forceInformObservers(pObserver, file);
                     return CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                    children.computeIfAbsent(dir,
-                            p -> directoryFactory.newBranch(children.get(dir.getParent()), register(dir)));
+                    dirs.computeIfAbsent(dir,
+                            p -> directoryFactory.newBranch(dirs.get(dir.getParent()), register(dir)));
                     return CONTINUE;
                 }
             });
@@ -104,10 +123,10 @@ public class FsDirectories implements Closeable {
     }
 
     public boolean directoryDeleted(final Path pDirectory) {
-        final FsBaseDirectory dir = children.remove(pDirectory);
+        final FsBaseDirectory dir = dirs.remove(pDirectory);
         if (null != dir) {
             dir.cancelKey();
-            for (final Iterator<Map.Entry<Path, FsBaseDirectory>> it = children.entrySet().iterator(); it.hasNext(); ) {
+            for (final Iterator<Map.Entry<Path, FsBaseDirectory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
                 final Map.Entry<Path, FsBaseDirectory> entry = it.next();
                 if (entry.getKey().startsWith(pDirectory)) {
                     entry.getValue().cancelKey();
@@ -115,11 +134,11 @@ public class FsDirectories implements Closeable {
                 }
             }
         }
-        return children.isEmpty();
+        return dirs.isEmpty();
     }
 
     public FsBaseDirectory getParentDirectory(final Path pFile) {
-        final FsBaseDirectory dir = children.get(pFile.getParent());
+        final FsBaseDirectory dir = dirs.get(pFile.getParent());
         if (null == dir) {
             throw new NullPointerException(format("No parent directory found for file %s", pFile));
         }
@@ -133,7 +152,7 @@ public class FsDirectories implements Closeable {
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         } finally {
-            children.clear();
+            dirs.clear();
         }
     }
 

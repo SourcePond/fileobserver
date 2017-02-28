@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutorService;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
+import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY1;
 import static ch.sourcepond.io.fileobserver.impl.directory.FsDirectory.TIMEOUT;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -48,7 +49,7 @@ public class FsDirectoryTest {
     private final Checksum checksum2 = mock(Checksum.class);
     private final Resource resource = mock(Resource.class);
     private final FileKey key = mock(FileKey.class);
-    private final FsRootDirectory parent = factory.newRoot(TEST_KEY);
+    private final FsRootDirectory parent = factory.newRoot();
     private final FsDirectory child = factory.newBranch(parent, watchKey);
 
     @Before
@@ -70,8 +71,29 @@ public class FsDirectoryTest {
     }
 
     @Test
-    public void getWatchedDirectoryKey() {
-        assertSame(TEST_KEY, child.getWatchedDirectoryKey());
+    public void getDirectoryKeysNoKeysToChildAdded() {
+        parent.addDirectoryKey(TEST_KEY);
+        final Collection<Object> keys = child.getDirectoryKeys();
+        assertEquals(1, keys.size());
+        assertTrue(keys.contains(TEST_KEY));
+    }
+
+    @Test
+    public void getDirectoryKeysOnlyToChildAdded() {
+        child.addDirectoryKey(TEST_KEY);
+        final Collection<Object> keys = child.getDirectoryKeys();
+        assertEquals(1, keys.size());
+        assertTrue(keys.contains(TEST_KEY));
+    }
+
+    @Test
+    public void getDirectoryKeysChildAndParentHaveKeys() {
+        parent.addDirectoryKey(TEST_KEY);
+        child.addDirectoryKey(TEST_KEY1);
+        final Collection<Object> keys = child.getDirectoryKeys();
+        assertEquals(2, keys.size());
+        assertTrue(keys.contains(TEST_KEY));
+        assertTrue(keys.contains(TEST_KEY1));
     }
 
     @Test
@@ -94,6 +116,7 @@ public class FsDirectoryTest {
 
     @Test
     public void informAboutChange() {
+        parent.addDirectoryKey(TEST_KEY);
         when(resource.update(eq(TIMEOUT), notNull())).thenAnswer(im -> {
             final CalculationObserver lambda = im.getArgument(1);
             lambda.done(checksum1, checksum2);
@@ -120,6 +143,7 @@ public class FsDirectoryTest {
 
     @Test
     public void forceInform() {
+        parent.addDirectoryKey(TEST_KEY);
         child.forceInformObservers(observers, path);
         verify(observer, timeout(500)).modified(key, path);
     }

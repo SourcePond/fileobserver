@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -48,6 +49,7 @@ public class DirectoriesTest {
     private final Path testPath = mock(Path.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final FileKey fileKey = mock(FileKey.class);
+    private final Collection<FileKey> fileKeys = asList(fileKey);
     private final FileObserver observer = mock(FileObserver.class);
     private final ArgumentMatcher<Collection<FileObserver>> observerMatcher = c -> c.size() == 1 && c.contains(observer);
     private final List<FsDirectories> roots = mock(List.class);
@@ -66,7 +68,7 @@ public class DirectoriesTest {
         when(provider.readAttributes(rootDirectory, BasicFileAttributes.class)).thenReturn(rootDirectoryAttrs);
         when(rootDirectoryAttrs.isDirectory()).thenReturn(true);
         when(provider.readAttributes(testPath, BasicFileAttributes.class)).thenReturn(attrs);
-        when(fsDirectory.newKey(testPath)).thenReturn(fileKey);
+        when(fsDirectory.createKeys(testPath)).thenReturn(fileKeys);
         directories.addRoot(TEST_KEY, rootDirectory);
     }
 

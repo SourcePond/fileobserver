@@ -48,8 +48,8 @@ public class FsDirectoryFactory {
         executorServices = pExecutorServices;
     }
 
-    public FsRootDirectory newRoot(final Object pWatchedDirectoryKeyOrNull) {
-        return new FsRootDirectory(this, pWatchedDirectoryKeyOrNull);
+    public FsRootDirectory newRoot() {
+        return new FsRootDirectory(this);
     }
 
     public FsDirectory newBranch(final FsBaseDirectory pParent, final WatchKey pKey) {

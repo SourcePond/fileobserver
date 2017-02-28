@@ -59,7 +59,7 @@ public class FsDirectoriesTest extends CopyResourcesTest {
     @Before
     public void setup() throws Exception {
         when(executorServices.getDirectoryWalkerExecutor()).thenReturn(executorService);
-        when(directoryFactory.newRoot(TEST_KEY)).thenReturn(rootFsDir);
+        when(directoryFactory.newRoot()).thenReturn(rootFsDir);
         when(directoryFactory.newBranch(same(rootFsDir), argThat(new FsDirectoriesTest.SubDirWatchKeyMatcher()))).thenReturn(subFsDir);
         watchService = fs.newWatchService();
         fsDirectories = fsDirectoriesFactory.newDirectories(fs);
@@ -72,12 +72,12 @@ public class FsDirectoriesTest extends CopyResourcesTest {
         fsDirectories.rootAdded(TEST_KEY, directory, observers);
 
         // Should have been called exactly once
-        verify(directoryFactory).newRoot(TEST_KEY);
+        verify(directoryFactory).newRoot();
     }
 
     @Test
     public void rootAddedFirstWins() throws Exception {
-        when(directoryFactory.newRoot(TEST_KEY)).thenAnswer(new Answer<FsRootDirectory>() {
+        when(directoryFactory.newRoot()).thenAnswer(new Answer<FsRootDirectory>() {
             @Override
             public FsRootDirectory answer(final InvocationOnMock invocation) throws Throwable {
                 sleep(500);

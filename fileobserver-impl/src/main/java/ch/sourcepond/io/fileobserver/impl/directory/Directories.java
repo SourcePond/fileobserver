@@ -23,11 +23,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
@@ -139,9 +141,13 @@ public class Directories {
             children.remove(pPath.getFileSystem());
         }
 
-        final FileKey key = fsdir.newKey(pPath);
-        observers.forEach(o -> executorServices.getObserverExecutor().execute(
-                () -> o.discard(key)));
+        final ExecutorService executor = executorServices.getObserverExecutor();
+        final Collection<FileKey> keys = fsdir.createKeys(pPath);
+        for (final FileObserver observer : observers) {
+            for (final FileKey key : keys) {
+                executor.execute(() -> observer.discard(key));
+            }
+        }
     }
 
     // Lifecycle method for Felix DM
