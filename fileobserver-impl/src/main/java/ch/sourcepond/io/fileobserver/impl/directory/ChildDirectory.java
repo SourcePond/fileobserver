@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  *
  */
-public class ChildDirectory extends Directory {
+class ChildDirectory extends Directory {
     private final Directory parent;
     private final WatchKey watchKey;
     private volatile Set<Object> directoryKeysOrNull;

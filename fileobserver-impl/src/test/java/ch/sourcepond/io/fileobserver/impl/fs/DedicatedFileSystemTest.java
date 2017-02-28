@@ -3,7 +3,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
-import ch.sourcepond.io.fileobserver.impl.directory.ChildDirectory;
+import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import org.junit.Before;
@@ -55,7 +55,7 @@ public class DedicatedFileSystemTest extends CopyResourcesTest {
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
     private final RootDirectory rootFsDir = mock(RootDirectory.class);
-    private final ChildDirectory subFsDir = mock(ChildDirectory.class);
+    private final Directory subFsDir = mock(Directory.class);
     private WatchService watchService;
     private DedicatedFileSystem dedicatedFileSystem;
 

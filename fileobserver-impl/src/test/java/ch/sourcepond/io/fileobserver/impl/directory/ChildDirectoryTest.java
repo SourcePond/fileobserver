@@ -50,7 +50,7 @@ public class ChildDirectoryTest {
     private final Resource resource = mock(Resource.class);
     private final FileKey key = mock(FileKey.class);
     private final RootDirectory parent = factory.newRoot();
-    private final ChildDirectory child = factory.newBranch(parent, watchKey);
+    private final Directory child = factory.newBranch(parent, watchKey);
 
     @Before
     public void setup() {

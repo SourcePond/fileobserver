@@ -3,10 +3,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
-import ch.sourcepond.io.fileobserver.impl.directory.ChildDirectory;
-import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
-import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
+import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +41,7 @@ public class VirtualRootTest {
 
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory = mock(DedicatedFileSystemFactory.class);
     private final DedicatedFileSystem dedicatedFileSystem = mock(DedicatedFileSystem.class);
-    private final ChildDirectory childDirectory = mock(ChildDirectory.class);
+    private final Directory childDirectory = mock(Directory.class);
     private final WatchService watchService = mock(WatchService.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path rootDirectory = mock(Path.class);

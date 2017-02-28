@@ -52,7 +52,7 @@ public class DirectoryFactory {
         return new RootDirectory(this);
     }
 
-    public ChildDirectory newBranch(final Directory pParent, final WatchKey pKey) {
+    public Directory newBranch(final Directory pParent, final WatchKey pKey) {
         return new ChildDirectory(pParent, pKey);
     }
 
