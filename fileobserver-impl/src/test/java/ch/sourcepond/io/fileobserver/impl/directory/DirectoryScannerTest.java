@@ -47,7 +47,7 @@ public class DirectoryScannerTest extends CopyResourcesTest {
     @After
     public void tearDown() throws IOException {
         watchService.close();
-        directories.removeRoot(directory);
+        directories.pathDeleted(directory);
         scanner.stop();
     }
 

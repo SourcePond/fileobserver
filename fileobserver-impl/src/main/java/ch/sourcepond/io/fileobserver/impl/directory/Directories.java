@@ -110,13 +110,6 @@ public class Directories {
         }
     }
 
-    public void removeRoot(final Path pDirectory) {
-        final FsDirectories fsdirs = children.get(pDirectory.getFileSystem());
-        if (null != fsdirs && fsdirs.directoryDeleted(pDirectory)) {
-            children.remove(pDirectory.getFileSystem());
-        }
-    }
-
     private FsDirectories getFsDirectories(final Path pPath) {
         final FsDirectories fsdirs = children.get(pPath.getFileSystem());
         if (null == fsdirs) {
@@ -133,7 +126,7 @@ public class Directories {
         }
     }
 
-    void pathDeleted(final Path pPath) {
+    public void pathDeleted(final Path pPath) {
         final FsDirectories fsdirs = getFsDirectories(pPath);
         final FsBaseDirectory fsdir = fsdirs.getParentDirectory(pPath);
 

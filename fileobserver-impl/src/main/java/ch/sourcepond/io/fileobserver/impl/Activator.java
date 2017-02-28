@@ -182,7 +182,7 @@ public class Activator extends SmartSwitchActivatorBase {
         }
 
         if (noMoreKeys) {
-            directories.removeRoot(directory);
+            directories.pathDeleted(directory);
         }
     }
 }

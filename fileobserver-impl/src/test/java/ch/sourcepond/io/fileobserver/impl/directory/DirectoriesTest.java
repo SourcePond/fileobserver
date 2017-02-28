@@ -98,14 +98,6 @@ public class DirectoriesTest {
     }
 
     @Test
-    public void removeRoot() throws IOException {
-        when(fsDirectories.directoryDeleted(rootDirectory)).thenReturn(true);
-        directories.removeRoot(rootDirectory);
-        directories.addRoot(TEST_KEY,rootDirectory);
-        verify(fsDirectoriesFactory, times(2)).newDirectories(fs);
-    }
-
-    @Test
     public void addRemoveObserver() {
         when(fsDirectories.getParentDirectory(testPath)).thenReturn(fsDirectory);
         directories.addObserver(observer);
@@ -176,13 +168,6 @@ public class DirectoriesTest {
 
         // Should have been called twice
         verify(fsDirectoriesFactory, times(2)).newDirectories(fs);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void noAppropriateRootDirFound() {
-        when(fsDirectories.directoryDeleted(rootDirectory)).thenReturn(true);
-        directories.removeRoot(rootDirectory);
-        directories.pathModified(rootDirectory);
     }
 
     @Test
