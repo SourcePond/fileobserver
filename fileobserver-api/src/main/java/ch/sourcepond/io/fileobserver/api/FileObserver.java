@@ -48,15 +48,16 @@ public interface FileObserver {
      *      cache.put(pKey, readObject(pFile));
      * </pre>
      *
-     * @param pKey Relative path, never {@code null}
+     * @param pKey File-key of the modified file, never {@code null}
      * @param pFile Readable path, never {@code null}
      */
     void modified(FileKey pKey, Path pFile);
 
     /**
-     * <p>Indicates, that the file or directory with the relative path specified has been discarded for some reason
-     * (file/directory has been deleted, watched directory is being unregistered etc.). In case a directory is being discarded, only that directory will be delivered to this method. This means,
-     * that this method will <em>not</em> be called for any file or sub-directory within the discarded directory.
+     * <p>Indicates, that the file or directory with the {@link FileKey} specified has been discarded for some reason
+     * (file/directory has been deleted, watched directory is being unregistered etc.). In case a directory is being
+     * discarded, only the file-key of that directory will be delivered. This means, that this method will <em>not</em>
+     * be called for any file or sub-directory within the discarded directory.
      *
      * <p>Following code snipped should give an idea how to properly remove all resources which are related to
      * the path specified from a cache:
@@ -68,7 +69,7 @@ public interface FileObserver {
      *      cache.keySet().removeIf(k -&gt; p.isSubKey(pKey));
      * </pre>
      *
-     * @param pKey pRelativePath Relative path, never {@code null}
+     * @param pKey File-key of the discarded file or directory, never {@code null}
      */
     void discard(FileKey pKey);
 }
