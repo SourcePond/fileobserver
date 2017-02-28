@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static java.nio.file.Files.newDirectoryStream;
+import static java.util.Arrays.asList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -63,9 +64,9 @@ public abstract class FsBaseDirectory {
         getWatchKey().cancel();
     }
 
-    public void forceInformAboutAllDirectChildFiles(final Collection<FileObserver> pObservers) {
+    public void forceInformAboutAllDirectChildFiles(final FileObserver pObserver) {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
-            stream.forEach(f -> forceInformObservers(pObservers, f));
+            stream.forEach(f -> forceInformObservers(asList(pObserver), f));
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         }

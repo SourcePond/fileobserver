@@ -14,17 +14,26 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.WatchKey;
+import java.io.UncheckedIOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
+import static java.nio.file.FileVisitResult.CONTINUE;
+import static java.nio.file.Files.walkFileTree;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -32,32 +41,87 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class FsDirectories implements Closeable {
     private static final Logger LOG = getLogger(FsDirectories.class);
-    private final Registrar registrar;
+    private final ConcurrentMap<Path, FsBaseDirectory> children = new ConcurrentHashMap<>();
+    private final ExecutorServices executorServices;
+    private final FsDirectoryFactory directoryFactory;
+    private final WatchService watchService;
 
-    public FsDirectories(final Registrar pRegistrar) {
-        registrar = pRegistrar;
+    FsDirectories(final ExecutorServices pExecutorServices, final FsDirectoryFactory pDirectoryFactory, final WatchService pWatchService) {
+        executorServices = pExecutorServices;
+        directoryFactory = pDirectoryFactory;
+        watchService = pWatchService;
     }
 
-    public void initiallyInformHandler(final FileObserver pHandler) {
-        registrar.initiallyInformHandler(asList(pHandler));
+    private WatchKey register(final Path pDirectory) {
+        try {
+            return pDirectory.register(watchService, new WatchEvent.Kind[]{
+                    ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY});
+        } catch (final IOException e) {
+            throw new UncheckedIOException(e);
+        } finally {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(format("Added Directory %s", pDirectory));
+            }
+        }
     }
 
-    public void rootAdded(final Object pWatchedDirectoryKeyOrNull, final Path pDirectory, final Collection<FileObserver> pObservers) {
-        registrar.rootAdded(pWatchedDirectoryKeyOrNull, pDirectory, pObservers);
+    public void initiallyInformHandler(final FileObserver pObserver) {
+        children.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObserver));
     }
 
-    public void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObservers) {
-        registrar.directoryCreated(pDirectory, pObservers);
+    public void rootAdded(final Object pWatchedDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
+        if (!children.containsKey(pDirectory)) {
+            final FsRootDirectory rootDir = directoryFactory.newRoot(pWatchedDirectoryKey);
+            if (null == children.putIfAbsent(pDirectory, rootDir)) {
+                rootDir.setWatchKey(register(pDirectory));
+                executorServices.getDirectoryWalkerExecutor().execute(
+                        () -> directoryCreated(pDirectory, pObservers));
+            }
+        }
+    }
+
+    public void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObserver) {
+        try {
+            walkFileTree(pDirectory, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                    children.get(file.getParent()).forceInformObservers(pObserver, file);
+                    return CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    children.computeIfAbsent(dir,
+                            p -> directoryFactory.newBranch(children.get(dir.getParent()), register(dir)));
+                    return CONTINUE;
+                }
+            });
+        } catch (final UncheckedIOException // Can happen when watch-service registration fails, see register
+                | IOException e) {
+            LOG.warn(e.getMessage(), e);
+        }
     }
 
     public boolean directoryDeleted(final Path pDirectory) {
-        return registrar.directoryDeleted(pDirectory);
+        final FsBaseDirectory dir = children.remove(pDirectory);
+        if (null != dir) {
+            dir.cancelKey();
+            for (final Iterator<Map.Entry<Path, FsBaseDirectory>> it = children.entrySet().iterator(); it.hasNext(); ) {
+                final Map.Entry<Path, FsBaseDirectory> entry = it.next();
+                if (entry.getKey().startsWith(pDirectory)) {
+                    entry.getValue().cancelKey();
+                    it.remove();
+                }
+            }
+        }
+        return children.isEmpty();
     }
 
-    public FsBaseDirectory getDirectory(final Path pFile) {
-        final FsBaseDirectory dir = registrar.getDirectory(pFile.getParent());
+    public FsBaseDirectory getParentDirectory(final Path pFile) {
+        final FsBaseDirectory dir = children.get(pFile.getParent());
         if (null == dir) {
-            throw new NullPointerException(format("No directory object found for file %s", pFile));
+            throw new NullPointerException(format("No parent directory found for file %s", pFile));
         }
         return dir;
     }
@@ -65,13 +129,15 @@ public class FsDirectories implements Closeable {
     @Override
     public void close() {
         try {
-            registrar.close();
+            watchService.close();
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
+        } finally {
+            children.clear();
         }
     }
 
     public WatchKey poll() {
-        return registrar.poll();
+        return watchService.poll();
     }
 }

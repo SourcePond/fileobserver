@@ -3,8 +3,8 @@ package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.io.fileobserver.impl.directory.Directories;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
+import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoriesFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
  */
 public class ActivatorTest {
     private final FsDirectoryFactory fsDirectoryFactory = mock(FsDirectoryFactory.class);
-    private final RegistrarFactory registrarFactory = mock(RegistrarFactory.class);
+    private final FsDirectoriesFactory fsDirectoriesFactory = mock(FsDirectoriesFactory.class);
     private final DirectoryScanner directoryScanner = mock(DirectoryScanner.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
@@ -34,7 +34,7 @@ public class ActivatorTest {
     private final Directories directories = mock(Directories.class);
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final ExecutorServices executorServices = mock(ExecutorServices.class);
-    private final Activator manager = new Activator(executorServices, fsDirectoryFactory, registrarFactory, directories, directoryScanner);
+    private final Activator manager = new Activator(executorServices, fsDirectoryFactory, fsDirectoriesFactory, directories, directoryScanner);
 
     @Before
     public void setup() throws IOException {

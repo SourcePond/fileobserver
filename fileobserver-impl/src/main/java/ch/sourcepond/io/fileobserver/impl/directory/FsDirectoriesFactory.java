@@ -13,14 +13,29 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+
+import java.io.IOException;
+import java.nio.file.FileSystem;
 
 /**
  *
  */
 public class FsDirectoriesFactory {
+    private final FsDirectoryFactory directoryFactory;
+    private final ExecutorServices executorServices;
 
-    public FsDirectories newDirectories(final Registrar pRegistrar) {
-        return new FsDirectories(pRegistrar);
+    // Constructor for BundleActivator
+    public FsDirectoriesFactory(final ExecutorServices pExecutorServices, final FsDirectoryFactory pDirectoryFactory) {
+        executorServices = pExecutorServices;
+        directoryFactory = pDirectoryFactory;
+    }
+
+    public FsDirectoryFactory getDirectoryFactory() {
+        return directoryFactory;
+    }
+
+    public FsDirectories newDirectories(final FileSystem pFs) throws IOException {
+        return new FsDirectories(executorServices, directoryFactory, pFs.newWatchService());
     }
 }

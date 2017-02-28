@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>ch.sourcepond</groupId>
 		<artifactId>bundle</artifactId>
-		<version>0.7-SNAPSHOT</version>
+		<version>0.7.5</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ch.sourcepond.io</groupId>

@@ -5,8 +5,8 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directories;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
+import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoriesFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.FsDirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.apache.felix.dm.DependencyManager;
 import org.osgi.framework.BundleContext;
@@ -32,7 +32,7 @@ public class Activator extends SmartSwitchActivatorBase {
     private final ConcurrentMap<Path, Collection<Object>> pathToKeys = new ConcurrentHashMap<>();
     private final ExecutorServices executorServices;
     private final FsDirectoryFactory fsDirectoryFactory;
-    private final RegistrarFactory registrarFactory;
+    private final FsDirectoriesFactory fsDirectoriesFactory;
     private final Directories directories;
     private final DirectoryScanner directoryScanner;
 
@@ -40,7 +40,7 @@ public class Activator extends SmartSwitchActivatorBase {
     public Activator() {
         executorServices = new ExecutorServices();
         fsDirectoryFactory = new FsDirectoryFactory(executorServices);
-        registrarFactory = new RegistrarFactory(executorServices, fsDirectoryFactory);
+        fsDirectoriesFactory = new FsDirectoriesFactory(executorServices, fsDirectoryFactory);
         directories = new Directories(executorServices, fsDirectoryFactory);
         directoryScanner = new DirectoryScanner(directories);
     }
@@ -48,12 +48,12 @@ public class Activator extends SmartSwitchActivatorBase {
     // Constructor for testing
     public Activator(final ExecutorServices pExecutorServices,
                      final FsDirectoryFactory pFsDirectoryFactory,
-                     final RegistrarFactory pRegistrarFactory,
+                     final FsDirectoriesFactory pRegistrarFactory,
                      final Directories pDirectories,
                      final DirectoryScanner pDirectoryScanner) {
         executorServices = pExecutorServices;
         fsDirectoryFactory = pFsDirectoryFactory;
-        registrarFactory = pRegistrarFactory;
+        fsDirectoriesFactory = pRegistrarFactory;
         directories = pDirectories;
         directoryScanner = pDirectoryScanner;
     }

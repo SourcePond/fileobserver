@@ -54,7 +54,7 @@ public class ForceInformAboutAllDirectChildFilesTest extends CopyResourcesTest {
 
     @Test
     public void forceInformAboutAllDirectChildFiles() {
-        fsDir.forceInformAboutAllDirectChildFiles(observers);
+        fsDir.forceInformAboutAllDirectChildFiles(observer);
         verify(observer, timeout(500)).modified(fileKey, testfileXml);
         verifyNoMoreInteractions(observer);
     }

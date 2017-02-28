@@ -16,8 +16,6 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
-import ch.sourcepond.io.fileobserver.impl.registrar.Registrar;
-import ch.sourcepond.io.fileobserver.impl.registrar.RegistrarFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +39,6 @@ public class Directories {
     private static final Logger LOG = LoggerFactory.getLogger(Directories.class);
     private final ConcurrentMap<FileSystem, FsDirectories> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = ConcurrentHashMap.newKeySet();
-
-    private final RegistrarFactory registrarFactory;
     private final FsDirectoriesFactory fsDirectoriesFactory;
 
     // Injected by Felix DM
@@ -59,17 +55,14 @@ public class Directories {
     // Constructor for BundleActivator
     public Directories(final ExecutorServices pExecutorServices, final FsDirectoryFactory pFsDirectoryFactory) {
         executorServices = pExecutorServices;
-        registrarFactory = new RegistrarFactory(pExecutorServices, pFsDirectoryFactory);
-        fsDirectoriesFactory = new FsDirectoriesFactory();
+        fsDirectoriesFactory = new FsDirectoriesFactory(pExecutorServices, pFsDirectoryFactory);
         roots = new CopyOnWriteArrayList<>();
     }
 
     // Constructor for testing
-    public Directories(final RegistrarFactory pRegistrarFactory,
-                       final FsDirectoriesFactory pFsDirectories,
+    public Directories(final FsDirectoriesFactory pFsDirectories,
                        final ExecutorServices pExecutorServices,
                        final List<FsDirectories> pRoots) {
-        registrarFactory = pRegistrarFactory;
         fsDirectoriesFactory = pFsDirectories;
         executorServices = pExecutorServices;
         roots = pRoots;
@@ -77,7 +70,7 @@ public class Directories {
 
     // Composition callback for Felix DM
     public Object[] getComposition() {
-        return new Object[]{registrarFactory, registrarFactory.getDirectoryFactory()};
+        return new Object[]{ fsDirectoriesFactory, fsDirectoriesFactory.getDirectoryFactory()};
     }
 
     public void addObserver(final FileObserver pObserver) {
@@ -96,19 +89,14 @@ public class Directories {
         }
     }
 
-    private Registrar newRegistrar(final FileSystem pFs) {
+    private FsDirectories newDirectories(final FileSystem pFs) {
         try {
-            return registrarFactory.newRegistrar(pFs);
+            final FsDirectories fsdirs = fsDirectoriesFactory.newDirectories(pFs);
+            roots.add(fsdirs);
+            return fsdirs;
         } catch (final IOException e) {
             throw new UncheckedIOException(e.getMessage(), e);
         }
-    }
-
-    private FsDirectories newDirectories(final FileSystem pFs) {
-        final FsDirectories fsdirs = fsDirectoriesFactory.newDirectories(
-                newRegistrar(pFs));
-        roots.add(fsdirs);
-        return fsdirs;
     }
 
     public void addRoot(final Object pWatchedDirectoryKey, final Path pDirectory) throws IOException {
@@ -139,13 +127,13 @@ public class Directories {
         if (isDirectory(pPath)) {
             getFsDirectories(pPath).directoryCreated(pPath, observers);
         } else {
-            getFsDirectories(pPath).getDirectory(pPath).informIfChanged(observers, pPath);
+            getFsDirectories(pPath).getParentDirectory(pPath).informIfChanged(observers, pPath);
         }
     }
 
     void pathDeleted(final Path pPath) {
         final FsDirectories fsdirs = getFsDirectories(pPath);
-        final FsBaseDirectory fsdir = fsdirs.getDirectory(pPath);
+        final FsBaseDirectory fsdir = fsdirs.getParentDirectory(pPath);
 
         if (fsdirs.directoryDeleted(pPath)) {
             children.remove(pPath.getFileSystem());
