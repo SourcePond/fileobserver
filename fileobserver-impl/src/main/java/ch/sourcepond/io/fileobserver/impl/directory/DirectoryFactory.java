@@ -53,7 +53,7 @@ public class DirectoryFactory {
     }
 
     public Directory newBranch(final Directory pParent, final WatchKey pKey) {
-        return new ChildDirectory(pParent, pKey);
+        return new SubDirectory(pParent, pKey);
     }
 
     Resource newResource(final Algorithm pAlgorithm, final Path pFile) {
@@ -64,7 +64,7 @@ public class DirectoryFactory {
         return fileKeyFactory.newKey(pWatchedDirectoryKey, pRelativePath);
     }
 
-    public void execute(final Runnable pRunnable) {
+    void execute(final Runnable pRunnable) {
         executorServices.getObserverExecutor().execute(pRunnable);
     }
 }

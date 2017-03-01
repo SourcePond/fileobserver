@@ -156,7 +156,7 @@ public class Activator extends SmartSwitchActivatorBase {
 
         // If the key is newly added, open a watch-service for the directory
         if (isNew) {
-            virtualRoot.addRoot(key, directory);
+            virtualRoot.addRoot(pWatchedDirectory);
         }
     }
 

@@ -13,11 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
@@ -35,6 +37,7 @@ import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
 import static java.nio.file.StandardWatchEventKinds.*;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -42,7 +45,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
-    private final ConcurrentMap<Path, Directory> roots = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
     private final WatchService watchService;
@@ -53,99 +56,149 @@ public class DedicatedFileSystem implements Closeable {
         watchService = pWatchService;
     }
 
-    private WatchKey register(final Path pDirectory) {
-        try {
-            return pDirectory.register(watchService, new WatchEvent.Kind[]{
-                    ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY});
-        } catch (final IOException e) {
-            throw new UncheckedIOException(e);
-        } finally {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(format("Added Directory %s", pDirectory));
-            }
+    /**
+     * Registers the path specified with the {@link WatchService} held by this object.
+     * If the path specified is not a directory, an {@link UncheckedIOException} will be caused to be thrown.
+     *
+     * @param pDirectory Directory to be watched, must not be {@code null}
+     * @return A key representing the registration of this object with the watch service
+     * @throws IOException Thrown, if the registration of the directory specified with the watch service failed.
+     */
+    private WatchKey register(final Path pDirectory) throws IOException {
+        final WatchKey key = pDirectory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(format("Added Directory %s", pDirectory));
         }
-    }
-
-    public void initiallyInformHandler(final FileObserver pObserver) {
-        roots.values().forEach(d -> d.forceInformAboutAllDirectChildFiles(pObserver));
+        return key;
     }
 
     /**
+     * <p>Iterates through all registered directories and passes all their files to the
+     * {@link FileObserver#modified(FileKey, Path)} of the observer specified. This is necessary for newly registered
+     * observers who need to know about all watched files. See {@link #registerRootDirectory(WatchedDirectory, Collection)} and
+     * {@link #directoryCreated(Path, Collection)} to get an idea how directories are registered with this object.
+     * <p>Note: it's guaranteed that the {@link Path} instances passed
+     * to the observer are regular files (not directories).
      *
-     *
-     * @param pDirectoryKey
-     * @param pDirectory
+     * @param pObserver Oberserver to be informed, must not be {@code null}.
+     */
+    public void forceInform(final FileObserver pObserver) {
+        dirs.values().forEach(d -> d.forceInform(pObserver));
+    }
+
+    /**
+     * @param pWatchedDirectory
      * @param pObservers
      */
-    public void rootAdded(final Object pDirectoryKey, final Path pDirectory, final Collection<FileObserver> pObservers) {
+    public void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
+                                      final Collection<FileObserver> pObservers)
+            throws IOException {
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
+
+        // It's already checked that the directory is not null
+        final Path directory = pWatchedDirectory.getDirectory();
+
         // Check if there is already a directory available for the path specified.
-        Directory dir = roots.get(pDirectory);
+        Directory dir = dirs.get(directory);
 
         if (dir == null) {
             // If no directory is registered for the path specified, create a new root-directory.
             dir = directoryFactory.newRoot();
 
-            if (null == roots.putIfAbsent(pDirectory, dir)) {
+            if (null == dirs.putIfAbsent(directory, dir)) {
                 // Register the path with the watch-service and set the watch-key on the
                 // newly create root-directory
-                ((RootDirectory) dir).setWatchKey(register(pDirectory));
-                roots.put(pDirectory, dir);
+                ((RootDirectory) dir).setWatchKey(register(directory));
+                dirs.put(directory, dir);
 
                 // Asynchronously register all sub-directories with the watch-service, and,
                 // inform the registered FileObservers
                 executorServices.getDirectoryWalkerExecutor().execute(
-                        () -> directoryCreated(pDirectory, pObservers));
+                        () -> directoryCreated(directory, pObservers));
             }
         }
 
         // In any case, add the directory key to the directory
-        dir.addDirectoryKey(pDirectoryKey);
+        dir.addDirectoryKey(key);
     }
 
-    public void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObserver) {
+    public void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
+                                        final Collection<FileObserver> pObservers) {
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+
+        final Directory dir = dirs.get(directory);
+        dir.removeDirectoryKey(key);
+
+        // Discard the root-directory; after this the directory is not watched anymore.
+        directoryDiscarded(pObservers, directory);
+
+
+    }
+
+    /**
+     * Registers the directory specified and all its sub-directories with the watch-service held by this object.
+     * Additionally, it passes any detected file to {@link FileObserver#modified(FileKey, Path)} to the observers
+     * specified.
+     *
+     * @param pDirectory Newly created directory, must not be {@code null}
+     * @param pObservers Observers to be informed about detected files, must not be {@code null}
+     */
+    void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObservers) {
         try {
             walkFileTree(pDirectory, new SimpleFileVisitor<Path>() {
 
                 @Override
                 public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                    roots.get(file.getParent()).forceInformObservers(pObserver, file);
+                    // It's important here to only trigger the observers if the file has changed.
+                    // This is most certainly the case, but, there is an exception: because we already
+                    // registered the parent directory of the file with the watch-service there's a small
+                    // chance that the file had already been modified before we got here.
+                    dirs.get(file.getParent()).informIfChanged(pObservers, file);
                     return CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                    roots.computeIfAbsent(dir,
-                            p -> directoryFactory.newBranch(roots.get(dir.getParent()), register(dir)));
-                    return CONTINUE;
+                    try {
+                        dirs.computeIfAbsent(dir,
+                                p -> {
+                                    try {
+                                        return directoryFactory.newBranch(dirs.get(dir.getParent()), register(dir));
+                                    } catch (final IOException e) {
+                                        throw new UncheckedIOException(e.getMessage(), e);
+                                    }
+                                });
+                        return CONTINUE;
+                    } catch (final UncheckedIOException e) {
+                        throw new IOException(e.getMessage(), e);
+                    }
                 }
             });
-        } catch (final UncheckedIOException // Can happen when watch-service registration fails, see register
-                | IOException e) {
+        } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         }
     }
 
-    public boolean directoryDeleted(final Path pDirectory) {
-        final Directory dir = roots.remove(pDirectory);
-        if (null != dir) {
+    public boolean directoryDiscarded(final Collection<FileObserver> pObservers, final Path pDirectory) {
+        final Directory dir = dirs.remove(pDirectory);
+        final boolean wasDirectory = dir != null;
+        if (wasDirectory) {
             dir.cancelKey();
-            for (final Iterator<Map.Entry<Path, Directory>> it = roots.entrySet().iterator(); it.hasNext(); ) {
+            for (final Iterator<Map.Entry<Path, Directory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
                 final Map.Entry<Path, Directory> entry = it.next();
                 if (entry.getKey().startsWith(pDirectory)) {
                     entry.getValue().cancelKey();
                     it.remove();
                 }
             }
+            dir.informDiscard(pObservers, pDirectory);
         }
-        return roots.isEmpty();
+        return wasDirectory;
     }
 
-    public Directory getParentDirectory(final Path pFile) {
-        final Directory dir = roots.get(pFile.getParent());
-        if (null == dir) {
-            throw new NullPointerException(format("No parent directory found for file %s", pFile));
-        }
-        return dir;
+    public Directory getDirectory(final Path pPath) {
+        return dirs.get(pPath);
     }
 
     @Override
@@ -155,7 +208,7 @@ public class DedicatedFileSystem implements Closeable {
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         } finally {
-            roots.clear();
+            dirs.clear();
         }
     }
 

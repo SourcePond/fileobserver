@@ -14,41 +14,55 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Algorithm;
-import ch.sourcepond.io.checksum.api.Checksum;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  *
  */
-class ChildDirectory extends Directory {
+class SubDirectory extends Directory {
     private final Directory parent;
     private final WatchKey watchKey;
-    private volatile Set<Object> directoryKeysOrNull;
+    private volatile Collection<Object> directoryKeysOrNull;
 
-    ChildDirectory(final Directory pParent, final WatchKey pWatchKey) {
+    SubDirectory(final Directory pParent, final WatchKey pWatchKey) {
         parent = pParent;
         watchKey = pWatchKey;
     }
 
     @Override
-    public void addDirectoryKey(final Object pKey) {
-        if (directoryKeysOrNull == null) {
+    WatchKey getWatchKey() {
+        return watchKey;
+    }
+
+    @Override
+    public void addDirectoryKey(final Object pDirectoryKey) {
+        Collection<Object> keys = directoryKeysOrNull;
+        if (keys == null) {
             synchronized (this) {
                 if (directoryKeysOrNull == null) {
-                    directoryKeysOrNull = new CopyOnWriteArraySet<>();
+                    keys = directoryKeysOrNull = new CopyOnWriteArraySet<>();
                 }
             }
         }
-        directoryKeysOrNull.add(pKey);
+        keys.add(pDirectoryKey);
+    }
+
+    @Override
+    public boolean removeDirectoryKey(final Object pDirectoryKey) {
+        final Collection<Object> keys = directoryKeysOrNull;
+        boolean rc = false;
+        if (keys != null) {
+            keys.remove(pDirectoryKey);
+            rc = keys.isEmpty();
+        }
+        return rc;
     }
 
     @Override
@@ -65,27 +79,22 @@ class ChildDirectory extends Directory {
     }
 
     @Override
-    WatchKey getWatchKey() {
-        return watchKey;
+    FileKey createKey(final Object pDirectoryKey, final Path pRelativePath) {
+        return parent.createKey(pDirectoryKey, pRelativePath);
     }
 
     @Override
-    Resource newResource(final Algorithm pAlgorithm, final Path pFile) {
-        return parent.newResource(pAlgorithm, pFile);
+    Resource createResource(final Algorithm pAlgorithm, final Path pFile) {
+        return parent.createResource(pAlgorithm, pFile);
     }
 
     @Override
-    public Collection<FileKey> createKeys(final Path pFile) {
-        return parent.createKeys(pFile);
+    void execute(final Runnable pTask) {
+        parent.execute(pTask);
     }
 
     @Override
-    void informObservers(final Checksum pPrevious, final Checksum pCurrent, final Collection<FileObserver> pObservers, final Path pFile) {
-        parent.informObservers(pPrevious, pCurrent, pObservers, pFile);
-    }
-
-    @Override
-    public void forceInformObservers(final Collection<FileObserver> pObservers, final Path pFile) {
-        parent.forceInformObservers(pObservers, pFile);
+    Path relativizeAgainstRoot(final Path pPath) {
+        return parent.relativizeAgainstRoot(pPath);
     }
 }

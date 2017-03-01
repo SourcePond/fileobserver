@@ -3,6 +3,7 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.*;
  */
 public class DirectoryScannerTest extends CopyResourcesTest {
     private static final String NEW_FILE_NAME = "newfile.txt";
+    private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final DedicatedFileSystem child = mock(DedicatedFileSystem.class);
     private final List<DedicatedFileSystem> roots = asList(child);
@@ -34,6 +36,8 @@ public class DirectoryScannerTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws Exception {
+        when(watchedDirectory.getDirectory()).thenReturn(directory);
+        when(watchedDirectory.getKey()).thenReturn(TEST_KEY);
         when(virtualRoot.getRoots()).thenReturn(roots);
         watchService = fs.newWatchService();
         key = directory.register(watchService, new WatchEvent.Kind[]{
@@ -42,7 +46,7 @@ public class DirectoryScannerTest extends CopyResourcesTest {
             Thread.sleep(1000);
             return watchService.poll();
         });
-        virtualRoot.addRoot(TEST_KEY, directory);
+        virtualRoot.addRoot(watchedDirectory);
         scanner.start();
     }
 

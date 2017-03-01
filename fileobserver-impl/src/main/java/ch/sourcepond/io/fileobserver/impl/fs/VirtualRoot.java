@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,16 +25,15 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
+import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -81,7 +80,7 @@ public class VirtualRoot {
         if (null == pObserver) {
             LOG.warn("Observer is null; nothing to add");
         } else if (observers.add(pObserver)) {
-            children.values().forEach(f -> f.initiallyInformHandler(pObserver));
+            children.values().forEach(f -> f.forceInform(pObserver));
         }
     }
 
@@ -103,16 +102,17 @@ public class VirtualRoot {
         }
     }
 
-    public void addRoot(final Object pWatchedDirectoryKey, final Path pDirectory) throws IOException {
+    public void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
         try {
-            children.computeIfAbsent(pDirectory.getFileSystem(),
-                    this::newDirectories).rootAdded(pWatchedDirectoryKey, pDirectory, observers);
+            children.computeIfAbsent(directory.getFileSystem(),
+                    this::newDirectories).registerRootDirectory(pWatchedDirectory, observers);
         } catch (final UncheckedIOException e) {
             throw new IOException(e.getMessage(), e);
         }
     }
 
-    private DedicatedFileSystem getFsDirectories(final Path pPath) {
+    private DedicatedFileSystem getDedicatedFileSystem(final Path pPath) {
         final DedicatedFileSystem fsdirs = children.get(pPath.getFileSystem());
         if (null == fsdirs) {
             throw new IllegalStateException(format("No appropriate root-directory found for %s", pPath));
@@ -122,26 +122,24 @@ public class VirtualRoot {
 
     public void pathModified(final Path pPath) {
         if (isDirectory(pPath)) {
-            getFsDirectories(pPath).directoryCreated(pPath, observers);
+            getDedicatedFileSystem(pPath).directoryCreated(pPath, observers);
         } else {
-            getFsDirectories(pPath).getParentDirectory(pPath).informIfChanged(observers, pPath);
+            final Directory dir = getDedicatedFileSystem(pPath).getDirectory(pPath.getParent());
+            if (null == dir) {
+                throw new NullPointerException(format("No directory registered for file %s", pPath));
+            }
+            dir.informIfChanged(observers, pPath);
         }
     }
 
     public void pathDeleted(final Path pPath) {
-        final DedicatedFileSystem fsdirs = getFsDirectories(pPath);
-        final Directory fsdir = fsdirs.getParentDirectory(pPath);
+        final DedicatedFileSystem dfs = getDedicatedFileSystem(pPath);
 
-        if (fsdirs.directoryDeleted(pPath)) {
-            children.remove(pPath.getFileSystem());
-        }
+        // The deleted path was a directory
+        if (!dfs.directoryDiscarded(observers, pPath)) {
 
-        final ExecutorService executor = executorServices.getObserverExecutor();
-        final Collection<FileKey> keys = fsdir.createKeys(pPath);
-        for (final FileObserver observer : observers) {
-            for (final FileKey key : keys) {
-                executor.execute(() -> observer.discard(key));
-            }
+            // The deleted path was a file
+            dfs.getDirectory(pPath.getParent()).informDiscard(observers, pPath);
         }
     }
 

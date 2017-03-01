@@ -1,10 +1,10 @@
 package ch.sourcepond.io.fileobserver.impl;
 
 
-import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
+import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 
-import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static org.mockito.Mockito.*;
 
 /**
@@ -80,7 +79,7 @@ public class ActivatorTest {
     @Test(expected = IOException.class)
     public void bindFailed() throws IOException {
         final IOException expected = new IOException();
-        doThrow(expected).when(virtualRoot).addRoot(TEST_KEY, directory);
+        doThrow(expected).when(virtualRoot).addRoot(watchedDirectory);
 
         // This should not cause an exception
         manager.bind(watchedDirectory);
