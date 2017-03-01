@@ -39,7 +39,7 @@ public class DirectoryTest {
     private final Path subDirPath = mock(Path.class);
     private final WatchKey rootDirWatchKey = mock(WatchKey.class);
     private final WatchKey subDirWatchKey = mock(WatchKey.class);
-    private final RootDirectory rootDir = new RootDirectory(factory);
+    private final RootDirectory rootDir = new RootDirectory(factory, rootDirWatchKey);
     private final SubDirectory subDir = new SubDirectory(rootDir, subDirWatchKey);
 
     @Before

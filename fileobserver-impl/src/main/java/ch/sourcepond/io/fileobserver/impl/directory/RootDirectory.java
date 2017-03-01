@@ -28,9 +28,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class RootDirectory extends Directory {
     private final Collection<Object> directoryKeys = new CopyOnWriteArraySet<>();
     private final DirectoryFactory factory;
-    private volatile WatchKey watchKey;
 
-    RootDirectory(final DirectoryFactory pFactory) {
+    RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey) {
+        super(pWatchKey);
         factory = pFactory;
     }
 
@@ -54,15 +54,6 @@ public class RootDirectory extends Directory {
     @Override
     FileKey createKey(final Object pDirectoryKey, final Path pRelativePath) {
         return factory.newKey(pDirectoryKey, pRelativePath);
-    }
-
-    public void setWatchKey(final WatchKey pWatchKey) {
-        watchKey = pWatchKey;
-    }
-
-    @Override
-    WatchKey getWatchKey() {
-        return watchKey;
     }
 
     /*

@@ -42,6 +42,11 @@ public abstract class Directory {
     private static final Logger LOG = getLogger(SubDirectory.class);
     static final long TIMEOUT = 2000;
     private final ConcurrentMap<Path, Resource> resources = new ConcurrentHashMap<>();
+    private final WatchKey watchKey;
+
+    Directory(final WatchKey pWatchKey) {
+        watchKey = pWatchKey;
+    }
 
     /**
      * Iterates over a new collection of {@link FileKey} objects based on the file specified.
@@ -96,16 +101,6 @@ public abstract class Directory {
      * @param pTask Task to be executed, must not be {@code null}
      */
     abstract void execute(Runnable pTask);
-
-    /**
-     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
-     * Returns the {@link WatchKey} which is associated with this directory.
-     * The watch-key remains accessible even afeter {@link #cancelKey()} has been called.
-     *
-     * @return Watch-key, never {@code null}
-     */
-    abstract WatchKey getWatchKey();
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
@@ -166,6 +161,18 @@ public abstract class Directory {
                 stream().map(
                 k -> createKey(k, relativizeAgainstRoot(pFile))).
                 collect(toList());
+    }
+
+    /**
+     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
+     *
+     * Returns the {@link WatchKey} which is associated with this directory.
+     * The watch-key remains accessible even afeter {@link #cancelKey()} has been called.
+     *
+     * @return Watch-key, never {@code null}
+     */
+    WatchKey getWatchKey() {
+        return watchKey;
     }
 
     /**

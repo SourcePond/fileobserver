@@ -18,7 +18,6 @@ import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -90,7 +89,10 @@ public class DedicatedFileSystem implements Closeable {
      * @param pWatchedDirectory
      * @param pObservers
      */
-    public void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
+    // Note: Despite a ConcurrenMap is used it's necessary to synchronize this method.
+    // The reason is because all sub-directories need to registered before another WatchedDirectory
+    // can be registered through this method.
+    public synchronized void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
                                       final Collection<FileObserver> pObservers)
             throws IOException {
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
@@ -98,24 +100,17 @@ public class DedicatedFileSystem implements Closeable {
         // It's already checked that the directory is not null
         final Path directory = pWatchedDirectory.getDirectory();
 
-        // Check if there is already a directory available for the path specified.
         Directory dir = dirs.get(directory);
-
         if (dir == null) {
             // If no directory is registered for the path specified, create a new root-directory.
-            dir = directoryFactory.newRoot();
+            // Register the path with the watch-service and use the returned watch-key to create the root directory.
+            dir = directoryFactory.newRoot(register(directory));
+            dirs.put(directory, dir);
 
-            if (null == dirs.putIfAbsent(directory, dir)) {
-                // Register the path with the watch-service and set the watch-key on the
-                // newly create root-directory
-                ((RootDirectory) dir).setWatchKey(register(directory));
-                dirs.put(directory, dir);
-
-                // Asynchronously register all sub-directories with the watch-service, and,
-                // inform the registered FileObservers
-                executorServices.getDirectoryWalkerExecutor().execute(
-                        () -> directoryCreated(directory, pObservers));
-            }
+            // Asynchronously register all sub-directories with the watch-service, and,
+            // inform the registered FileObservers
+            executorServices.getDirectoryWalkerExecutor().execute(
+                    () -> directoryCreated(directory, pObservers));
         }
 
         // In any case, add the directory key to the directory
@@ -132,7 +127,6 @@ public class DedicatedFileSystem implements Closeable {
 
         // Discard the root-directory; after this the directory is not watched anymore.
         directoryDiscarded(pObservers, directory);
-
 
     }
 

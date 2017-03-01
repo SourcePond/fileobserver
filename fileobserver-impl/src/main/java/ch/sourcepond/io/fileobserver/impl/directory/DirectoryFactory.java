@@ -48,8 +48,8 @@ public class DirectoryFactory {
         executorServices = pExecutorServices;
     }
 
-    public RootDirectory newRoot() {
-        return new RootDirectory(this);
+    public RootDirectory newRoot(final WatchKey pWatchKey) {
+        return new RootDirectory(this, pWatchKey);
     }
 
     public Directory newBranch(final Directory pParent, final WatchKey pKey) {

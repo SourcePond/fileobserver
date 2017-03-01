@@ -28,19 +28,13 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 class SubDirectory extends Directory {
     private final Directory parent;
-    private final WatchKey watchKey;
     private volatile Collection<Object> directoryKeysOrNull;
 
     SubDirectory(final Directory pParent, final WatchKey pWatchKey) {
+        super(pWatchKey);
         parent = pParent;
-        watchKey = pWatchKey;
     }
-
-    @Override
-    WatchKey getWatchKey() {
-        return watchKey;
-    }
-
+    
     @Override
     public void addDirectoryKey(final Object pDirectoryKey) {
         Collection<Object> keys = directoryKeysOrNull;
