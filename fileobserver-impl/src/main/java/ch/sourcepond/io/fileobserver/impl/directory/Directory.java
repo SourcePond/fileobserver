@@ -124,6 +124,8 @@ public abstract class Directory {
      */
     abstract FileKey createKey(Object pDirectoryKey, Path pRelativePath);
 
+    abstract DirectoryFactory getFactory();
+
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      *
@@ -178,16 +180,9 @@ public abstract class Directory {
         return watchKey;
     }
 
-    /**
-     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
-     * Returns the path represented by this directory object.
-     *
-     * @return Path of this directory, never {@code null}.
-     */
-    Path getPath() {
-        return (Path) getWatchKey().watchable();
-    }
+    public abstract boolean isRoot();
+
+    public abstract boolean hasKeys();
 
     /**
      * <p>Adds the directory-key specified to this directory instance. When a change is detected, a
@@ -235,6 +230,15 @@ public abstract class Directory {
     }
 
     /**
+     * Returns the path represented by this directory object.
+     *
+     * @return Path of this directory, never {@code null}.
+     */
+    public Path getPath() {
+        return (Path) getWatchKey().watchable();
+    }
+
+    /**
      * Iterates over the observers specified and informs them that the file specified has
      * been discarded through their {@link FileObserver#discard(FileKey)} method. The observers
      * will be called asynchronously sometime in the future.
@@ -253,6 +257,10 @@ public abstract class Directory {
         }
     }
 
+    public boolean isDirectParentOf(Directory pOther) {
+        return getPath().equals(pOther.getPath().getParent());
+    }
+
     /**
      * Triggers the {@link FileObserver#modified(FileKey, Path)} on all observers specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
@@ -267,4 +275,8 @@ public abstract class Directory {
                 f -> createResource(SHA256, pFile)).update(TIMEOUT,
                 (pPrevious, pCurrent) -> informObservers(pPrevious, pCurrent, pObservers, pFile));
     }
+
+    public abstract Directory rebase(Directory pBaseDirectory);
+
+    public abstract Directory toRootDirectory();
 }

@@ -27,14 +27,34 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *
  */
 class SubDirectory extends Directory {
-    private final Directory parent;
+    private volatile Directory parent;
     private volatile Collection<Object> directoryKeysOrNull;
 
     SubDirectory(final Directory pParent, final WatchKey pWatchKey) {
         super(pWatchKey);
         parent = pParent;
     }
-    
+
+    /**
+     * This constructor is used by {@link RootDirectory#rebase(Directory)}.
+     *
+     * @param pParent
+     * @param pWatchKey
+     * @param pDirectoryKeysOrNull
+     */
+    SubDirectory(final Directory pParent,
+                         final WatchKey pWatchKey,
+                         final Collection<Object> pDirectoryKeysOrNull) {
+        super(pWatchKey);
+        parent = pParent;
+        directoryKeysOrNull = pDirectoryKeysOrNull;
+    }
+
+    @Override
+    DirectoryFactory getFactory() {
+        return parent.getFactory();
+    }
+
     @Override
     public void addDirectoryKey(final Object pDirectoryKey) {
         Collection<Object> keys = directoryKeysOrNull;
@@ -97,5 +117,27 @@ class SubDirectory extends Directory {
             relativePath = parent.relativizeAgainstRoot(pDirectoryKey, pPath);
         }
         return relativePath;
+    }
+
+    @Override
+    public boolean isRoot() {
+        return false;
+    }
+
+    @Override
+    public boolean hasKeys() {
+        final Collection<Object> keys = directoryKeysOrNull;
+        return keys != null && !keys.isEmpty();
+    }
+
+    @Override
+    public Directory rebase(final Directory pBaseDirectory) {
+        parent = pBaseDirectory;
+        return this;
+    }
+
+    @Override
+    public Directory toRootDirectory() {
+        return new RootDirectory(getFactory(), getWatchKey(), directoryKeysOrNull);
     }
 }

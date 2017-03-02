@@ -26,12 +26,31 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Represents a root-directory i.e. a directory which has been registered to watched.
  */
 public class RootDirectory extends Directory {
-    private final Collection<Object> directoryKeys = new CopyOnWriteArraySet<>();
+    private final Collection<Object> directoryKeys;
     private final DirectoryFactory factory;
 
     RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey) {
         super(pWatchKey);
         factory = pFactory;
+        directoryKeys = new CopyOnWriteArraySet<>();
+    }
+
+    /**
+     * This constructor is used by {@link SubDirectory#toRootDirectory()}.
+     *
+     * @param pFactory
+     * @param pWatchKey
+     * @param pDirectoryKeysOrNull
+     */
+    RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey, final Collection<Object> pDirectoryKeysOrNull) {
+        super(pWatchKey);
+        factory = pFactory;
+        directoryKeys = pDirectoryKeysOrNull == null ? new CopyOnWriteArraySet<>() : pDirectoryKeysOrNull;
+    }
+
+    @Override
+    DirectoryFactory getFactory() {
+        return factory;
     }
 
     /**
@@ -96,5 +115,26 @@ public class RootDirectory extends Directory {
         // Because we are on the last root directory possible we can ignore the
         // directory key here.
         return getPath().relativize(pPath);
+    }
+
+    @Override
+    public boolean isRoot() {
+        return true;
+    }
+
+    @Override
+    public boolean hasKeys() {
+        // A root directory has always keys
+        return true;
+    }
+
+    @Override
+    public Directory rebase(final Directory pBaseDirectory) {
+        return new SubDirectory(pBaseDirectory, getWatchKey(), directoryKeys);
+    }
+
+    @Override
+    public Directory toRootDirectory() {
+        return this;
     }
 }
