@@ -165,12 +165,12 @@ public abstract class Directory {
     public abstract void addDirectoryKey(Object pDirectoryKey);
 
     /**
-     * Removes the directory-key specfied from this directory instance.
+     * Removes the directory-key specified from this directory instance. If no such
+     * key is registered nothing happens.
      *
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
-     * @return {@code true} if this directory does not contain directory-keys anymore, {@code false} otherwise
      */
-    public abstract boolean removeDirectoryKey(Object pDirectoryKey);
+    public abstract  void removeDirectoryKey(Object pDirectoryKey);
 
     /**
      * Cancels the {@link WatchKey} held by this directory object (see {@link WatchKey#cancel()}).
