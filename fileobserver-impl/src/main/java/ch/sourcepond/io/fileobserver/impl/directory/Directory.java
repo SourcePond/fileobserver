@@ -138,12 +138,15 @@ public abstract class Directory {
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      *
-     * Relatives the root-directory against the path specified.
+     * Relatives the first root-directory against the path specified. To determine which is the first
+     * root-directory, the key specified will be matched against every directory in the tree. If a directory directly
+     * contains the key, it will be used for relativization.
      *
      * @param pPath Path to be relativized, must not be {@code null}
+     * @param pDirectoryKey Key of the desired root directory, must not be {@code null}
      * @return Relative path between root and the path specified, never {@code null}.
      */
-    abstract Path relativizeAgainstRoot(Path pPath);
+    abstract Path relativizeAgainstRoot(Object pDirectoryKey, Path pPath);
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
@@ -151,7 +154,7 @@ public abstract class Directory {
      * Creates a new collection of {@link FileKey} objects. Therefore, every directory-key
      * returned by {@link #getDirectoryKeys()} will be combined with the relative path of the
      * file specified. The relative path is the relativization between the root-directory and
-     * the file specified (see {@link #relativizeAgainstRoot(Path)}).
+     * the file specified (see {@link #relativizeAgainstRoot(Object, Path)}).
      *
      * @param pFile File to relativize against {@link #getPath()}, must not be {@code null}
      * @return New collection of {@link FileKey} objects, never {@code null}
@@ -159,7 +162,7 @@ public abstract class Directory {
     Collection<FileKey> createKeys(final Path pFile) {
         return getDirectoryKeys().
                 stream().map(
-                k -> createKey(k, relativizeAgainstRoot(pFile))).
+                k -> createKey(k, relativizeAgainstRoot(k, pFile))).
                 collect(toList());
     }
 

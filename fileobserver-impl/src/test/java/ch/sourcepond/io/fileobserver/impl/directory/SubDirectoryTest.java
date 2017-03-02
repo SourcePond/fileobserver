@@ -49,7 +49,7 @@ public class SubDirectoryTest {
     private final Checksum checksum2 = mock(Checksum.class);
     private final Resource resource = mock(Resource.class);
     private final FileKey key = mock(FileKey.class);
-    private final RootDirectory parent = factory.newRoot();
+    private final RootDirectory parent = factory.newRoot(parentWatchKey);
     private final Directory child = factory.newBranch(parent, watchKey);
 
     @Before
@@ -62,7 +62,6 @@ public class SubDirectoryTest {
         when(relativePath.toString()).thenReturn(ANY_RELATIVIZED_PATH);
         when(resourcesFactory.create(SHA256, path)).thenReturn(resource);
         when(child.getPath()).thenReturn(childPath);
-        parent.setWatchKey(parentWatchKey);
     }
 
     @After

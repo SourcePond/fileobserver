@@ -88,7 +88,14 @@ class SubDirectory extends Directory {
     }
 
     @Override
-    Path relativizeAgainstRoot(final Path pPath) {
-        return parent.relativizeAgainstRoot(pPath);
+    Path relativizeAgainstRoot(final Object pDirectoryKey, final Path pPath) {
+        final Path relativePath;
+        final Collection<Object> keys = directoryKeysOrNull;
+        if (keys != null && keys.contains(pDirectoryKey)) {
+            relativePath = getPath().relativize(pPath);
+        } else {
+            relativePath = parent.relativizeAgainstRoot(pDirectoryKey, pPath);
+        }
+        return relativePath;
     }
 }

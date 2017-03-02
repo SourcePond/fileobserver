@@ -34,12 +34,28 @@ public class RootDirectory extends Directory {
         factory = pFactory;
     }
 
+    /**
+     * <p>Adds the directory-key specified to this directory instance. When a change is detected, a
+     * {@link FileKey} will be generated for every directory-key/relative-path combination.
+     * This {@link FileKey} instance will then be delivered (along with the readable file path)
+     * to the {@link ch.sourcepond.io.fileobserver.api.FileObserver} objects which should be informed.</p>
+     *
+     * <p>Note: The key object should be <em>immutable</em>, {@link String} or an {@link Enum}
+     * objects are good condidates for being directory-keys.</p>
+     *
+     * @param pDirectoryKey Directory key, must not be {@code null}
+     */
     @Override
     public void addDirectoryKey(final Object pDirectoryKey) {
         directoryKeys.add(pDirectoryKey);
     }
 
-    @Override
+    /**
+     * Removes the directory-key specfied from this directory instance.
+     *
+     * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
+     * @return {@code true} if this directory does not contain directory-keys anymore, {@code false} otherwise
+     */
     public boolean removeDirectoryKey(final Object pDirectoryKey) {
         final Collection<Object> keys = directoryKeys;
         keys.remove(pDirectoryKey);
@@ -76,7 +92,9 @@ public class RootDirectory extends Directory {
      * Relativizes the path specified against the path of this directory.
      */
     @Override
-    Path relativizeAgainstRoot(final Path pPath) {
+    Path relativizeAgainstRoot(final Object pDirectoryKey, final Path pPath) {
+        // Because we are on the last root directory possible we can ignore the
+        // directory key here.
         return getPath().relativize(pPath);
     }
 }
