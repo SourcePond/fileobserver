@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.checksum.api.Algorithm;
 import ch.sourcepond.io.checksum.api.Checksum;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
@@ -57,7 +56,7 @@ public abstract class Directory {
      */
     private void forceModified(final FileObserver pObserver, final Path pFile) {
         for (final FileKey key : createKeys(pFile)) {
-            execute(() -> pObserver.modified(key, pFile));
+            getFactory().execute(() -> pObserver.modified(key, pFile));
         }
     }
 
@@ -96,15 +95,6 @@ public abstract class Directory {
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      *
-     * Asynchronously executes the task specified.
-     *
-     * @param pTask Task to be executed, must not be {@code null}
-     */
-    abstract void execute(Runnable pTask);
-
-    /**
-     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
      * Returns the registered directory keys (see {@link #addDirectoryKey(Object)}). Any change
      * on the returned collection could possible change the internal state.
      *
@@ -112,30 +102,7 @@ public abstract class Directory {
      */
     abstract Collection<Object> getDirectoryKeys();
 
-    /**
-     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
-     * Creates a new {@link FileKey} based on the directory-key and
-     * relative path specified, see {@link #addDirectoryKey(Object)} for further information.
-     *
-     * @param pDirectoryKey Directory-key, must not be {@code null}
-     * @param pRelativePath Relative path, must not be {@code null}
-     * @return New file-key, never {@code null}
-     */
-    abstract FileKey createKey(Object pDirectoryKey, Path pRelativePath);
-
     abstract DirectoryFactory getFactory();
-
-    /**
-     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
-     * Creates a new checksum {@link Resource} with the algorithm and file specified.
-     *
-     * @param pAlgorithm Algorithm, must not be {@code null}
-     * @param pFile File on which checksums shall be tracked, must not be {@code null}
-     * @return New resource instance, never {@code null}
-     */
-    abstract Resource createResource(Algorithm pAlgorithm, Path pFile);
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
@@ -164,7 +131,7 @@ public abstract class Directory {
     Collection<FileKey> createKeys(final Path pFile) {
         return getDirectoryKeys().
                 stream().map(
-                k -> createKey(k, relativizeAgainstRoot(k, pFile))).
+                k -> getFactory().newKey(k, relativizeAgainstRoot(k, pFile))).
                 collect(toList());
     }
 
@@ -226,7 +193,7 @@ public abstract class Directory {
      * @param pObserver Observer to be informed, must not be {@code null}.
      */
     public void forceInform(final FileObserver pObserver) {
-        execute(() -> streamDirectoryAndForceInform(pObserver));
+        getFactory().execute(() -> streamDirectoryAndForceInform(pObserver));
     }
 
     /**
@@ -252,7 +219,7 @@ public abstract class Directory {
 
         for (final FileKey key : createKeys(pFile)) {
             for (final FileObserver observer : pObservers) {
-                execute(() -> observer.discard(key));
+                getFactory().execute(() -> observer.discard(key));
             }
         }
     }
@@ -272,7 +239,7 @@ public abstract class Directory {
     public void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
         // TODO: Replace interval with configurable value
         resources.computeIfAbsent(pFile,
-                f -> createResource(SHA256, pFile)).update(TIMEOUT,
+                f -> getFactory().newResource(SHA256, pFile)).update(TIMEOUT,
                 (pPrevious, pCurrent) -> informObservers(pPrevious, pCurrent, pObservers, pFile));
     }
 

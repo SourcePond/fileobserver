@@ -56,15 +56,41 @@ public class DirectoryFactory {
         return new SubDirectory(pParent, pKey);
     }
 
+    /**
+     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
+     *
+     * Creates a new checksum {@link Resource} with the algorithm and file specified.
+     *
+     * @param pAlgorithm Algorithm, must not be {@code null}
+     * @param pFile File on which checksums shall be tracked, must not be {@code null}
+     * @return New resource instance, never {@code null}
+     */
     Resource newResource(final Algorithm pAlgorithm, final Path pFile) {
         return resourcesFactory.create(pAlgorithm, pFile);
     }
 
-    FileKey newKey(final Object pWatchedDirectoryKey, final Path pRelativePath) {
-        return fileKeyFactory.newKey(pWatchedDirectoryKey, pRelativePath);
+    /**
+     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
+     *
+     * Creates a new {@link FileKey} based on the directory-key and
+     * relative path specified, see {@link Directory#addDirectoryKey(Object)} for further information.
+     *
+     * @param pDirectoryKey Directory-key, must not be {@code null}
+     * @param pRelativePath Relative path, must not be {@code null}
+     * @return New file-key, never {@code null}
+     */
+    FileKey newKey(final Object pDirectoryKey, final Path pRelativePath) {
+        return fileKeyFactory.newKey(pDirectoryKey, pRelativePath);
     }
 
-    void execute(final Runnable pRunnable) {
-        executorServices.getObserverExecutor().execute(pRunnable);
+    /**
+     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
+     *
+     * Asynchronously executes the task specified.
+     *
+     * @param pTask Task to be executed, must not be {@code null}
+     */
+    void execute(final Runnable pTask) {
+        executorServices.getObserverExecutor().execute(pTask);
     }
 }

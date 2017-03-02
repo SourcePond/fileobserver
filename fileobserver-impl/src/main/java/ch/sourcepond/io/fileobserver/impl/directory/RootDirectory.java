@@ -13,8 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.checksum.api.Algorithm;
-import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 
 import java.nio.file.Path;
@@ -84,27 +82,6 @@ public class RootDirectory extends Directory {
     @Override
     Collection<Object> getDirectoryKeys() {
         return directoryKeys;
-    }
-
-    @Override
-    FileKey createKey(final Object pDirectoryKey, final Path pRelativePath) {
-        return factory.newKey(pDirectoryKey, pRelativePath);
-    }
-
-    /*
-     * Delegates the Resource creation to the factory which created this object.
-     */
-    @Override
-    Resource createResource(final Algorithm pAlgorithm, final Path pFile) {
-        return factory.newResource(pAlgorithm, pFile);
-    }
-
-    /*
-     * Delegates the task execution to the factory which created this object.
-     */
-    @Override
-    void execute(final Runnable pTask) {
-        factory.execute(pTask);
     }
 
     /*

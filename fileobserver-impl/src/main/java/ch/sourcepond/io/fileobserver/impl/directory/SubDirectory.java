@@ -13,10 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.checksum.api.Algorithm;
-import ch.sourcepond.io.checksum.api.Resource;
-import ch.sourcepond.io.fileobserver.api.FileKey;
-
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
@@ -90,21 +86,6 @@ class SubDirectory extends Directory {
             keys.addAll(keysOrNull);
         }
         return keys;
-    }
-
-    @Override
-    FileKey createKey(final Object pDirectoryKey, final Path pRelativePath) {
-        return parent.createKey(pDirectoryKey, pRelativePath);
-    }
-
-    @Override
-    Resource createResource(final Algorithm pAlgorithm, final Path pFile) {
-        return parent.createResource(pAlgorithm, pFile);
-    }
-
-    @Override
-    void execute(final Runnable pTask) {
-        parent.execute(pTask);
     }
 
     @Override
