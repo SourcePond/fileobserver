@@ -28,9 +28,7 @@ public class RootDirectory extends Directory {
     private final DirectoryFactory factory;
 
     RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey) {
-        super(pWatchKey);
-        factory = pFactory;
-        directoryKeys = new CopyOnWriteArraySet<>();
+        this(pFactory, pWatchKey, null);
     }
 
     /**
@@ -73,8 +71,8 @@ public class RootDirectory extends Directory {
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
      * @return {@code true} if this directory does not contain directory-keys anymore, {@code false} otherwise
      */
-    public void removeDirectoryKey(final Object pDirectoryKey) {
-        directoryKeys.remove(pDirectoryKey);
+    public boolean removeDirectoryKey(final Object pDirectoryKey) {
+        return directoryKeys.remove(pDirectoryKey);
     }
 
     @Override

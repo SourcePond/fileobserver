@@ -168,7 +168,7 @@ public class DedicatedFileSystem implements Closeable {
      * @param pWatchedDirectory
      * @param pObservers
      */
-    // Note: Despite a ConcurrenMap is used it's necessary to synchronize this method.
+    // Note: Despite a ConcurrentMap is used it's necessary to synchronize this method.
     // The reason is because all sub-directories need to be registered before another WatchedDirectory
     // is being registered through this method.
     public synchronized void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
@@ -226,7 +226,7 @@ public class DedicatedFileSystem implements Closeable {
         final Directory dir = dirs.get(directory);
 
         // Remove the directory-key of the watched directory from the key list
-        dir.removeDirectoryKey(key);
+        dir.removeDirectoryKey(key, pObservers);
 
         // If all watched-directories which referenced the directory have been de-registered,
         // it's time to clean-up.
@@ -235,9 +235,6 @@ public class DedicatedFileSystem implements Closeable {
                 dirs.replace(d.getPath(), d.toRootDirectory());
             });
         }
-
-        // Inform observers that a key has been removed
-        dir.informDiscard(pObservers, directory, key);
     }
 
     private void walkDirectory(final Path pDirectory, final Collection<FileObserver> pObservers, final boolean pSkipExisting) {

@@ -166,12 +166,30 @@ public abstract class Directory {
     public abstract void addDirectoryKey(Object pDirectoryKey);
 
     /**
+     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
+     *
      * Removes the directory-key specified from this directory instance. If no such
      * key is registered nothing happens.
      *
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
+     * @return {@code true} if the directory-key specified was removed, {@code false} otherwise.
      */
-    public abstract void removeDirectoryKey(Object pDirectoryKey);
+    abstract boolean removeDirectoryKey(Object pDirectoryKey);
+
+    /**
+     * Removes the directory-key specified from this directory instance and informs
+     * the observers specified through their {@link FileObserver#discard(FileKey)}. If no such
+     * key is registered nothing happens.
+     *
+     * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
+     * @param pObservers Observers to be informed, must not be {@code null}
+     */
+    public final void removeDirectoryKey(final Object pDirectoryKey, final Collection<FileObserver> pObservers) {
+        if (removeDirectoryKey(pDirectoryKey)) {
+            final FileKey key = createKey(pDirectoryKey, getPath());
+            pObservers.forEach(o -> getFactory().execute(() -> o.discard(key)));
+        }
+    }
 
     /**
      * Cancels the {@link WatchKey} held by this directory object (see {@link WatchKey#cancel()}).
@@ -221,11 +239,6 @@ public abstract class Directory {
         for (final FileKey key : createKeys(pFile)) {
             pObservers.forEach(o -> getFactory().execute(() -> o.discard(key)));
         }
-    }
-
-    public void informDiscard(final Collection<FileObserver> pObservers, final Path pFile, final Object pKey) {
-        final FileKey key = createKey(pKey, pFile);
-        pObservers.forEach(o -> getFactory().execute(() -> o.discard(key)));
     }
 
     /**

@@ -65,16 +65,18 @@ class SubDirectory extends Directory {
     }
 
     @Override
-    public void removeDirectoryKey(final Object pDirectoryKey) {
+    public boolean removeDirectoryKey(final Object pDirectoryKey) {
         final Collection<Object> keys = directoryKeysOrNull;
+        boolean rc = false;
         if (keys != null) {
-            keys.remove(pDirectoryKey);
+            rc = keys.remove(pDirectoryKey);
             if (keys.isEmpty()) {
                 synchronized (this) {
                     directoryKeysOrNull = null;
                 }
             }
         }
+        return rc;
     }
 
     @Override

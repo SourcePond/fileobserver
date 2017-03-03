@@ -60,7 +60,7 @@ public class DirectoryTest {
         doAnswer(invocationOnMock -> {
             final Runnable task = invocationOnMock.getArgument(0);
             task.run();
-            return  null;
+            return null;
         }).when(factory).execute(notNull());
         when(factory.newResource(SHA256, file)).thenReturn(resource);
         when(rootDirWatchKey.watchable()).thenReturn(rootDirPath);
