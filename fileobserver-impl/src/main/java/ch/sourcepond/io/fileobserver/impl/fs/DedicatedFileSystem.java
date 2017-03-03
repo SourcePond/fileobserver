@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
+import static java.nio.file.FileVisitResult.SKIP_SUBTREE;
 import static java.nio.file.Files.walkFileTree;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static java.util.Objects.requireNonNull;
@@ -47,7 +48,9 @@ public class DedicatedFileSystem implements Closeable {
     private final DirectoryFactory directoryFactory;
     private final WatchService watchService;
 
-    DedicatedFileSystem(final ExecutorServices pExecutorServices, final DirectoryFactory pDirectoryFactory, final WatchService pWatchService) {
+    DedicatedFileSystem(final ExecutorServices pExecutorServices,
+                        final DirectoryFactory pDirectoryFactory,
+                        final WatchService pWatchService) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
         watchService = pWatchService;
@@ -187,10 +190,9 @@ public class DedicatedFileSystem implements Closeable {
             // root directory, they need to be rebased (including their direct children)
             rebaseExistingRootDirectories(dir);
 
-            // Asynchronously register all sub-directories with the watch-service, and,
-            // inform the registered FileObservers
-            //executorServices.getDirectoryWalkerExecutor().execute(
-            //        () -> directoryCreated(directory, pObservers));
+            // Register directories, ignore existing because they have already been
+            // delivered to the observers.
+            walkDirectory(directory, pObservers, true);
         }
 
         // In any case, add the directory key to the directory
@@ -221,15 +223,33 @@ public class DedicatedFileSystem implements Closeable {
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
 
-        final Directory discardedDirectory = dirs.get(directory);
-        discardedDirectory.removeDirectoryKey(key);
+        final Directory dir = dirs.get(directory);
 
-        if (!discardedDirectory.hasKeys()) {
-            cancelDiscarded(discardedDirectory, new LinkedList<>()).forEach(dir -> {
-                dirs.replace(dir.getPath(), dir.toRootDirectory());
+        // Remove the directory-key of the watched directory from the key list
+        dir.removeDirectoryKey(key);
+
+        // If all watched-directories which referenced the directory have been de-registered,
+        // it's time to clean-up.
+        if (!dir.hasKeys()) {
+            cancelDiscarded(dir, new LinkedList<>()).forEach(d -> {
+                dirs.replace(d.getPath(), d.toRootDirectory());
             });
-            discardedDirectory.informDiscard(pObservers, directory);
         }
+
+        // Inform observers that a key has been removed
+        dir.informDiscard(pObservers, directory, key);
+    }
+
+    private void walkDirectory(final Path pDirectory, final Collection<FileObserver> pObservers, final boolean pSkipExisting) {
+        // Asynchronously register all sub-directories with the watch-service, and,
+        // inform the registered FileObservers
+        executorServices.getDirectoryWalkerExecutor().execute(() -> {
+            try {
+                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pSkipExisting, pObservers));
+            } catch (final IOException e) {
+                LOG.warn(e.getMessage(), e);
+            }
+        });
     }
 
     /**
@@ -241,11 +261,7 @@ public class DedicatedFileSystem implements Closeable {
      * @param pObservers Observers to be informed about detected files, must not be {@code null}
      */
     void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObservers) {
-        try {
-            walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pObservers));
-        } catch (final IOException e) {
-            LOG.warn(e.getMessage(), e);
-        }
+        walkDirectory(pDirectory, pObservers, false);
     }
 
     public boolean directoryDiscarded(final Collection<FileObserver> pObservers, final Path pDirectory) {
@@ -292,14 +308,17 @@ public class DedicatedFileSystem implements Closeable {
      */
     private class DirectoryInitializerFileVisitor extends SimpleFileVisitor<Path> {
         private final Collection<FileObserver> observers;
+        private final boolean skipExisting;
+        private Directory newlyAdded;
 
         /**
          * Creates a new instance of this class.
          *
          * @param pObservers Observers to be informed about detected files, must not be {@code null}
          */
-        public DirectoryInitializerFileVisitor(final Collection<FileObserver> pObservers) {
+        public DirectoryInitializerFileVisitor(final boolean pSkipExisting, final Collection<FileObserver> pObservers) {
             observers = pObservers;
+            skipExisting = pSkipExisting;
         }
 
         @Override
@@ -318,12 +337,14 @@ public class DedicatedFileSystem implements Closeable {
                 dirs.computeIfAbsent(dir,
                         p -> {
                             try {
-                                return directoryFactory.newBranch(dirs.get(dir.getParent()), register(dir));
+                                return newlyAdded = directoryFactory.newBranch(dirs.get(dir.getParent()), register(dir));
                             } catch (final IOException e) {
                                 throw new UncheckedIOException(e.getMessage(), e);
                             }
                         });
-                return CONTINUE;
+                return skipExisting && dir.equals(newlyAdded.getPath()) ?
+                        SKIP_SUBTREE :
+                        CONTINUE;
             } catch (final UncheckedIOException e) {
                 throw new IOException(e.getMessage(), e);
             }

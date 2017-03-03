@@ -69,6 +69,11 @@ class SubDirectory extends Directory {
         final Collection<Object> keys = directoryKeysOrNull;
         if (keys != null) {
             keys.remove(pDirectoryKey);
+            if (keys.isEmpty()) {
+                synchronized (this) {
+                    directoryKeysOrNull = null;
+                }
+            }
         }
     }
 

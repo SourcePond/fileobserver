@@ -52,7 +52,6 @@ public abstract class Directory {
      * Creates then an asynchronous task for each {@link FileKey}/file combination. This tasks will
      * be executed sometime in the future. Such a task will call {@link FileObserver#modified(FileKey, Path)}
      * with the {@link FileKey}/file combination which has been associated with it.
-     *
      */
     private void forceModified(final FileObserver pObserver, final Path pFile) {
         for (final FileKey key : createKeys(pFile)) {
@@ -64,16 +63,14 @@ public abstract class Directory {
      * Calls {@link #forceModified(FileObserver, Path)} with the file-observers and the file specified
      * if, and only if, the previous and current checksum specified are <em>not</em> equal.
      *
-     * @param pPrevious Previous checksum, must not be {@code null}
-     * @param pCurrent Current checksum, must not be {@code null}
+     * @param pPrevious  Previous checksum, must not be {@code null}
+     * @param pCurrent   Current checksum, must not be {@code null}
      * @param pObservers Observers to be informed, must not be {@code null}
-     * @param pFile Modified (readable) file, must not be {@code null}.
+     * @param pFile      Modified (readable) file, must not be {@code null}.
      */
     private void informObservers(final Checksum pPrevious, final Checksum pCurrent, final Collection<FileObserver> pObservers, final Path pFile) {
         if (!pPrevious.equals(pCurrent)) {
-            for (final FileObserver observer : pObservers) {
-                forceModified(observer, pFile);
-            }
+            pObservers.forEach(o -> forceModified(o, pFile));
         }
     }
 
@@ -94,7 +91,7 @@ public abstract class Directory {
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Returns the registered directory keys (see {@link #addDirectoryKey(Object)}). Any change
      * on the returned collection could possible change the internal state.
      *
@@ -106,20 +103,24 @@ public abstract class Directory {
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Relatives the first root-directory against the path specified. To determine which is the first
      * root-directory, the key specified will be matched against every directory in the tree. If a directory directly
      * contains the key, it will be used for relativization.
      *
-     * @param pPath Path to be relativized, must not be {@code null}
+     * @param pPath         Path to be relativized, must not be {@code null}
      * @param pDirectoryKey Key of the desired root directory, must not be {@code null}
      * @return Relative path between root and the path specified, never {@code null}.
      */
     abstract Path relativizeAgainstRoot(Object pDirectoryKey, Path pPath);
 
+    private FileKey createKey(final Object pDirectoryKey, final Path pFile) {
+        return getFactory().newKey(pDirectoryKey, relativizeAgainstRoot(pDirectoryKey, pFile));
+    }
+
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Creates a new collection of {@link FileKey} objects. Therefore, every directory-key
      * returned by {@link #getDirectoryKeys()} will be combined with the relative path of the
      * file specified. The relative path is the relativization between the root-directory and
@@ -128,16 +129,16 @@ public abstract class Directory {
      * @param pFile File to relativize against {@link #getPath()}, must not be {@code null}
      * @return New collection of {@link FileKey} objects, never {@code null}
      */
-    Collection<FileKey> createKeys(final Path pFile) {
+    private Collection<FileKey> createKeys(final Path pFile) {
         return getDirectoryKeys().
                 stream().map(
-                k -> getFactory().newKey(k, relativizeAgainstRoot(k, pFile))).
+                k -> createKey(k, pFile)).
                 collect(toList());
     }
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Returns the {@link WatchKey} which is associated with this directory.
      * The watch-key remains accessible even afeter {@link #cancelKey()} has been called.
      *
@@ -156,7 +157,7 @@ public abstract class Directory {
      * {@link FileKey} will be generated for every directory-key/relative-path combination.
      * This {@link FileKey} instance will then be delivered (along with the readable file path)
      * to the {@link FileObserver} objects which should be informed.</p>
-     *
+     * <p>
      * <p>Note: The key object should be <em>immutable</em>, {@link String} or an {@link Enum}
      * objects are good condidates for being directory-keys.</p>
      *
@@ -170,7 +171,7 @@ public abstract class Directory {
      *
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
      */
-    public abstract  void removeDirectoryKey(Object pDirectoryKey);
+    public abstract void removeDirectoryKey(Object pDirectoryKey);
 
     /**
      * Cancels the {@link WatchKey} held by this directory object (see {@link WatchKey#cancel()}).
@@ -211,19 +212,28 @@ public abstract class Directory {
      * will be called asynchronously sometime in the future.
      *
      * @param pObservers Observers to be informed, must not be {@code null}
-     * @param pFile Discarded file, must be {@code null}
+     * @param pFile      Discarded file, must be {@code null}
      */
     public void informDiscard(final Collection<FileObserver> pObservers, final Path pFile) {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
         for (final FileKey key : createKeys(pFile)) {
-            for (final FileObserver observer : pObservers) {
-                getFactory().execute(() -> observer.discard(key));
-            }
+            pObservers.forEach(o -> getFactory().execute(() -> o.discard(key)));
         }
     }
 
+    public void informDiscard(final Collection<FileObserver> pObservers, final Path pFile, final Object pKey) {
+        final FileKey key = createKey(pKey, pFile);
+        pObservers.forEach(o -> getFactory().execute(() -> o.discard(key)));
+    }
+
+    /**
+     * Checks whether this directory is the directory parent of the directory specified.
+     *
+     * @param pOther Other directory, must not be {@code null}
+     * @return {@code true} if this object is the direct parent of the directory specified, {@code false} otherwise
+     */
     public boolean isDirectParentOf(Directory pOther) {
         return getPath().equals(pOther.getPath().getParent());
     }
@@ -234,13 +244,14 @@ public abstract class Directory {
      * has been detected, nothing happens.
      *
      * @param pObservers Observers to be informed, must not be {@code null}
-     * @param pFile File which potentially has changed, must not be {@code null}
+     * @param pFile      File which potentially has changed, must not be {@code null}
      */
     public void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
         // TODO: Replace interval with configurable value
         resources.computeIfAbsent(pFile,
                 f -> getFactory().newResource(SHA256, pFile)).update(TIMEOUT,
-                (pPrevious, pCurrent) -> informObservers(pPrevious, pCurrent, pObservers, pFile));
+                (pPrevious, pCurrent) ->
+                        informObservers(pPrevious, pCurrent, pObservers, pFile));
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);
