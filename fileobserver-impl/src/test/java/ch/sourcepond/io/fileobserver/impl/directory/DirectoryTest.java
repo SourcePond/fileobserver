@@ -21,6 +21,7 @@ import ch.sourcepond.io.fileobserver.api.FileObserver;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
@@ -95,7 +96,7 @@ public class DirectoryTest {
      *
      */
     @Test
-    public void rootDirInformIfChangedChecksumsDifferent() {
+    public void rootDirInformIfChangedChecksumsDifferent() throws IOException {
         setupChecksumAnswer(checksum2);
         rootDir.informIfChanged(observers, file);
         verify(observer).modified(rootDirKey, file);
@@ -127,7 +128,7 @@ public class DirectoryTest {
      *
      */
     @Test
-    public void subDirInformIfChangedChecksumsDifferent() {
+    public void subDirInformIfChangedChecksumsDifferent() throws IOException {
         setupChecksumAnswer(checksum2);
         subDir.informIfChanged(observers, file);
         verify(observer).modified(rootDirKey, file);
@@ -139,7 +140,7 @@ public class DirectoryTest {
      *
      */
     @Test
-    public void subDirInformIfChangedChecksumsDifferentOnlyRootKeyRegistered() {
+    public void subDirInformIfChangedChecksumsDifferentOnlyRootKeyRegistered() throws IOException {
         setupChecksumAnswer(checksum2);
         subDir.removeDirectoryKey(SUB_DIR_WATCH_KEY);
         subDir.informIfChanged(observers, file);

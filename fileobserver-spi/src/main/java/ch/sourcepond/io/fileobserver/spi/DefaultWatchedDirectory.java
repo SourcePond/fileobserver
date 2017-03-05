@@ -78,4 +78,9 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
             observers.forEach(o -> o.destinationChanged(this, previous));
         }
     }
+
+    @Override
+    public String toString() {
+        return format("[%s: %s]", key, directory);
+    }
 }

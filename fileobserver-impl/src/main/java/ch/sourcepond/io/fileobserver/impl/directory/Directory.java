@@ -55,7 +55,13 @@ public abstract class Directory {
      */
     private void forceModified(final FileObserver pObserver, final Path pFile) {
         for (final FileKey key : createKeys(pFile)) {
-            getFactory().execute(() -> pObserver.modified(key, pFile));
+            getFactory().execute(() -> {
+                try {
+                    pObserver.modified(key, pFile);
+                } catch (final IOException e) {
+                    LOG.warn(e.getMessage(), e);
+                }
+            });
         }
     }
 

@@ -28,7 +28,8 @@
 		<module>fileobserver-tests</module>
         <module>fileobserver-feature</module>
 		<module>fileobserver-spi</module>
-	</modules>
+        <module>fileobserver-lib</module>
+    </modules>
 
 	<!-- Remove this when MNG-3244, MNG-5951 are resolved -->
 	<url>https://sourcepond.github.io/${repo.project}</url>

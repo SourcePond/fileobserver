@@ -12,6 +12,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
@@ -114,7 +115,7 @@ public class SubDirectoryTest {
     }
 
     @Test
-    public void informAboutChange() {
+    public void informAboutChange() throws IOException {
         parent.addDirectoryKey(TEST_KEY);
         when(resource.update(eq(TIMEOUT), notNull())).thenAnswer(im -> {
             final CalculationObserver lambda = im.getArgument(1);
@@ -127,7 +128,7 @@ public class SubDirectoryTest {
     }
 
     @Test
-    public void doNotinformAboutChangeWhenChecksumsAreEqual() {
+    public void doNotinformAboutChangeWhenChecksumsAreEqual() throws IOException {
         when(resource.update(eq(TIMEOUT), notNull())).thenAnswer(im -> {
             final CalculationObserver lambda = im.getArgument(1);
 
@@ -141,7 +142,7 @@ public class SubDirectoryTest {
     }
 
     @Test
-    public void forceInform() {
+    public void forceInform() throws IOException {
         parent.addDirectoryKey(TEST_KEY);
        // child.forceInformObservers(observers, path);
         verify(observer, timeout(500)).modified(key, path);
