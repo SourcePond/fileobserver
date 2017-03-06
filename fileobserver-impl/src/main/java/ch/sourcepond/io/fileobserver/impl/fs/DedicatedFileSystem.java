@@ -24,7 +24,10 @@ import org.slf4j.Logger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.WatchKey;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,7 +36,6 @@ import java.util.concurrent.ConcurrentMap;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
-import static java.nio.file.StandardWatchEventKinds.*;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -46,30 +48,14 @@ public class DedicatedFileSystem implements Closeable {
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
-    private final WatchService watchService;
+    private final WatchServiceRegistrar wsRegistrar;
 
     DedicatedFileSystem(final ExecutorServices pExecutorServices,
                         final DirectoryFactory pDirectoryFactory,
-                        final WatchService pWatchService) {
+                        final WatchServiceRegistrar pWsRegistrar) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
-        watchService = pWatchService;
-    }
-
-    /**
-     * Registers the path specified with the {@link WatchService} held by this object.
-     * If the path specified is not a directory, an {@link UncheckedIOException} will be caused to be thrown.
-     *
-     * @param pDirectory Directory to be watched, must not be {@code null}
-     * @return A key representing the registration of this object with the watch service
-     * @throws IOException Thrown, if the registration of the directory specified with the watch service failed.
-     */
-    private WatchKey register(final Path pDirectory) throws IOException {
-        final WatchKey key = pDirectory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(format("Added Directory %s", pDirectory));
-        }
-        return key;
+        wsRegistrar = pWsRegistrar;
     }
 
     /**
@@ -80,7 +66,7 @@ public class DedicatedFileSystem implements Closeable {
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      *
-     * @param pObserver Oberserver to be informed, must not be {@code null}.
+     * @param pObserver Observer to be informed, must not be {@code null}.
      */
     public void forceInform(final FileObserver pObserver) {
         dirs.values().forEach(d -> d.forceInform(pObserver));
@@ -148,7 +134,7 @@ public class DedicatedFileSystem implements Closeable {
             // the existing roots which shall be rebased.
             Directory parent = pRoot;
             for (final Path missingLevel : pathsInBetweenOf(pRoot.getPath(), existingRoot.getPath())) {
-                parent = directoryFactory.newBranch(parent, register(missingLevel));
+                parent = directoryFactory.newBranch(parent, wsRegistrar.register(missingLevel));
                 dirs.put(missingLevel, parent);
             }
 
@@ -187,7 +173,7 @@ public class DedicatedFileSystem implements Closeable {
         if (dir == null) {
             // If no directory is registered for the path specified, create a new root-directory.
             // Register the path with the watch-service and use the returned watch-key to create the root directory.
-            dir = directoryFactory.newRoot(register(directory));
+            dir = directoryFactory.newRoot(wsRegistrar.register(directory));
             dirs.put(directory, dir);
 
             // If there are root-directories registered which are children or the newly added
@@ -286,16 +272,14 @@ public class DedicatedFileSystem implements Closeable {
     @Override
     public void close() {
         try {
-            watchService.close();
-        } catch (final IOException e) {
-            LOG.warn(e.getMessage(), e);
+            wsRegistrar.close();
         } finally {
             dirs.clear();
         }
     }
 
     public WatchKey poll() {
-        return watchService.poll();
+        return wsRegistrar.poll();
     }
 
     /**
@@ -332,7 +316,7 @@ public class DedicatedFileSystem implements Closeable {
                 dirs.computeIfAbsent(dir,
                         p -> {
                             try {
-                                return directoryFactory.newBranch(dirs.get(dir.getParent()), register(dir));
+                                return directoryFactory.newBranch(dirs.get(dir.getParent()), wsRegistrar.register(dir));
                             } catch (final IOException e) {
                                 throw new UncheckedIOException(e.getMessage(), e);
                             }

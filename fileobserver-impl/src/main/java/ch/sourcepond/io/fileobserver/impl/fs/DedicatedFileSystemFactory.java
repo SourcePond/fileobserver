@@ -37,6 +37,8 @@ public class DedicatedFileSystemFactory {
     }
 
     public DedicatedFileSystem newDirectories(final FileSystem pFs) throws IOException {
-        return new DedicatedFileSystem(executorServices, directoryFactory, pFs.newWatchService());
+        return new DedicatedFileSystem(executorServices,
+                directoryFactory,
+                new WatchServiceRegistrar(pFs.newWatchService()));
     }
 }
