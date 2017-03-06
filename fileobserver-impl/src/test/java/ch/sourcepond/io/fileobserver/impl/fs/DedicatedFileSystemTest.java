@@ -3,6 +3,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -15,6 +16,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
@@ -28,6 +31,7 @@ import static org.mockito.Mockito.when;
  * Created by rolandhauser on 06.03.17.
  */
 public class DedicatedFileSystemTest extends CopyResourcesTest {
+    private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ExecutorServices executors = mock(ExecutorServices.class);
     private final ExecutorService executor = newCachedThreadPool();
     private final FileObserver observer = mock(FileObserver.class);
@@ -65,7 +69,7 @@ public class DedicatedFileSystemTest extends CopyResourcesTest {
 
         // Setup fs
         when(executors.getDirectoryWalkerExecutor()).thenReturn(executor);
-        fs = new DedicatedFileSystem(executors, directoryFactory, wsRegistrar, rebase);
+        fs = new DedicatedFileSystem(executors, directoryFactory, wsRegistrar, rebase, dirs);
     }
 
     @After

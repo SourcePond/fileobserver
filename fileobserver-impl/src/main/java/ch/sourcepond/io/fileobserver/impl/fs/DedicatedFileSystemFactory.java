@@ -14,10 +14,14 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  *
@@ -38,9 +42,11 @@ public class DedicatedFileSystemFactory {
 
     public DedicatedFileSystem newDirectories(final FileSystem pFs) throws IOException {
         final WatchServiceRegistrar wsRegistrar = new WatchServiceRegistrar(pFs.newWatchService());
+        final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
         return new DedicatedFileSystem(executorServices,
                 directoryFactory,
                 wsRegistrar,
-                new DirectoryRebase(directoryFactory, wsRegistrar));
+                new DirectoryRebase(directoryFactory, wsRegistrar, dirs),
+                dirs);
     }
 }

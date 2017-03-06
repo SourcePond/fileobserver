@@ -16,10 +16,12 @@ import java.util.Map;
 class DirectoryRebase {
     private final DirectoryFactory directoryFactory;
     private final WatchServiceRegistrar registrar;
+    private final Map<Path, Directory> dirs;
 
-    DirectoryRebase(final DirectoryFactory pDirectoryFactory, final WatchServiceRegistrar pRegistrar) {
+    DirectoryRebase(final DirectoryFactory pDirectoryFactory, final WatchServiceRegistrar pRegistrar, final Map<Path, Directory> pDirs) {
         directoryFactory = pDirectoryFactory;
         registrar = pRegistrar;
+        dirs = pDirs;
     }
 
     /**
@@ -46,10 +48,10 @@ class DirectoryRebase {
      * @param pNewRoot New root directory to match, must not be {@code null}
      * @return Collection of directories, never {@code null}.
      */
-    private Collection<Directory> collectExistingRoots(final Directory pNewRoot, final Map<Path, Directory> pDirs) {
+    private Collection<Directory> collectExistingRoots(final Directory pNewRoot) {
         final Path parentPath = pNewRoot.getPath();
         final Collection<Directory> pathsToRebase = new LinkedList<>();
-        pDirs.entrySet().forEach(e -> {
+        dirs.entrySet().forEach(e -> {
             if (e.getKey().startsWith(parentPath) && e.getValue().isRoot()) {
                 pathsToRebase.add(e.getValue());
             }
@@ -63,40 +65,40 @@ class DirectoryRebase {
      *
      * @param pBaseDirectory Parent directory to set, must not be {@code null}
      */
-    private void rebaseDirectSubDirectories(final Directory pBaseDirectory, final Map<Path, Directory> pDirs) {
+    private void rebaseDirectSubDirectories(final Directory pBaseDirectory) {
         final Path base = pBaseDirectory.getPath();
-        pDirs.forEach((k, v) -> {
+        dirs.forEach((k, v) -> {
             if (base.equals(k.getParent())) {
                 v.rebase(pBaseDirectory);
             }
         });
     }
 
-    void rebaseExistingRootDirectories(final Directory pNewRoot, final Map<Path, Directory> pDirs) throws IOException {
+    void rebaseExistingRootDirectories(final Directory pNewRoot) throws IOException {
         // Iterate over already registered root directories which should be converted to
         // sub-directories (rebased).
-        for (final Directory existingRoot : collectExistingRoots(pNewRoot, pDirs)) {
+        for (final Directory existingRoot : collectExistingRoots(pNewRoot)) {
 
             // Create all missing directories between the new root and
             // the existing roots which shall be rebased.
             Directory parent = pNewRoot;
             for (final Path missingLevel : pathsInBetweenOf(pNewRoot.getPath(), existingRoot.getPath())) {
                 parent = directoryFactory.newBranch(parent, registrar.register(missingLevel));
-                pDirs.put(missingLevel, parent);
+                dirs.put(missingLevel, parent);
             }
 
             // Rebase the existing root-directory; after this operation it's
             // not a root directory anymore but a sub-directory of the root
             // directory specified.
             final Directory rebasedDirectory = existingRoot.rebase(parent);
-            pDirs.replace(existingRoot.getPath(), rebasedDirectory);
+            dirs.replace(existingRoot.getPath(), rebasedDirectory);
 
             // This is important: we need to rebase also the direct children of the
             // former root directory otherwise they would reference an invalid parent!
-            rebaseDirectSubDirectories(rebasedDirectory, pDirs);
+            rebaseDirectSubDirectories(rebasedDirectory);
         }
 
         // The new root directory is being added as very last
-        pDirs.put(pNewRoot.getPath(), pNewRoot);
+        dirs.put(pNewRoot.getPath(), pNewRoot);
     }
 }

@@ -30,7 +30,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.WatchKey;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
@@ -45,7 +44,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DedicatedFileSystem implements Closeable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new HashMap<>();
-    private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Path, Directory> dirs;
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
     private final WatchServiceRegistrar wsRegistrar;
@@ -54,11 +53,13 @@ public class DedicatedFileSystem implements Closeable {
     DedicatedFileSystem(final ExecutorServices pExecutorServices,
                         final DirectoryFactory pDirectoryFactory,
                         final WatchServiceRegistrar pWsRegistrar,
-                        final DirectoryRebase pRebase) {
+                        final DirectoryRebase pRebase,
+                        final ConcurrentMap<Path, Directory> pDirs) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
         wsRegistrar = pWsRegistrar;
         rebase = pRebase;
+        dirs = pDirs;
     }
 
     /**
@@ -102,7 +103,7 @@ public class DedicatedFileSystem implements Closeable {
 
             // If there are root-directories registered which are children or the newly added
             // root directory, they need to be rebased (including their direct children)
-            rebase.rebaseExistingRootDirectories(dir, dirs);
+            rebase.rebaseExistingRootDirectories(dir);
 
             // Register directories
             directoryCreated(directory, pObservers);
@@ -112,8 +113,8 @@ public class DedicatedFileSystem implements Closeable {
         dir.addDirectoryKey(key);
     }
 
-    private Collection<Directory> cancelDiscarded(final Directory pDiscardedParent,
-                                                  final Collection<Directory> pToBeConverted) {
+    private Collection<Directory> cancelWatchKeysOfDiscardedDirectories(final Directory pDiscardedParent,
+                                                                        final Collection<Directory> pToBeConverted) {
         final Collection<Directory> toBeDiscarded = new LinkedList<>();
         dirs.values().removeIf(dir -> {
             if (pDiscardedParent.isDirectParentOf(dir)) {
@@ -127,7 +128,7 @@ public class DedicatedFileSystem implements Closeable {
             }
             return false;
         });
-        toBeDiscarded.forEach(dir -> cancelDiscarded(dir, pToBeConverted));
+        toBeDiscarded.forEach(dir -> cancelWatchKeysOfDiscardedDirectories(dir, pToBeConverted));
         return pToBeConverted;
     }
 
@@ -145,7 +146,7 @@ public class DedicatedFileSystem implements Closeable {
         // If all watched-directories which referenced the directory have been de-registered,
         // it's time to clean-up.
         if (!dir.hasKeys()) {
-            cancelDiscarded(dir, new LinkedList<>()).forEach(d -> {
+            cancelWatchKeysOfDiscardedDirectories(dir, new LinkedList<>()).forEach(d -> {
                 dirs.replace(d.getPath(), d.toRootDirectory());
             });
         }

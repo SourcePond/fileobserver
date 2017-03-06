@@ -46,7 +46,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
         dir_211 = directoryFactory.newRoot(wsRegistrar.register(subdir_211_path));
         when(executorServices.getDirectoryWalkerExecutor()).thenReturn(executor);
         when(executorServices.getObserverExecutor()).thenReturn(executor);
-        rebase = new DirectoryRebase(directoryFactory, wsRegistrar);
+        rebase = new DirectoryRebase(directoryFactory, wsRegistrar, dirs);
     }
 
     @After
@@ -65,7 +65,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
         dirs.put(subdir_111_path, dir_111);
         dirs.put(subdir_211_path, dir_211);
 
-        rebase.rebaseExistingRootDirectories(dir, dirs);
+        rebase.rebaseExistingRootDirectories(dir);
         assertEquals(7, dirs.size());
 
         // Firstly, check the new root directory
@@ -108,7 +108,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     public void rebaseExistingRootDirectoriesWhichAreDirectChildren() throws IOException {
         dirs.put(subdir_1_path, dir_1);
         dirs.put(subdir_2_path, dir_2);
-        rebase.rebaseExistingRootDirectories(dir, dirs);
+        rebase.rebaseExistingRootDirectories(dir);
 
         assertEquals(3, dirs.size());
 
@@ -136,7 +136,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
         final Directory dir_21 = directoryFactory.newBranch(dir_2, wsRegistrar.register(subdir_21_path));
         dirs.put(subdir_21_path, dir_21);
 
-        rebase.rebaseExistingRootDirectories(dir,dirs);
+        rebase.rebaseExistingRootDirectories(dir);
         assertEquals(5, dirs.size());
 
         final Directory expectedRoot = dirs.get(root_dir_path);
