@@ -108,7 +108,7 @@ public class DirectoryScanner implements Runnable {
 
     private boolean waitForNextIteration() {
         synchronized (this) {
-            long nextRun = clock.millis() + TIMEOUT;
+            final long nextRun = clock.millis() + TIMEOUT;
             while (nextRun > clock.millis()) {
                 try {
                     wait(TIMEOUT);
