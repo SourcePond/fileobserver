@@ -18,6 +18,7 @@ import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardWatchEventKinds.*;
+import static java.time.Clock.systemUTC;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.*;
 
@@ -30,17 +31,17 @@ public class DirectoryScannerTest extends CopyResourcesTest {
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final DedicatedFileSystem child = mock(DedicatedFileSystem.class);
     private final List<DedicatedFileSystem> roots = asList(child);
-    private final DirectoryScanner scanner = new DirectoryScanner(virtualRoot);
+    private final DirectoryScanner scanner = new DirectoryScanner(systemUTC(), virtualRoot);
     private WatchService watchService;
     private WatchKey key;
 
     @Before
     public void setup() throws Exception {
-        when(watchedDirectory.getDirectory()).thenReturn(directory);
+        when(watchedDirectory.getDirectory()).thenReturn(root_dir);
         when(watchedDirectory.getKey()).thenReturn(TEST_KEY);
         when(virtualRoot.getRoots()).thenReturn(roots);
         watchService = fs.newWatchService();
-        key = directory.register(watchService, new WatchEvent.Kind[]{
+        key = root_dir.register(watchService, new WatchEvent.Kind[]{
                 ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
         when(child.poll()).thenReturn(key).thenAnswer(im -> {
             Thread.sleep(1000);
@@ -53,7 +54,7 @@ public class DirectoryScannerTest extends CopyResourcesTest {
     @After
     public void tearDown() throws IOException {
         watchService.close();
-        virtualRoot.pathDeleted(directory);
+        virtualRoot.pathDeleted(root_dir);
         scanner.stop();
     }
 
@@ -68,17 +69,17 @@ public class DirectoryScannerTest extends CopyResourcesTest {
 
     @Test
     public void verifyEntryCreate() throws Exception {
-        changeContent(directory.resolve(NEW_FILE_NAME));
+        changeContent(root_dir.resolve(NEW_FILE_NAME));
     }
 
     @Test
     public void verifyEntryModify() throws Exception {
-        changeContent(testfileTxt);
+        changeContent(testfile_txt);
     }
 
     @Test
     public void verifyEntryDelete() throws Exception {
-        final Path file = directory.resolve(NEW_FILE_NAME);
+        final Path file = root_dir.resolve(NEW_FILE_NAME);
         changeContent(file);
         Files.delete(file);
         Thread.sleep(5000);

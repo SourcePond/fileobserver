@@ -17,13 +17,12 @@ import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.nio.file.*;
-import java.util.LinkedList;
+import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.String.format;
-import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -32,40 +31,16 @@ import static org.slf4j.LoggerFactory.getLogger;
  * <p>This thread-safe class manages watch-service instances and their associated watch-keys.
  */
 public class DirectoryScanner implements Runnable {
-
-    private static class DelayedWatchKey {
-        private final long delayedUntilInMilliseconds;
-        private final WatchKey key;
-
-        DelayedWatchKey(final WatchKey pKey) {
-            // TODO: Replace constant delay value with a configurable value.
-            delayedUntilInMilliseconds = currentTimeMillis() + 2000;
-            key = pKey;
-        }
-
-        public WatchKey getKey() {
-            return key;
-        }
-
-        boolean isDue() {
-            return 0 > delayedUntilInMilliseconds - currentTimeMillis();
-        }
-    }
-
+    // TODO: Replace constant delay value with a configurable value.
+    private static final int TIMEOUT = 2000;
     private static final Logger LOG = getLogger(DirectoryScanner.class);
-
-    /**
-     * We do <em>not</em> work with a {@link java.util.concurrent.DelayQueue} here because the
-     * timeout of the elements will always be linear. Furthermore, we do
-     * not not need synchronization because the queue will always be accessed
-     * from the same thread (runner thread).
-     */
-    private final List<DelayedWatchKey> delayQueue = new LinkedList<>();
+    private final Clock clock;
     private final VirtualRoot virtualRoot;
     private final Thread thread = new Thread(this, "fileobserver.DirectoryScanner");
 
     // Constructor for testing and BundleActivator
-    public DirectoryScanner(final VirtualRoot pVirtualRoot) {
+    public DirectoryScanner(final Clock pClock, final VirtualRoot pVirtualRoot) {
+        clock = pClock;
         virtualRoot = pVirtualRoot;
     }
 
@@ -101,7 +76,7 @@ public class DirectoryScanner implements Runnable {
         }
     }
 
-    private void processEvent(final WatchKey pWatchKey) throws IOException {
+    private void processEvent(final WatchKey pWatchKey) {
         final Path directory = (Path) pWatchKey.watchable();
 
         for (final WatchEvent<?> event : pWatchKey.pollEvents()) {
@@ -131,52 +106,49 @@ public class DirectoryScanner implements Runnable {
         }
     }
 
-    private boolean queueWatchKeys(final List<DedicatedFileSystem> pRoots) {
-        DedicatedFileSystem next = null;
-        WatchKey key;
-
-        // We intentionally use a traditional for-loop to keep object creation
-        // count as low as possible. Therefore, do not use an iterator here.
-        for (int i = 0; i < pRoots.size(); i++) {
-            try {
-                next = pRoots.get(i);
-                key = next.poll();
-                if (null != key) {
-                    delayQueue.add(new DelayedWatchKey(key));
+    private boolean waitForNextIteration() {
+        synchronized (this) {
+            long nextRun = clock.millis() + TIMEOUT;
+            while (nextRun > clock.millis()) {
+                try {
+                    wait(TIMEOUT);
+                } catch (final InterruptedException e) {
+                    currentThread().interrupt();
                 }
-            } catch (final ClosedWatchServiceException e) {
-                virtualRoot.close(next);
-                LOG.debug(e.getMessage(), e);
             }
         }
-
-        return !delayQueue.isEmpty();
-    }
-
-    private boolean processIfDue(final DelayedWatchKey delayedKey) {
-        final boolean due = delayedKey.isDue();
-        if (due) {
-            try {
-                processEvent(delayedKey.getKey());
-            } catch (final IOException e) {
-                LOG.warn(e.getMessage(), e);
-            }
-        }
-        return due;
+        return !currentThread().isInterrupted();
     }
 
     @Override
     public void run() {
         // Avoid accessing instance method to often
         final List<DedicatedFileSystem> roots = virtualRoot.getRoots();
+        final List<WatchKey> keys = new ArrayList<>();
 
-        while (!currentThread().isInterrupted()) {
+        DedicatedFileSystem next = null;
+        WatchKey key;
 
-            // Add new keys to the queue for delayed execution
-            if (queueWatchKeys(roots)) {
+        while (waitForNextIteration()) {
+            // We intentionally use a traditional for-loop to keep object creation
+            // count as low as possible. Therefore, do not use an iterator here.
+            for (int i = 0 ; i < keys.size() ; i++) {
+                processEvent(keys.get(i));
+            }
 
-                // Process events if available
-                delayQueue.removeIf(this::processIfDue);
+            // We intentionally use a traditional for-loop to keep object creation
+            // count as low as possible. Therefore, do not use an iterator here.
+            for (int i = 0; i < roots.size(); i++) {
+                try {
+                    next = roots.get(i);
+                    key = next.poll();
+                    if (key != null) {
+                        keys.add(key);
+                    }
+                } catch (final ClosedWatchServiceException e) {
+                    virtualRoot.close(next);
+                    LOG.debug(e.getMessage(), e);
+                }
             }
         }
     }
