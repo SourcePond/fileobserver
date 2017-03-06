@@ -41,12 +41,14 @@ public class DedicatedFileSystemFactory {
     }
 
     public DedicatedFileSystem newDirectories(final FileSystem pFs) throws IOException {
-        final WatchServiceWrapper wsRegistrar = new WatchServiceWrapper(pFs.newWatchService());
         final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
+        final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs.newWatchService());
+        final DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(executorServices, wrapper, directoryFactory, dirs);
         return new DedicatedFileSystem(executorServices,
                 directoryFactory,
-                wsRegistrar,
-                new DirectoryRebase(directoryFactory, wsRegistrar, dirs),
+                wrapper,
+                new DirectoryRebase(directoryFactory, wrapper, dirs),
+                walker,
                 dirs);
     }
 }

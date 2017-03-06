@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
  */
 public class DedicatedFileSystemTest extends CopyResourcesTest {
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
+    private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final ExecutorServices executors = mock(ExecutorServices.class);
     private final ExecutorService executor = newCachedThreadPool();
     private final FileObserver observer = mock(FileObserver.class);
@@ -69,7 +70,7 @@ public class DedicatedFileSystemTest extends CopyResourcesTest {
 
         // Setup fs
         when(executors.getDirectoryWalkerExecutor()).thenReturn(executor);
-        fs = new DedicatedFileSystem(executors, directoryFactory, wsRegistrar, rebase, dirs);
+        fs = new DedicatedFileSystem(executors, directoryFactory, wsRegistrar, rebase, walker, dirs);
     }
 
     @After
@@ -87,6 +88,4 @@ public class DedicatedFileSystemTest extends CopyResourcesTest {
         // This should cause an exception
         fs.registerRootDirectory(watchedDirectory, observers);
     }
-
-
 }

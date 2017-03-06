@@ -23,18 +23,15 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.WatchKey;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
-import static java.nio.file.FileVisitResult.CONTINUE;
-import static java.nio.file.Files.walkFileTree;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -49,16 +46,19 @@ public class DedicatedFileSystem implements Closeable {
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wsRegistrar;
     private final DirectoryRebase rebase;
+    private final DirectoryRegistrationWalker walker;
 
     DedicatedFileSystem(final ExecutorServices pExecutorServices,
                         final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWsRegistrar,
                         final DirectoryRebase pRebase,
+                        final DirectoryRegistrationWalker pWalker,
                         final ConcurrentMap<Path, Directory> pDirs) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
         wsRegistrar = pWsRegistrar;
         rebase = pRebase;
+        walker = pWalker;
         dirs = pDirs;
     }
 
@@ -141,15 +141,7 @@ public class DedicatedFileSystem implements Closeable {
      * @param pObservers Observers to be informed about detected files, must not be {@code null}
      */
     void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObservers) {
-        // Asynchronously register all sub-directories with the watch-service, and,
-        // inform the registered FileObservers
-        executorServices.getDirectoryWalkerExecutor().execute(() -> {
-            try {
-                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pObservers));
-            } catch (final IOException e) {
-                LOG.warn(e.getMessage(), e);
-            }
-        });
+        walker.directoryCreated(pDirectory, pObservers);
     }
 
     public boolean directoryDiscarded(final Collection<FileObserver> pObservers, final Path pDirectory) {
@@ -184,51 +176,5 @@ public class DedicatedFileSystem implements Closeable {
 
     public WatchKey poll() {
         return wsRegistrar.poll();
-    }
-
-    /**
-     * This visitor is used to walk through a directory structure which needs to be registered
-     * with the enclosing {@link DedicatedFileSystem} instance. If a file is detected, the
-     * observers specified through the constructor of this class will be informed. If a directory is
-     * detected, a new directory object will be created and registered with the enclosing instance.
-     */
-    private class DirectoryInitializerFileVisitor extends SimpleFileVisitor<Path> {
-        private final Collection<FileObserver> observers;
-
-        /**
-         * Creates a new instance of this class.
-         *
-         * @param pObservers Observers to be informed about detected files, must not be {@code null}
-         */
-        public DirectoryInitializerFileVisitor(final Collection<FileObserver> pObservers) {
-            observers = pObservers;
-        }
-
-        @Override
-        public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-            // It's important here to only trigger the observers if the file has changed.
-            // This is most certainly the case, but, there is an exception: because we already
-            // registered the parent directory of the file with the watch-service there's a small
-            // chance that the file had already been modified before we got here.
-            dirs.get(file.getParent()).informIfChanged(observers, file);
-            return CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-            try {
-                dirs.computeIfAbsent(dir,
-                        p -> {
-                            try {
-                                return directoryFactory.newBranch(dirs.get(dir.getParent()), wsRegistrar.register(dir));
-                            } catch (final IOException e) {
-                                throw new UncheckedIOException(e.getMessage(), e);
-                            }
-                        });
-                return CONTINUE;
-            } catch (final UncheckedIOException e) {
-                throw new IOException(e.getMessage(), e);
-            }
-        }
     }
 }
