@@ -22,7 +22,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  *
  */
-class SubDirectory extends Directory {
+public class SubDirectory extends Directory {
     private volatile Directory parent;
     private volatile Collection<Object> directoryKeysOrNull;
 
@@ -124,5 +124,9 @@ class SubDirectory extends Directory {
     @Override
     public Directory toRootDirectory() {
         return new RootDirectory(getFactory(), getWatchKey(), directoryKeysOrNull);
+    }
+
+    public Directory getParent() {
+        return parent;
     }
 }

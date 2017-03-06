@@ -109,28 +109,10 @@ public class DedicatedFileSystem implements Closeable {
             directoryCreated(directory, pObservers);
         }
 
-        // In any case, add the directory key to the directory
+        // VERY IMPORTANT: in any case, add the directory with the directory-key
         dir.addDirectoryKey(key);
     }
 
-    private Collection<Directory> cancelWatchKeysOfDiscardedDirectories(final Directory pDiscardedParent,
-                                                                        final Collection<Directory> pToBeConverted) {
-        final Collection<Directory> toBeDiscarded = new LinkedList<>();
-        dirs.values().removeIf(dir -> {
-            if (pDiscardedParent.isDirectParentOf(dir)) {
-                if (dir.hasKeys()) {
-                    pToBeConverted.add(dir);
-                } else {
-                    toBeDiscarded.add(dir);
-                    dir.cancelKey();
-                }
-                return true;
-            }
-            return false;
-        });
-        toBeDiscarded.forEach(dir -> cancelWatchKeysOfDiscardedDirectories(dir, pToBeConverted));
-        return pToBeConverted;
-    }
 
     public synchronized void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
                                                      final Collection<FileObserver> pObservers) {
@@ -146,9 +128,7 @@ public class DedicatedFileSystem implements Closeable {
         // If all watched-directories which referenced the directory have been de-registered,
         // it's time to clean-up.
         if (!dir.hasKeys()) {
-            cancelWatchKeysOfDiscardedDirectories(dir, new LinkedList<>()).forEach(d -> {
-                dirs.replace(d.getPath(), d.toRootDirectory());
-            });
+            rebase.cancelAndRebaseDiscardedDirectory(dir);
         }
     }
 

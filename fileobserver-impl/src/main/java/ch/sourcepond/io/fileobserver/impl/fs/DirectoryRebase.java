@@ -5,10 +5,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
@@ -100,5 +97,52 @@ class DirectoryRebase {
 
         // The new root directory is being added as very last
         dirs.put(pNewRoot.getPath(), pNewRoot);
+    }
+
+    /**
+     * Recursively traverses the registered directories. Directories which were not roots sometime in the past will
+     * be cancelled and removed. If a directory was a root (known by {@link Directory#hasKeys()}), then it will be
+     * added to the list specified. This list contains sub-directories which need to be converted back into
+     * root directories.
+     *
+     * @param pDiscardedParent Parent directory which was discarded, never {@code null}
+     * @param pToBeConverted   List of sub-directories which need to be converted into root-directories, never {@code null}
+     */
+    private void cancelDiscardedDirectories(final Directory pDiscardedParent,
+                                            final Collection<Directory> pToBeConverted) {
+        final Collection<Directory> toBeDiscarded = new LinkedList<>();
+        dirs.values().removeIf(dir -> {
+            if (pDiscardedParent.isDirectParentOf(dir)) {
+                if (dir.hasKeys()) {
+                    pToBeConverted.add(dir);
+                } else {
+                    toBeDiscarded.add(dir);
+                    dir.cancelKey();
+                    return true;
+                }
+            }
+            return false;
+        });
+        toBeDiscarded.forEach(dir -> cancelDiscardedDirectories(dir, pToBeConverted));
+    }
+
+    /**
+     * Cancels the watch-key of the discarded directory specified. Additionally, cancels and removes any sub-directory
+     * which was not a root itself sometime in the past. Any sub-directory which was a root directory in the past
+     * will be converted back to a root-directory.
+     *
+     * @param pDiscardedParent Discarded directory, never {@code null}
+     */
+    void cancelAndRebaseDiscardedDirectory(final Directory pDiscardedParent) {
+        pDiscardedParent.cancelKey();
+        dirs.remove(pDiscardedParent.getPath());
+
+        final List<Directory> toBeConvertedIntoRoot = new LinkedList<>();
+        cancelDiscardedDirectories(pDiscardedParent, toBeConvertedIntoRoot);
+        toBeConvertedIntoRoot.forEach(d -> {
+            final Directory root = d.toRootDirectory();
+            rebaseDirectSubDirectories(root);
+            dirs.replace(d.getPath(), root);
+        });
     }
 }
