@@ -47,12 +47,12 @@ public class DedicatedFileSystem implements Closeable {
     private final ConcurrentMap<Path, Directory> dirs;
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
-    private final WatchServiceRegistrar wsRegistrar;
+    private final WatchServiceWrapper wsRegistrar;
     private final DirectoryRebase rebase;
 
     DedicatedFileSystem(final ExecutorServices pExecutorServices,
                         final DirectoryFactory pDirectoryFactory,
-                        final WatchServiceRegistrar pWsRegistrar,
+                        final WatchServiceWrapper pWsRegistrar,
                         final DirectoryRebase pRebase,
                         final ConcurrentMap<Path, Directory> pDirs) {
         executorServices = pExecutorServices;

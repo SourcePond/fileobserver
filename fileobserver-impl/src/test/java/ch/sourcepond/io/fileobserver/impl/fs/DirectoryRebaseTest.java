@@ -32,7 +32,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     private final ExecutorService executor = newCachedThreadPool();
     private final ExecutorServices executorServices = mock(ExecutorServices.class);
     protected final DirectoryFactory directoryFactory = new DirectoryFactory(executorServices);
-    protected WatchServiceRegistrar wsRegistrar;
+    protected WatchServiceWrapper wsRegistrar;
     protected Directory dir;
     protected Directory dir_1;
     protected Directory dir_111;
@@ -42,7 +42,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
 
     @Before
     public void setupDirectories() throws IOException {
-        wsRegistrar = new WatchServiceRegistrar(getDefault().newWatchService());
+        wsRegistrar = new WatchServiceWrapper(getDefault().newWatchService());
         dir = directoryFactory.newRoot(wsRegistrar.register(root_dir_path));
         dir_1 = directoryFactory.newRoot(wsRegistrar.register(subdir_1_path));
         dir_111 = directoryFactory.newRoot(wsRegistrar.register(subdir_111_path));

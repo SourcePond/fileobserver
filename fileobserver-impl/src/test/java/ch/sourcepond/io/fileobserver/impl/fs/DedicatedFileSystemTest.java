@@ -40,7 +40,7 @@ public class DedicatedFileSystemTest extends CopyResourcesTest {
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final RootDirectory dir = mock(RootDirectory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
-    private WatchServiceRegistrar wsRegistrar = mock(WatchServiceRegistrar.class);
+    private WatchServiceWrapper wsRegistrar = mock(WatchServiceWrapper.class);
     private DedicatedFileSystem fs;
 
     private static WatchKey matchWatchKey(final Path pPath) {

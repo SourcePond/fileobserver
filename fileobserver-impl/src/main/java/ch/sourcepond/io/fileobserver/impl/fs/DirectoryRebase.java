@@ -12,10 +12,10 @@ import java.util.*;
  */
 class DirectoryRebase {
     private final DirectoryFactory directoryFactory;
-    private final WatchServiceRegistrar registrar;
+    private final WatchServiceWrapper registrar;
     private final Map<Path, Directory> dirs;
 
-    DirectoryRebase(final DirectoryFactory pDirectoryFactory, final WatchServiceRegistrar pRegistrar, final Map<Path, Directory> pDirs) {
+    DirectoryRebase(final DirectoryFactory pDirectoryFactory, final WatchServiceWrapper pRegistrar, final Map<Path, Directory> pDirs) {
         directoryFactory = pDirectoryFactory;
         registrar = pRegistrar;
         dirs = pDirs;
