@@ -16,10 +16,10 @@ package ch.sourcepond.io.fileobserver.impl;
 import ch.sourcepond.commons.smartswitch.lib.SmartSwitchActivatorBase;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
+import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.apache.felix.dm.DependencyManager;
 import org.osgi.framework.BundleContext;
@@ -39,6 +39,7 @@ import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
+import static java.time.Clock.systemUTC;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -64,7 +65,7 @@ public class Activator extends SmartSwitchActivatorBase {
         directoryFactory = new DirectoryFactory(executorServices);
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(executorServices, directoryFactory);
         virtualRoot = new VirtualRoot(executorServices, directoryFactory);
-        directoryScanner = new DirectoryScanner(virtualRoot);
+        directoryScanner = new DirectoryScanner(systemUTC(), virtualRoot);
     }
 
     // Constructor for testing

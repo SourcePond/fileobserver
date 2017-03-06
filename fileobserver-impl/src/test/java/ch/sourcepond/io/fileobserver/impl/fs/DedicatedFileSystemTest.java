@@ -35,6 +35,7 @@ public class DedicatedFileSystemTest extends CopyResourcesTest {
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final RootDirectory dir = mock(RootDirectory.class);
+    private final DirectoryRebase rebase = mock(DirectoryRebase.class);
     private WatchServiceRegistrar wsRegistrar = mock(WatchServiceRegistrar.class);
     private DedicatedFileSystem fs;
 
@@ -54,17 +55,17 @@ public class DedicatedFileSystemTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws IOException {
-        // Setup watched-root_dir
+        // Setup watched-root_dir_path
         when(watchedDirectory.getKey()).thenReturn(TEST_KEY);
-        when(watchedDirectory.getDirectory()).thenReturn(root_dir);
+        when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
 
         // Setup directories
-        when(directoryFactory.newRoot(matchWatchKey(root_dir))).thenReturn(dir);
-        when(dir.getPath()).thenReturn(root_dir);
+        when(directoryFactory.newRoot(matchWatchKey(root_dir_path))).thenReturn(dir);
+        when(dir.getPath()).thenReturn(root_dir_path);
 
         // Setup fs
         when(executors.getDirectoryWalkerExecutor()).thenReturn(executor);
-        fs = new DedicatedFileSystem(executors, directoryFactory, wsRegistrar);
+        fs = new DedicatedFileSystem(executors, directoryFactory, wsRegistrar, rebase);
     }
 
     @After

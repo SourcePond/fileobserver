@@ -37,8 +37,10 @@ public class DedicatedFileSystemFactory {
     }
 
     public DedicatedFileSystem newDirectories(final FileSystem pFs) throws IOException {
+        final WatchServiceRegistrar wsRegistrar = new WatchServiceRegistrar(pFs.newWatchService());
         return new DedicatedFileSystem(executorServices,
                 directoryFactory,
-                new WatchServiceRegistrar(pFs.newWatchService()));
+                wsRegistrar,
+                new DirectoryRebase(directoryFactory, wsRegistrar));
     }
 }

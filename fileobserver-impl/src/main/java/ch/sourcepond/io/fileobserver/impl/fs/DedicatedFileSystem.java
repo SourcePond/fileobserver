@@ -49,13 +49,16 @@ public class DedicatedFileSystem implements Closeable {
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
     private final WatchServiceRegistrar wsRegistrar;
+    private final DirectoryRebase rebase;
 
     DedicatedFileSystem(final ExecutorServices pExecutorServices,
                         final DirectoryFactory pDirectoryFactory,
-                        final WatchServiceRegistrar pWsRegistrar) {
+                        final WatchServiceRegistrar pWsRegistrar,
+                        final DirectoryRebase pRebase) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
         wsRegistrar = pWsRegistrar;
+        rebase = pRebase;
     }
 
     /**
@@ -71,85 +74,7 @@ public class DedicatedFileSystem implements Closeable {
     public void forceInform(final FileObserver pObserver) {
         dirs.values().forEach(d -> d.forceInform(pObserver));
     }
-
-    /**
-     * Collects the paths between the parent and the child path specified. The returned collection will <em>not</em>
-     * contain the parent and child path specified, and, will be ordered from the base path to the farthest child.
-     *
-     * @param pParent The parent path, must not be {@code null}
-     * @param pChild  The child path, must not be {@code null}
-     * @return Collection of paths in between excluding the parent and child specified
-     */
-    private Collection<Path> pathsInBetweenOf(final Path pParent, final Path pChild) {
-        if (!pChild.startsWith(pParent)) {
-            throw new IllegalArgumentException(format("%s is not a child of %s", pChild, pParent));
-        }
-        final Deque<Path> hierarchy = new LinkedList<>();
-        Path p = pChild.getParent();
-        while (!p.equals(pParent)) {
-            hierarchy.addFirst(p);
-            p = p.getParent();
-        }
-        return hierarchy;
-    }
-
-    /**
-     * Collects all existing root directories which are children of the new root directory specified specified.
-     *
-     * @param pNewRoot New root directory to match, must not be {@code null}
-     * @return Collection of directories, never {@code null}.
-     */
-    private Collection<Directory> collectExistingRoots(final Directory pNewRoot) {
-        final Path parentPath = pNewRoot.getPath();
-        final Collection<Directory> pathsToRebase = new LinkedList<>();
-        dirs.entrySet().forEach(e -> {
-            if (e.getKey().startsWith(parentPath) && e.getValue().isRoot()) {
-                pathsToRebase.add(e.getValue());
-            }
-        });
-        return pathsToRebase;
-    }
-
-    /**
-     * Sets the directory specified on all directories whose path is a direct child of
-     * {@link Directory#getPath()} of the base directory specified.
-     *
-     * @param pBaseDirectory Parent directory to set, must not be {@code null}
-     */
-    private void rebaseDirectSubDirectories(final Directory pBaseDirectory) {
-        final Path base = pBaseDirectory.getPath();
-        dirs.forEach((k, v) -> {
-            if (base.equals(k.getParent())) {
-                v.rebase(pBaseDirectory);
-            }
-        });
-    }
-
-    private void rebaseExistingRootDirectories(final Directory pRoot) throws IOException {
-        // Iterate over already registered root directories which should be converted to
-        // sub-directories (rebased).
-        for (final Directory existingRoot : collectExistingRoots(pRoot)) {
-
-            // Create all missing directories between the new root and
-            // the existing roots which shall be rebased.
-            Directory parent = pRoot;
-            for (final Path missingLevel : pathsInBetweenOf(pRoot.getPath(), existingRoot.getPath())) {
-                parent = directoryFactory.newBranch(parent, wsRegistrar.register(missingLevel));
-                dirs.put(missingLevel, parent);
-            }
-
-            // Rebase the existing root-directory; after this operation it's
-            // not a root directory anymore but a sub-directory of the root
-            // directory specified.
-            final Directory rebasedDirectory = existingRoot.rebase(parent);
-            dirs.put(existingRoot.getPath(), rebasedDirectory);
-
-            // This is important: we need to rebase also the direct children of the
-            // former root directory otherwise they would reference a invalid parent!
-            rebaseDirectSubDirectories(rebasedDirectory);
-        }
-    }
-
+    
     /**
      * @param pWatchedDirectory
      * @param pObservers
@@ -174,11 +99,10 @@ public class DedicatedFileSystem implements Closeable {
             // If no directory is registered for the path specified, create a new root-directory.
             // Register the path with the watch-service and use the returned watch-key to create the root directory.
             dir = directoryFactory.newRoot(wsRegistrar.register(directory));
-            dirs.put(directory, dir);
 
             // If there are root-directories registered which are children or the newly added
             // root directory, they need to be rebased (including their direct children)
-            rebaseExistingRootDirectories(dir);
+            rebase.rebaseExistingRootDirectories(dir, dirs);
 
             // Register directories
             directoryCreated(directory, pObservers);
@@ -211,7 +135,6 @@ public class DedicatedFileSystem implements Closeable {
                                                      final Collection<FileObserver> pObservers) {
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
-
         watchtedDirectories.remove(key);
 
         final Directory dir = dirs.get(directory);

@@ -37,11 +37,11 @@ public class DirectoryScannerTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws Exception {
-        when(watchedDirectory.getDirectory()).thenReturn(root_dir);
+        when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
         when(watchedDirectory.getKey()).thenReturn(TEST_KEY);
         when(virtualRoot.getRoots()).thenReturn(roots);
         watchService = fs.newWatchService();
-        key = root_dir.register(watchService, new WatchEvent.Kind[]{
+        key = root_dir_path.register(watchService, new WatchEvent.Kind[]{
                 ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
         when(child.poll()).thenReturn(key).thenAnswer(im -> {
             Thread.sleep(1000);
@@ -54,7 +54,7 @@ public class DirectoryScannerTest extends CopyResourcesTest {
     @After
     public void tearDown() throws IOException {
         watchService.close();
-        virtualRoot.pathDeleted(root_dir);
+        virtualRoot.pathDeleted(root_dir_path);
         scanner.stop();
     }
 
@@ -69,17 +69,17 @@ public class DirectoryScannerTest extends CopyResourcesTest {
 
     @Test
     public void verifyEntryCreate() throws Exception {
-        changeContent(root_dir.resolve(NEW_FILE_NAME));
+        changeContent(root_dir_path.resolve(NEW_FILE_NAME));
     }
 
     @Test
     public void verifyEntryModify() throws Exception {
-        changeContent(testfile_txt);
+        changeContent(testfile_txt_path);
     }
 
     @Test
     public void verifyEntryDelete() throws Exception {
-        final Path file = root_dir.resolve(NEW_FILE_NAME);
+        final Path file = root_dir_path.resolve(NEW_FILE_NAME);
         changeContent(file);
         Files.delete(file);
         Thread.sleep(5000);
