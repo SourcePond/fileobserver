@@ -30,11 +30,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Wraps the {@link WatchService} specified.
  */
-class WatchServiceWrapper implements Closeable {
+public class WatchServiceWrapper implements Closeable {
     private static final Logger LOG = getLogger(WatchServiceWrapper.class);
     private final WatchService watchService;
 
-    WatchServiceWrapper(final WatchService pWatchService) {
+    public WatchServiceWrapper(final WatchService pWatchService) {
         watchService = pWatchService;
     }
 

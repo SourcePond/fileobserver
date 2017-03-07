@@ -56,21 +56,37 @@ public abstract class Directory {
      * with the {@link FileKey}/file combination which has been associated with it.
      *
      */
-    private void forceModified(final Collection<FileKey> pSupplementKeys,
+    private void forceModified(final Collection<FileKey> pParentKeys,
                                final Collection<FileKey> pKeys,
                                final FileObserver pObserver,
                                final Path pFile) {
         for (final FileKey key : pKeys) {
             getFactory().execute(() -> {
                 try {
-                    for (final FileKey supplementKey : pSupplementKeys) {
-                        pObserver.supplement(key, supplementKey);
-                    }
+                    informSupplement(pObserver, key, pParentKeys);
                     pObserver.modified(key, pFile);
                 } catch (final IOException e) {
                     LOG.warn(e.getMessage(), e);
                 }
             });
+        }
+    }
+
+    private void informSupplement(final FileObserver pObserver, final FileKey pKey, final Collection<FileKey> pParentKeys) {
+        for (final FileKey parentKey : pParentKeys) {
+
+            /*
+             * Suppose:
+             * Parent /A [dirKey:K2] -> Has been added as new root
+             *    Child /A/B [dirKey:K2] -> Derived from new root = nothing to supplement
+             *               [dirKey:K1] -> Was there before new root had been added = A/B supplements B
+             *
+             * When iterating over parent keys ignore those which are derived from new parent.
+             *
+             */
+            if (!pKey.key().equals(parentKey.key())) {
+                pObserver.supplement(pKey, parentKey);
+            }
         }
     }
 

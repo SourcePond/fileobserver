@@ -62,7 +62,7 @@ public class Activator extends SmartSwitchActivatorBase {
     // Constructor for OSGi framework
     public Activator() {
         executorServices = new ExecutorServices();
-        directoryFactory = new DirectoryFactory(executorServices);
+        directoryFactory = new DirectoryFactory( executorServices);
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(executorServices, directoryFactory);
         virtualRoot = new VirtualRoot(executorServices, directoryFactory);
         directoryScanner = new DirectoryScanner(systemUTC(), virtualRoot);
