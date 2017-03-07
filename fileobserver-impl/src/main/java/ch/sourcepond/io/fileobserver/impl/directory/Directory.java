@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.checksum.api.Checksum;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
@@ -30,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static java.nio.file.Files.isRegularFile;
 import static java.nio.file.Files.newDirectoryStream;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -39,6 +39,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public abstract class Directory {
     private static final Logger LOG = getLogger(SubDirectory.class);
+
+    // TODO: Replace constant with configurable value
     static final long TIMEOUT = 2000;
     private final ConcurrentMap<Path, Resource> resources = new ConcurrentHashMap<>();
     private final WatchKey watchKey;
@@ -52,11 +54,18 @@ public abstract class Directory {
      * Creates then an asynchronous task for each {@link FileKey}/file combination. This tasks will
      * be executed sometime in the future. Such a task will call {@link FileObserver#modified(FileKey, Path)}
      * with the {@link FileKey}/file combination which has been associated with it.
+     *
      */
-    private void forceModified(final FileObserver pObserver, final Path pFile) {
-        for (final FileKey key : createKeys(pFile)) {
+    private void forceModified(final Collection<FileKey> pSupplementKeys,
+                               final Collection<FileKey> pKeys,
+                               final FileObserver pObserver,
+                               final Path pFile) {
+        for (final FileKey key : pKeys) {
             getFactory().execute(() -> {
                 try {
+                    for (final FileKey supplementKey : pSupplementKeys) {
+                        pObserver.supplement(key, supplementKey);
+                    }
                     pObserver.modified(key, pFile);
                 } catch (final IOException e) {
                     LOG.warn(e.getMessage(), e);
@@ -66,30 +75,15 @@ public abstract class Directory {
     }
 
     /**
-     * Calls {@link #forceModified(FileObserver, Path)} with the file-observers and the file specified
-     * if, and only if, the previous and current checksum specified are <em>not</em> equal.
-     *
-     * @param pPrevious  Previous checksum, must not be {@code null}
-     * @param pCurrent   Current checksum, must not be {@code null}
-     * @param pObservers Observers to be informed, must not be {@code null}
-     * @param pFile      Modified (readable) file, must not be {@code null}.
-     */
-    private void informObservers(final Checksum pPrevious, final Checksum pCurrent, final Collection<FileObserver> pObservers, final Path pFile) {
-        if (!pPrevious.equals(pCurrent)) {
-            pObservers.forEach(o -> forceModified(o, pFile));
-        }
-    }
-
-    /**
      * Iterates over all files contained by this directory and calls for each entry
-     * {@link #forceModified(FileObserver, Path)}. Only direct children will be considered,
+     * {@link #forceModified(Collection, Collection, FileObserver, Path)}. Only direct children will be considered,
      * sub-directories and non-regular files will be ignored.
      *
      * @param pObserver Observer to be informed, must not be {@code null}
      */
     private void streamDirectoryAndForceInform(final FileObserver pObserver) {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), p -> isRegularFile(p))) {
-            stream.forEach(p -> forceModified(pObserver, p));
+            stream.forEach(p -> forceModified(null, createKeys(p), pObserver, p));
         } catch (final IOException e) {
             LOG.warn("Exception occurred while trying to inform single observers!", e);
         }
@@ -265,12 +259,33 @@ public abstract class Directory {
      * @param pObservers Observers to be informed, must not be {@code null}
      * @param pFile      File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
+    public void informIfChanged(final Directory pNewRootOrNull, final Collection<FileObserver> pObservers, final Path pFile) {
         // TODO: Replace interval with configurable value
         resources.computeIfAbsent(pFile,
                 f -> getFactory().newResource(SHA256, pFile)).update(TIMEOUT,
-                (pPrevious, pCurrent) ->
-                        informObservers(pPrevious, pCurrent, pObservers, pFile));
+                (pPrevious, pCurrent) -> {
+                    if (!pPrevious.equals(pCurrent)) {
+                        // If the modification is requested because a new root-directory has been registered, we
+                        // need to inform the observers about supplement keys.
+                        final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
+                                emptyList() : pNewRootOrNull.createKeys(pFile);
+
+                        final Collection<FileKey> keys = createKeys(pFile);
+                        pObservers.forEach(o -> forceModified(supplementKeys, keys, o, pFile));
+                    }
+                });
+    }
+
+    /**
+     * Triggers the {@link FileObserver#modified(FileKey, Path)} on all observers specified if the
+     * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
+     * has been detected, nothing happens.
+     *
+     * @param pObservers Observers to be informed, must not be {@code null}
+     * @param pFile      File which potentially has changed, must not be {@code null}
+     */
+    public void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
+        informIfChanged(null, pObservers, pFile);
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);

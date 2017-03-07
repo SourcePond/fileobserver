@@ -105,8 +105,9 @@ public class DedicatedFileSystem implements Closeable {
             // root directory, they need to be rebased (including their direct children)
             rebase.rebaseExistingRootDirectories(dir);
 
-            // Register directories
-            directoryCreated(directory, pObservers);
+            // Register directories; important here is to pass the newly create root-directory
+            // (otherwise FileObserver#supplement would not be called).
+            walker.directoryCreated(dir, directory, pObservers);
         }
 
         // VERY IMPORTANT: in any case, add the directory with the directory-key
