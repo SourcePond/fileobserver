@@ -81,7 +81,7 @@ public interface FileObserver {
      * <p>Explanation: bundle A registers a watched directory with path "/A/B/C". Later, bundle B registers a watched directory
      * with path "/A". Both of this directories are located in the same file-system. This means, when absolute
      * path /A/B/C/foo/bar.txt had been changed, the observers would be informed twice, one time with relative path
-     * "foo/bar.txt" and one time with relative path "/B/C/foo/bar.txt". This could lead to disproportional memory
+     * "foo/bar.txt" and one time with relative path "B/C/foo/bar.txt". This could lead to disproportional memory
      * usage and worse performance because the observers would take and action multiple times on the same content.</p>
      *
      * <p>To avoid this, an implementation class can implement this method to react properly on supplement keys. It

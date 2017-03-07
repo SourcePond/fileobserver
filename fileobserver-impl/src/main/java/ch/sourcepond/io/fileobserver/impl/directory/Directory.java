@@ -87,9 +87,9 @@ public abstract class Directory {
      *
      * @param pObserver Observer to be informed, must not be {@code null}
      */
-    private void streamDirectoryAndForceInform(final FileObserver pObserver) {
+    private void streamDirectoryAndForceInform(final FileObserver pObserver, final FileObserverFunction pFunction) {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), p -> isRegularFile(p))) {
-            stream.forEach(p -> forceModified(pObserver, p));
+            stream.forEach(p -> pFunction.execute(pObserver, p));
         } catch (final IOException e) {
             LOG.warn("Exception occurred while trying to inform single observers!", e);
         }
@@ -218,7 +218,7 @@ public abstract class Directory {
      * @param pObserver Observer to be informed, must not be {@code null}.
      */
     public void forceInform(final FileObserver pObserver) {
-        getFactory().execute(() -> streamDirectoryAndForceInform(pObserver));
+        getFactory().execute(() -> streamDirectoryAndForceInform(pObserver, this::forceModified));
     }
 
     /**
