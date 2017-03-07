@@ -93,5 +93,6 @@ public interface FileObserver {
      */
     default void supplement(FileKey pKnownKey, FileKey pSupplementKey) {
         // Implementation of the method is optional
+
     }
 }
