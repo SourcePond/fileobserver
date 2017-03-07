@@ -76,22 +76,23 @@ public interface FileObserver {
     void discard(FileKey pKey);
 
     /**
-     * <p>Advices this observer that the supplement key specified supplements the known key specified.</p>
+     * <p>Informs this observer that the known key specified is being supplemented with the additional key
+     * specified. It is guaranteed that this method is executed <em>before</em> {@link #modified(FileKey, Path)} is
+     * entered with the additional key specified.</p>
      *
      * <p>Explanation: bundle A registers a watched directory with path "/A/B/C". Later, bundle B registers a watched directory
      * with path "/A". Both of this directories are located in the same file-system. This means, when absolute
      * path /A/B/C/foo/bar.txt had been changed, the observers would be informed twice, one time with relative path
      * "foo/bar.txt" and one time with relative path "B/C/foo/bar.txt". This could lead to disproportional memory
-     * usage and worse performance because the observers would take and action multiple times on the same content.</p>
-     *
-     * <p>To avoid this, an implementation class can implement this method to react properly on supplement keys. It
-     * will be informed about keys which supplement already known keys <em>before</em> {@link #modified(FileKey, Path)}
-     * is being called.</p>
+     * usage and worse performance because the observers would take and action multiple times on the same content. To
+     * avoid this, an implementation class can implement this optional method to react properly on supplementing
+     * keys.</p>
      *
      * @param pKnownKey Key which has already been delivered to this observer, never {@code null}
-     * @param pSupplementKey Key which is supplements the known key specified, never {@code null}
+     * @param pAdditionalKey Key which never has been delivered until now to this observer, and, which supplements
+     *                       the known key specified, never {@code null}
      */
-    default void supplement(FileKey pKnownKey, FileKey pSupplementKey) {
+    default void supplement(FileKey pKnownKey, FileKey pAdditionalKey) {
         // Implementation of the method is optional
 
     }
