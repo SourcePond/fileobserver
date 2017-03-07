@@ -56,7 +56,7 @@ public abstract class CopyResourcesTest {
         subdir_1_path = root_dir_path.resolve("subdir_1");
         subdir_11_path = subdir_1_path.resolve("subdir_11");
         subdir_111_path = subdir_11_path.resolve("subdir_111");
-        testfile_1111_txt_path = subdir_11_path.resolve("testfile_1111.txt");
+        testfile_1111_txt_path = subdir_111_path.resolve("testfile_1111.txt");
         testfile_111_txt_path = subdir_11_path.resolve("testfile_111.txt");
         subdir_12_path = subdir_1_path.resolve("subdir_12");
         testfile_121_txt_path = subdir_12_path.resolve("testfile_121.txt");

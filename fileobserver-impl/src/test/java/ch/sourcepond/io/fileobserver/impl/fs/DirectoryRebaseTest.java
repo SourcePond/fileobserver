@@ -31,13 +31,13 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ExecutorService executor = newCachedThreadPool();
     private final ExecutorServices executorServices = mock(ExecutorServices.class);
-    protected final DirectoryFactory directoryFactory = new DirectoryFactory(executorServices);
-    protected WatchServiceWrapper wsRegistrar;
-    protected Directory dir;
-    protected Directory dir_1;
-    protected Directory dir_111;
-    protected Directory dir_2;
-    protected Directory dir_211;
+    private final DirectoryFactory directoryFactory = new DirectoryFactory(executorServices);
+    private WatchServiceWrapper wsRegistrar;
+    private Directory dir;
+    private Directory dir_1;
+    private Directory dir_111;
+    private Directory dir_2;
+    private Directory dir_211;
     private DirectoryRebase rebase;
 
     @Before

@@ -3,6 +3,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
@@ -43,5 +44,17 @@ public class WatchServiceWrapperTest {
     public void register() throws IOException {
         when(directory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)).thenReturn(watchKey);
         assertSame(watchKey, registrar.register(directory));
+    }
+
+    @Test
+    public void registrationFaileBecauseWatchServiceIsClosed() throws IOException {
+        final ClosedWatchServiceException expected = new ClosedWatchServiceException();
+        doThrow(expected).when(directory).register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        try {
+            registrar.register(directory);
+            fail("Exception expected here");
+        } catch (final IOException e) {
+            assertSame(expected, e.getCause());
+        }
     }
 }

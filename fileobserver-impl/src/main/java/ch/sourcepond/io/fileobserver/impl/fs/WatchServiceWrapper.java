@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
@@ -64,10 +65,14 @@ class WatchServiceWrapper implements Closeable {
      * @throws IOException Thrown, if the registration of the directory specified with the watch service failed.
      */
     public WatchKey register(final Path pDirectory) throws IOException {
-        final WatchKey key = pDirectory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(format("Added Directory %s", pDirectory));
+        try {
+            final WatchKey key = pDirectory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(format("Added Directory %s", pDirectory));
+            }
+            return key;
+        } catch (final ClosedWatchServiceException e) {
+            throw new IOException(format("Closed WatchService! Registration failed for %s", pDirectory), e);
         }
-        return key;
     }
 }

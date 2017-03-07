@@ -1,3 +1,16 @@
+/*Copyright (C) 2017 Roland Hauser, <sourcepond@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
@@ -21,19 +34,54 @@ import static java.nio.file.Files.walkFileTree;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * Created by rolandhauser on 06.03.17.
+ * <p>Walks through a directory structure. For each detected file, the observers specified
+ * will be informed through their {@link FileObserver#modified(FileKey, Path)}. Each detected
+ * directory will be registered with the {@link WatchServiceWrapper}, and, be stored in the
+ * directory-map specified.</p>
+ *
+ * <p>There should exist exactly one instance of this class (singleton).</p>
+ *
  */
 class DirectoryRegistrationWalker {
-    private static final Logger LOG = getLogger(DirectoryRegistrationWalker.class);
+    private final Logger logger;
     private final ExecutorServices executorServices;
     private final WatchServiceWrapper wrapper;
     private final DirectoryFactory directoryFactory;
     private final ConcurrentMap<Path, Directory> dirs;
 
+    /**
+     * Constructor for bundle activator.
+     * @param pExecutorServices
+     * @param pWrapper
+     * @param pDirectoryFactory
+     * @param pDirs
+     */
     DirectoryRegistrationWalker(final ExecutorServices pExecutorServices,
                                 final WatchServiceWrapper pWrapper,
                                 final DirectoryFactory pDirectoryFactory,
                                 final ConcurrentMap<Path, Directory> pDirs) {
+        this(getLogger(DirectoryRegistrationWalker.class),
+                pExecutorServices,
+                pWrapper,
+                pDirectoryFactory,
+                pDirs);
+    }
+
+    /**
+     * Constructor for testing
+     *
+     * @param pLogger
+     * @param pExecutorServices
+     * @param pWrapper
+     * @param pDirectoryFactory
+     * @param pDirs
+     */
+    DirectoryRegistrationWalker(final Logger pLogger,
+                                final ExecutorServices pExecutorServices,
+                                final WatchServiceWrapper pWrapper,
+                                final DirectoryFactory pDirectoryFactory,
+                                final ConcurrentMap<Path, Directory> pDirs) {
+        logger = pLogger;
         executorServices = pExecutorServices;
         wrapper = pWrapper;
         directoryFactory = pDirectoryFactory;
@@ -55,7 +103,9 @@ class DirectoryRegistrationWalker {
             try {
                 walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pObservers));
             } catch (final IOException e) {
-                LOG.warn(e.getMessage(), e);
+                logger.warn(e.getMessage(), e);
+            } catch (final RuntimeException e) {
+                logger.error(e.getMessage(), e);
             }
         });
     }
@@ -79,7 +129,7 @@ class DirectoryRegistrationWalker {
         }
 
         @Override
-        public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+        public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
             // It's important here to only trigger the observers if the file has changed.
             // This is most certainly the case, but, there is an exception: because we already
             // registered the parent directory of the file with the watch-service there's a small
@@ -91,6 +141,8 @@ class DirectoryRegistrationWalker {
         @Override
         public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
             try {
+                // Only put a new directory if not already present. This is important, otherwise
+                // multiple threads would overwrite them.
                 dirs.computeIfAbsent(dir,
                         p -> {
                             try {
