@@ -69,9 +69,9 @@ public class DirectoryScanner implements Runnable {
             if (ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) {
                 virtualRoot.pathModified(child);
             } else if (ENTRY_DELETE == pKind) {
-                virtualRoot.pathDeleted(child);
+                virtualRoot.pathDiscarded(child);
             }
-        } catch (final Exception e) {
+        } catch (final RuntimeException e) {
             LOG.error(e.getMessage(), e);
         }
     }
@@ -86,9 +86,7 @@ public class DirectoryScanner implements Runnable {
                 LOG.debug(format("Changed detected [%s]: %s, context: %s", kind, directory, event.context()));
             }
 
-            // This key is registered only
-            // for ENTRY_CREATE events,
-            // but an OVERFLOW event can
+            // An OVERFLOW event can
             // occur regardless if events
             // are lost or discarded.
             if (OVERFLOW == kind) {
@@ -102,7 +100,7 @@ public class DirectoryScanner implements Runnable {
         }
 
         if (!pWatchKey.reset()) {
-            virtualRoot.pathDeleted((Path) pWatchKey.watchable());
+            virtualRoot.pathDiscarded((Path) pWatchKey.watchable());
         }
     }
 
@@ -128,24 +126,33 @@ public class DirectoryScanner implements Runnable {
 
         DedicatedFileSystem next = null;
         WatchKey key;
+        int index;
 
         while (waitForNextIteration()) {
             // We intentionally use a traditional for-loop to keep object creation
             // count as low as possible. Therefore, do not use an iterator here.
-            for (int i = 0 ; i < keys.size() ; i++) {
-                processEvent(keys.get(i));
+            for (index = 0 ; index < keys.size() ; index++) {
+                processEvent(keys.get(index));
             }
 
             // We intentionally use a traditional for-loop to keep object creation
             // count as low as possible. Therefore, do not use an iterator here.
-            for (int i = 0; i < roots.size(); i++) {
+            index = 0;
+            while(index < roots.size()) {
                 try {
-                    next = roots.get(i);
+                    next = roots.get(index);
                     key = next.poll();
                     if (key != null) {
                         keys.add(key);
                     }
+
+                    // Only increment index if the underlying watch-service is not
+                    // closed...
+                    index++;
                 } catch (final ClosedWatchServiceException e) {
+                    // ...otherwise, remove fs and continue without
+                    // index incrementation. This will remove the current
+                    // fs from the "roots" list
                     virtualRoot.close(next);
                     LOG.debug(e.getMessage(), e);
                 }

@@ -132,7 +132,7 @@ public class VirtualRoot {
         }
     }
 
-    public void pathDeleted(final Path pPath) {
+    public void pathDiscarded(final Path pPath) {
         final DedicatedFileSystem dfs = getDedicatedFileSystem(pPath);
 
         // The deleted path was a directory
@@ -149,8 +149,14 @@ public class VirtualRoot {
         children.clear();
     }
 
+    /**
+     * Closes the {@link DedicatedFileSystem} instance specified and removes it from
+     * the root list.
+     *
+     * @param pDedicatedFileSystem
+     */
     public void close(final DedicatedFileSystem pDedicatedFileSystem) {
-        if (null != pDedicatedFileSystem) {
+        if (pDedicatedFileSystem != null) {
             pDedicatedFileSystem.close();
 
             // Remove closed watch-service from the roots-list and children-map
