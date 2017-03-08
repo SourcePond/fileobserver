@@ -14,7 +14,6 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -26,6 +25,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -40,12 +40,10 @@ import static java.util.Objects.requireNonNull;
  */
 public class VirtualRoot {
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
+    private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = ConcurrentHashMap.newKeySet();
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
-
-    // Injected by Felix DM
-    private final ExecutorServices executorServices;
 
     /**
      * We intentionally do <em>not</em> use {@code children.values()} because we need to iterate
@@ -53,22 +51,16 @@ public class VirtualRoot {
      * we must create a new iterator during every loop iteration. This is a potential memory leak
      * and causes unnecessary GC activity.
      */
-    private final List<DedicatedFileSystem> roots;
+    private final List<DedicatedFileSystem> roots = new CopyOnWriteArrayList<>();
 
     // Constructor for BundleActivator
-    public VirtualRoot(final ExecutorServices pExecutorServices, final DirectoryFactory pDirectoryFactory) {
-        executorServices = pExecutorServices;
-        dedicatedFileSystemFactory = new DedicatedFileSystemFactory(pExecutorServices, pDirectoryFactory);
-        roots = new CopyOnWriteArrayList<>();
+    public VirtualRoot(final DirectoryFactory pDirectoryFactory) {
+        this(new DedicatedFileSystemFactory(pDirectoryFactory));
     }
 
-    // Constructor for testing
-    public VirtualRoot(final DedicatedFileSystemFactory pFsDirectories,
-                       final ExecutorServices pExecutorServices,
-                       final List<DedicatedFileSystem> pRoots) {
-        dedicatedFileSystemFactory = pFsDirectories;
-        executorServices = pExecutorServices;
-        roots = pRoots;
+    // Constructor for BundleActivator
+    public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory) {
+        dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
     }
 
     // Composition callback for Felix DM
@@ -102,13 +94,39 @@ public class VirtualRoot {
         }
     }
 
-    public void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
+    // This method must be synchronized because all sub-directories need to be
+    // registered before another WatchedDirectory is being registered.
+    public synchronized void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
+        requireNonNull(pWatchedDirectory, "Watched directory is null");
+
+        // Insure that the directory-key is unique
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
+        if (watchtedDirectories.containsKey(key)) {
+            throw new IllegalArgumentException(format("Directory-key %s is already used by %s", watchtedDirectories.get(key)));
+        }
+        watchtedDirectories.put(key, pWatchedDirectory);
+
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
         try {
             children.computeIfAbsent(directory.getFileSystem(),
                     this::newDirectories).registerRootDirectory(pWatchedDirectory, observers);
         } catch (final UncheckedIOException e) {
             throw new IOException(e.getMessage(), e);
+        }
+    }
+
+    // This method must be synchronized because all sub-directories need to be
+    // discarded before another WatchedDirectory is being unregistered.
+    public synchronized void removeRoot(final WatchedDirectory pWatchedDirectory) {
+        requireNonNull(pWatchedDirectory, "Watched directory is null");
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+        final DedicatedFileSystem fs = children.get(directory.getFileSystem());
+
+        if (fs == null) {
+            LOG.warn(format("Dedicated file system not registered for directory %s! Noting unregistered"));
+        } else {
+            fs.unregisterRootDirectory(pWatchedDirectory, observers);
+            watchtedDirectories.remove(pWatchedDirectory.getKey());
         }
     }
 

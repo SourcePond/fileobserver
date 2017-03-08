@@ -87,17 +87,6 @@ public class DedicatedFileSystemTest {
         fs.registerRootDirectory(mock(WatchedDirectory.class), observers);
     }
 
-    /**
-     *
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void registeringSameKeyIsNotAllowed() throws IOException {
-        fs.registerRootDirectory(watchedDirectory1, observers);
-
-        // This should cause an exception
-        fs.registerRootDirectory(watchedDirectory1, observers);
-    }
-
     @Test
     public void directoryWithSamePathAlreadyRegistered() throws IOException {
         when(watchedDirectory2.getDirectory()).thenReturn(rootDirPath1);

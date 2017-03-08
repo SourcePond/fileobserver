@@ -28,9 +28,16 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class DedicatedFileSystemFactory {
     private final DirectoryFactory directoryFactory;
-    private final ExecutorServices executorServices;
+
+    // Inject by Felix DM
+    private volatile ExecutorServices executorServices;
 
     // Constructor for BundleActivator
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory) {
+        directoryFactory = pDirectoryFactory;
+    }
+
+    // Constructor for testing
     public DedicatedFileSystemFactory(final ExecutorServices pExecutorServices, final DirectoryFactory pDirectoryFactory) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;

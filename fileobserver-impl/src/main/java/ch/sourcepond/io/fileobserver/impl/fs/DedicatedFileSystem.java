@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -40,7 +39,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
-    private final Map<Object, WatchedDirectory> watchtedDirectories = new HashMap<>();
     private final ConcurrentMap<Path, Directory> dirs;
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
@@ -77,21 +75,15 @@ public class DedicatedFileSystem implements Closeable {
     }
     
     /**
+     *
+     * This method is <em>not</em> thread-safe and must be synchronized externally.
+     *
      * @param pWatchedDirectory
      * @param pObservers
      */
-    // Note: Despite a ConcurrentMap is used it's necessary to synchronize this method.
-    // The reason is because all sub-directories need to be registered before another WatchedDirectory
-    // is being registered through this method.
-    public synchronized void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
+    void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
                                                    final Collection<FileObserver> pObservers)
             throws IOException {
-        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
-        if (watchtedDirectories.containsKey(key)) {
-            throw new IllegalArgumentException(format("Directory-key %s is already used by %s", watchtedDirectories.get(key)));
-        }
-        watchtedDirectories.put(key, pWatchedDirectory);
-
         // It's already checked that the directory is not null
         final Path directory = pWatchedDirectory.getDirectory();
 
@@ -112,17 +104,20 @@ public class DedicatedFileSystem implements Closeable {
         }
 
         // VERY IMPORTANT: in any case, add the directory with the directory-key
-        dir.addDirectoryKey(key);
+        dir.addDirectoryKey(pWatchedDirectory.getKey());
     }
 
-    // Note: Despite a ConcurrentMap is used it's necessary to synchronize this method.
-    // The reason is because all sub-directories need to be discarded before another WatchedDirectory
-    // is being unregistered through this method.
-    public synchronized void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
+    /**
+     *
+     * This method is <em>not</em> thread-safe and must be synchronized externally.
+     *
+     * @param pWatchedDirectory
+     * @param pObservers
+     */
+    void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
                                                      final Collection<FileObserver> pObservers) {
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
-        watchtedDirectories.remove(key);
 
         final Directory dir = dirs.get(directory);
         if (dir == null) {

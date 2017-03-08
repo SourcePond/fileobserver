@@ -64,7 +64,7 @@ public class Activator extends SmartSwitchActivatorBase {
         executorServices = new ExecutorServices();
         directoryFactory = new DirectoryFactory( executorServices);
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(executorServices, directoryFactory);
-        virtualRoot = new VirtualRoot(executorServices, directoryFactory);
+        virtualRoot = new VirtualRoot(directoryFactory);
         directoryScanner = new DirectoryScanner(systemUTC(), virtualRoot);
     }
 
