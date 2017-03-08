@@ -107,11 +107,24 @@ class DirectoryRegistrationWalker {
      * Additionally, it passes any detected file to {@link FileObserver#modified(FileKey, Path)} to the observers
      * specified.
      *
+     * @param pNewRoot Newly created directory, must not be {@code null}
+     * @param pObservers Observers to be informed about detected files, must not be {@code null}
+     */
+    void rootRebased(final Directory pNewRoot,
+                          final Collection<FileObserver> pObservers) {
+        directoryCreated(pNewRoot, pNewRoot.getPath(), pObservers);
+    }
+
+    /**
+     * Registers the directory specified and all its sub-directories with the watch-service held by this object.
+     * Additionally, it passes any detected file to {@link FileObserver#modified(FileKey, Path)} to the observers
+     * specified.
+     *
      * @param pNewRootOrNull New root-directory which causes a rebase, or, {@code null}
      * @param pDirectory Newly created directory, must not be {@code null}
      * @param pObservers Observers to be informed about detected files, must not be {@code null}
      */
-    void directoryCreated(final Directory pNewRootOrNull,
+    private void directoryCreated(final Directory pNewRootOrNull,
                           final Path pDirectory,
                           final Collection<FileObserver> pObservers) {
         // Asynchronously register all sub-directories with the watch-service, and,

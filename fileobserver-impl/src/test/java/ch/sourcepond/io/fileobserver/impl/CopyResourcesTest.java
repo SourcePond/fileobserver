@@ -36,7 +36,7 @@ public abstract class CopyResourcesTest {
     protected Path testfile_211_txt_path;
     protected Path subdir_22_path;
     protected Path testfile_221_txt_path;
-    protected Path testfile_21_txt_path;
+    protected Path testfile_21_xml_path;
     protected Path testfile_txt_path;
 
     @Before
@@ -68,7 +68,7 @@ public abstract class CopyResourcesTest {
         testfile_211_txt_path = subdir_21_path.resolve("testfile_211.txt");
         subdir_22_path = subdir_2_path.resolve("subdir_22");
         testfile_221_txt_path = subdir_22_path.resolve("testfile_221.txt");
-        testfile_21_txt_path = subdir_2_path.resolve("testfile_21.xml");
+        testfile_21_xml_path = subdir_2_path.resolve("testfile_21.xml");
         testfile_txt_path = root_dir_path.resolve("testfile.txt");
     }
 

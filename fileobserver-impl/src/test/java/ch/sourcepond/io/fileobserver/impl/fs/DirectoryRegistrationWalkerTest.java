@@ -99,7 +99,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         verify(subdir_211, timeout(200)).informIfChanged(observers, testfile_2111_txt_path);
         verify(subdir_21, timeout(200)).informIfChanged(observers, testfile_211_txt_path);
         verify(subdir_22, timeout(200)).informIfChanged(observers, testfile_221_txt_path);
-        verify(subdir_2, timeout(200)).informIfChanged(observers, testfile_21_txt_path);
+        verify(subdir_2, timeout(200)).informIfChanged(observers, testfile_21_xml_path);
         verify(root_dir, timeout(200)).informIfChanged(observers, testfile_txt_path);
         verifyNoMoreInteractions(subdir_111,
                 subdir_11, subdir_12, subdir_1,

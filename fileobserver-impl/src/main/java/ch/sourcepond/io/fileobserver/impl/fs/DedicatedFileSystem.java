@@ -107,7 +107,7 @@ public class DedicatedFileSystem implements Closeable {
 
             // Register directories; important here is to pass the newly create root-directory
             // (otherwise FileObserver#supplement would not be called).
-            walker.directoryCreated(dir, directory, pObservers);
+            walker.rootRebased(dir, pObservers);
         }
 
         // VERY IMPORTANT: in any case, add the directory with the directory-key

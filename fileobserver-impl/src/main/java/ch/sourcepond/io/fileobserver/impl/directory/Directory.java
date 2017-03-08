@@ -54,7 +54,6 @@ public abstract class Directory {
      * Creates then an asynchronous task for each {@link FileKey}/file combination. This tasks will
      * be executed sometime in the future. Such a task will call {@link FileObserver#modified(FileKey, Path)}
      * with the {@link FileKey}/file combination which has been associated with it.
-     *
      */
     private void forceModified(final Collection<FileKey> pParentKeys,
                                final Collection<FileKey> pKeys,
@@ -73,19 +72,21 @@ public abstract class Directory {
     }
 
     private void informSupplement(final FileObserver pObserver, final FileKey pKey, final Collection<FileKey> pParentKeys) {
-        for (final FileKey parentKey : pParentKeys) {
-
-            /*
-             * Suppose:
-             * Parent /A [dirKey:K2] -> Has been added as new root
-             *    Child /A/B [dirKey:K2] -> Derived from new root = nothing to supplement
-             *               [dirKey:K1] -> Was there before new root had been added = A/B supplements B
-             *
-             * When iterating over parent keys ignore those which are derived from new parent.
-             *
-             */
-            if (!pKey.key().equals(parentKey.key())) {
-                pObserver.supplement(pKey, parentKey);
+        if (!pParentKeys.isEmpty()) {
+            for (final FileKey parentKey : pParentKeys) {
+                /*
+                 * Suppose:
+                 * Parent /A [dirKey:K2] -> Has been added as new root
+                 *    Child /A/B [dirKey:K2] -> Derived from new root = nothing to supplement
+                 *               [dirKey:K1] -> Was there before new root had been added = A/B supplements B
+                 *
+                 * When iterating over parent keys ignore those which are derived from new parent.
+                 *
+                 */
+                if (!pKey.key().equals(parentKey.key())) {
+                    System.out.println(pKey + " " + parentKey);
+                    pObserver.supplement(pKey, parentKey);
+                }
             }
         }
     }
@@ -99,7 +100,7 @@ public abstract class Directory {
      */
     private void streamDirectoryAndForceInform(final FileObserver pObserver) {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), p -> isRegularFile(p))) {
-            stream.forEach(p -> forceModified(null, createKeys(p), pObserver, p));
+            stream.forEach(p -> forceModified(emptyList(), createKeys(p), pObserver, p));
         } catch (final IOException e) {
             LOG.warn("Exception occurred while trying to inform single observers!", e);
         }
@@ -130,10 +131,6 @@ public abstract class Directory {
      */
     abstract Path relativizeAgainstRoot(Object pDirectoryKey, Path pPath);
 
-    private FileKey createKey(final Object pDirectoryKey, final Path pFile) {
-        return getFactory().newKey(pDirectoryKey, relativizeAgainstRoot(pDirectoryKey, pFile));
-    }
-
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
@@ -148,7 +145,7 @@ public abstract class Directory {
     private Collection<FileKey> createKeys(final Path pFile) {
         return getDirectoryKeys().
                 stream().map(
-                k -> createKey(k, pFile)).
+                k -> getFactory().newKey(k, relativizeAgainstRoot(k, pFile))).
                 collect(toList());
     }
 
@@ -183,7 +180,7 @@ public abstract class Directory {
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Removes the directory-key specified from this directory instance. If no such
      * key is registered nothing happens.
      *
@@ -198,11 +195,17 @@ public abstract class Directory {
      * key is registered nothing happens.
      *
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
-     * @param pObservers Observers to be informed, must not be {@code null}
+     * @param pObservers    Observers to be informed, must not be {@code null}
      */
-    public final void removeDirectoryKey(final Object pDirectoryKey, final Collection<FileObserver> pObservers) {
+    public void removeDirectoryKey(final Object pDirectoryKey, final Collection<FileObserver> pObservers) {
+        // It is important to evaluate to relative path before the
+        // has been removed otherwise the resulting key has not the
+        // expected value!
+        final Path relativePath = relativizeAgainstRoot(pDirectoryKey, getPath());
+
+        // Now, the key can be safely removed
         if (removeDirectoryKey(pDirectoryKey)) {
-            final FileKey key = createKey(pDirectoryKey, getPath());
+            final FileKey key = getFactory().newKey(pDirectoryKey, relativePath);
             pObservers.forEach(o -> getFactory().execute(() -> o.discard(key)));
         }
     }

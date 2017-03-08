@@ -18,6 +18,8 @@ import ch.sourcepond.io.fileobserver.api.FileKey;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import static java.lang.String.format;
+
 /**
  *
  */
@@ -57,5 +59,10 @@ final class DefaultFileKey implements FileKey {
     @Override
     public int hashCode() {
         return Objects.hash(key, relativePath);
+    }
+
+    @Override
+    public String toString() {
+        return format("[%s:%s]", key, relativePath);
     }
 }

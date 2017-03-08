@@ -39,8 +39,8 @@ public class SubDirectory extends Directory {
      * @param pDirectoryKeysOrNull
      */
     SubDirectory(final Directory pParent,
-                         final WatchKey pWatchKey,
-                         final Collection<Object> pDirectoryKeysOrNull) {
+                 final WatchKey pWatchKey,
+                 final Collection<Object> pDirectoryKeysOrNull) {
         super(pWatchKey);
         parent = pParent;
         directoryKeysOrNull = pDirectoryKeysOrNull;
@@ -66,14 +66,12 @@ public class SubDirectory extends Directory {
 
     @Override
     public boolean removeDirectoryKey(final Object pDirectoryKey) {
-        final Collection<Object> keys = directoryKeysOrNull;
         boolean rc = false;
+        final Collection<Object> keys = directoryKeysOrNull;
         if (keys != null) {
             rc = keys.remove(pDirectoryKey);
             if (keys.isEmpty()) {
-                synchronized (this) {
-                    directoryKeysOrNull = null;
-                }
+                directoryKeysOrNull = null;
             }
         }
         return rc;

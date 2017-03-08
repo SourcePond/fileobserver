@@ -13,15 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import java.nio.file.WatchKey;
+import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
+import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
 
 /**
  *
  */
-public abstract class DirectoryBaseTest {
-    static final Object DIRECTORY_KEY = new Object();
-    final DirectoryFactory factory = mock(DirectoryFactory.class);
-    final WatchKey watchKey = mock(WatchKey.class);
+public class DirectoryFactoryTest {
+    private final ExecutorServices executorServices = mock(ExecutorServices.class);
+
+    @Test
+    public void verifyActivatorConstructor() {
+        // Should not throw an exception
+        new DirectoryFactory(executorServices);
+    }
 }

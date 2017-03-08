@@ -1,43 +1,48 @@
-/*Copyright (C) 2017 Roland Hauser, <sourcepond@gmail.com>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
+import org.junit.Before;
 import org.junit.Test;
 
-import static java.util.Collections.emptyList;
+import java.io.IOException;
+import java.util.Collection;
+
 import static org.junit.Assert.*;
 
 /**
- *
+ * Created by rolandhauser on 08.03.17.
  */
-public class RootDirectoryTest extends  DirectoryBaseTest {
-    private final RootDirectory dir = new RootDirectory(factory, watchKey);
+public class RootDirectoryTest extends DirectoryTest {
+    private Directory root;
 
-    @Test
-    public void verifyToRootConstructor() {
-        final RootDirectory rootDir = new RootDirectory(factory, watchKey, emptyList());
-        assertSame(emptyList(), rootDir.getDirectoryKeys());
+    @Before
+    public void setup() throws IOException {
+        root = factory.newRoot(wrapper.register(subdir_1_path));
     }
 
     @Test
-    public void getFactory() {
-        assertSame(factory, dir.getFactory());
+    public void rebase() throws IOException {
+        root.addDirectoryKey(ROOT_DIR_KEY);
+        final Directory newRoot = factory.newRoot(wrapper.register(root_dir_path));
+        final Directory rc = root.rebase(newRoot);
+        assertNotSame(root, rc);
+        assertTrue(rc instanceof SubDirectory);
+        final SubDirectory rebased = (SubDirectory)rc;
+        assertSame(newRoot, rebased.getParent());
+        assertSame(root.getWatchKey(), rebased.getWatchKey());
+        final Collection<Object> keys = rebased.getDirectoryKeys();
+        assertEquals(1, keys.size());
+        assertTrue(keys.contains(ROOT_DIR_KEY));
     }
 
     @Test
-    public void addGetRemovedDirectoryKey() {
-
+    public void hasKeys() {
+        // It's assumed that this method returns always true for
+        // root directories (event when no keys are added)
+        assertTrue(root.hasKeys());
     }
 
+    @Test
+    public void toRootDirectory() {
+        assertSame(root, root.toRootDirectory());
+    }
 }
