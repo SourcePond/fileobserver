@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -73,16 +72,15 @@ public class DedicatedFileSystem implements Closeable {
     public void forceInform(final FileObserver pObserver) {
         dirs.values().forEach(d -> d.forceInform(pObserver));
     }
-    
+
     /**
-     *
      * This method is <em>not</em> thread-safe and must be synchronized externally.
      *
      * @param pWatchedDirectory
      * @param pObservers
      */
     void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
-                                                   final Collection<FileObserver> pObservers)
+                               final Collection<FileObserver> pObservers)
             throws IOException {
         // It's already checked that the directory is not null
         final Path directory = pWatchedDirectory.getDirectory();
@@ -108,23 +106,20 @@ public class DedicatedFileSystem implements Closeable {
     }
 
     /**
-     *
      * This method is <em>not</em> thread-safe and must be synchronized externally.
      *
      * @param pWatchedDirectory
      * @param pObservers
      */
     void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
-                                                     final Collection<FileObserver> pObservers) {
-        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
-        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
-
-        final Directory dir = dirs.get(directory);
+                                 final Collection<FileObserver> pObservers) {
+        // It's already checked that the directory-key and the directory are not null
+        final Directory dir = dirs.get(pWatchedDirectory.getDirectory());
         if (dir == null) {
-            LOG.warn(format("Directory %s is unknown; nothing unregistered", directory));
+            LOG.warn(format("Directory %s is unknown; nothing unregistered", pWatchedDirectory.getDirectory()));
         } else {
             // Remove the directory-key of the watched directory from the key list
-            dir.removeDirectoryKey(key, pObservers);
+            dir.removeDirectoryKey(pWatchedDirectory.getKey(), pObservers);
 
             // If all watched-directories which referenced the directory have been de-registered,
             // it's time to clean-up.

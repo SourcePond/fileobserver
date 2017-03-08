@@ -18,7 +18,6 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
-import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.apache.felix.dm.DependencyManager;
@@ -28,19 +27,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
 import static java.time.Clock.systemUTC;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -48,22 +40,15 @@ import static java.util.Objects.requireNonNull;
  */
 public class Activator extends SmartSwitchActivatorBase {
     private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
-    private final ConcurrentMap<Object, Path> keyToPaths = new ConcurrentHashMap<>();
-
-    private final Map<Object, WatchedDirectory> watchedDirectories = new HashMap<>();
-    private final Map<Path, Collection<Object>> pathToKeys = new HashMap<>();
-
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
-    private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
     private final VirtualRoot virtualRoot;
     private final DirectoryScanner directoryScanner;
 
     // Constructor for OSGi framework
     public Activator() {
         executorServices = new ExecutorServices();
-        directoryFactory = new DirectoryFactory( executorServices);
-        dedicatedFileSystemFactory = new DedicatedFileSystemFactory(executorServices, directoryFactory);
+        directoryFactory = new DirectoryFactory(executorServices);
         virtualRoot = new VirtualRoot(directoryFactory);
         directoryScanner = new DirectoryScanner(systemUTC(), virtualRoot);
     }
@@ -71,12 +56,10 @@ public class Activator extends SmartSwitchActivatorBase {
     // Constructor for testing
     public Activator(final ExecutorServices pExecutorServices,
                      final DirectoryFactory pDirectoryFactory,
-                     final DedicatedFileSystemFactory pRegistrarFactory,
                      final VirtualRoot pVirtualRoot,
                      final DirectoryScanner pDirectoryScanner) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
-        dedicatedFileSystemFactory = pRegistrarFactory;
         virtualRoot = pVirtualRoot;
         directoryScanner = pDirectoryScanner;
     }
@@ -131,33 +114,17 @@ public class Activator extends SmartSwitchActivatorBase {
      * @throws IOException Thrown, if the root directory could not be added.
      */
     public void bind(final WatchedDirectory pWatchedDirectory) throws IOException {
+        requireNonNull(pWatchedDirectory, "Watched directory is null");
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
 
         if (!isDirectory(directory)) {
             throw new IllegalArgumentException(format("[%s]: %s is not a directory!", key, directory));
         }
+        virtualRoot.addRoot(pWatchedDirectory);
 
-        final boolean isNew;
-        synchronized (this) {
-            // It' not allowed to use the same key for more than one WatchedDirectory instance...
-            watchedDirectories.compute(key, (k, v) -> {
-                if (v != null) {
-                    throw new IllegalArgumentException(
-                            format("Key %s cannot be used for directory %s!\nIt is already occupied by %s",
-                                    key, directory, v.getDirectory()));
-                }
-                return pWatchedDirectory;
-            });
-
-            //... but it's perfectly allowed that more than WatchDirectory points to the same path
-            final Collection<Object> keys = pathToKeys.computeIfAbsent(directory, d -> new HashSet<>());
-            isNew = keys.add(key) && keys.size() == 1;
-        }
-
-        // If the key is newly added, open a watch-service for the directory
-        if (isNew) {
-            virtualRoot.addRoot(pWatchedDirectory);
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Added watched-directory with directory-key %s and path %s", key, directory);
         }
     }
 
@@ -168,22 +135,13 @@ public class Activator extends SmartSwitchActivatorBase {
      * @param pWatchedDirectory Watched-directory service to be unregistered.
      */
     public void unbind(final WatchedDirectory pWatchedDirectory) {
+        requireNonNull(pWatchedDirectory, "Watched directory is null");
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+        virtualRoot.removeRoot(pWatchedDirectory);
 
-        final boolean noMoreKeys;
-        synchronized (this) {
-            final Collection<Object> keys = pathToKeys.getOrDefault(directory, emptyList());
-
-            // If no more keys are registered for the previous directory, its watch-key
-            // needs to be cancelled.
-            if ((noMoreKeys = keys.remove(key) && keys.isEmpty())) {
-                pathToKeys.remove(directory);
-            }
-        }
-
-        if (noMoreKeys) {
-            virtualRoot.pathDiscarded(directory);
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Removed watched-directory with directory-key %s and path %s", key, directory);
         }
     }
 }

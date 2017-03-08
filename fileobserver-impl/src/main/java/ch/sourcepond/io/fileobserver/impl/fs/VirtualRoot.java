@@ -97,8 +97,6 @@ public class VirtualRoot {
     // This method must be synchronized because all sub-directories need to be
     // registered before another WatchedDirectory is being registered.
     public synchronized void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
-        requireNonNull(pWatchedDirectory, "Watched directory is null");
-
         // Insure that the directory-key is unique
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
         if (watchtedDirectories.containsKey(key)) {
@@ -118,9 +116,8 @@ public class VirtualRoot {
     // This method must be synchronized because all sub-directories need to be
     // discarded before another WatchedDirectory is being unregistered.
     public synchronized void removeRoot(final WatchedDirectory pWatchedDirectory) {
-        requireNonNull(pWatchedDirectory, "Watched directory is null");
-        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
-        final DedicatedFileSystem fs = children.get(directory.getFileSystem());
+        // It's already checked that nothing is null
+        final DedicatedFileSystem fs = children.get(pWatchedDirectory.getDirectory().getFileSystem());
 
         if (fs == null) {
             LOG.warn(format("Dedicated file system not registered for directory %s! Noting unregistered"));

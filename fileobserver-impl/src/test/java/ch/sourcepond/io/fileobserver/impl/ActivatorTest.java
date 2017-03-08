@@ -3,7 +3,6 @@ package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
-import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
@@ -22,7 +21,6 @@ import static org.mockito.Mockito.*;
  */
 public class ActivatorTest {
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
-    private final DedicatedFileSystemFactory dedicatedFileSystemFactory = mock(DedicatedFileSystemFactory.class);
     private final DirectoryScanner directoryScanner = mock(DirectoryScanner.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
@@ -33,7 +31,7 @@ public class ActivatorTest {
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final WatchedDirectory secondWatchedDirectory = mock(WatchedDirectory.class);
     private final ExecutorServices executorServices = mock(ExecutorServices.class);
-    private final Activator manager = new Activator(executorServices, directoryFactory, dedicatedFileSystemFactory, virtualRoot, directoryScanner);
+    private final Activator manager = new Activator(executorServices, directoryFactory, virtualRoot, directoryScanner);
 
     @Before
     public void setup() throws IOException {
