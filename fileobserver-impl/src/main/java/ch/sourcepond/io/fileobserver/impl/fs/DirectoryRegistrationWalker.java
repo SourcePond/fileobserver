@@ -110,8 +110,8 @@ class DirectoryRegistrationWalker {
      * @param pNewRoot Newly created directory, must not be {@code null}
      * @param pObservers Observers to be informed about detected files, must not be {@code null}
      */
-    void rootRebased(final Directory pNewRoot,
-                          final Collection<FileObserver> pObservers) {
+    void rootAdded(final Directory pNewRoot,
+                   final Collection<FileObserver> pObservers) {
         directoryCreated(pNewRoot, pNewRoot.getPath(), pObservers);
     }
 

@@ -44,19 +44,19 @@ public class DedicatedFileSystem implements Closeable {
     private final ConcurrentMap<Path, Directory> dirs;
     private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
-    private final WatchServiceWrapper wsRegistrar;
+    private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
     private final DirectoryRegistrationWalker walker;
 
     DedicatedFileSystem(final ExecutorServices pExecutorServices,
                         final DirectoryFactory pDirectoryFactory,
-                        final WatchServiceWrapper pWsRegistrar,
+                        final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final DirectoryRegistrationWalker pWalker,
                         final ConcurrentMap<Path, Directory> pDirs) {
         executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
-        wsRegistrar = pWsRegistrar;
+        wrapper = pWrapper;
         rebase = pRebase;
         walker = pWalker;
         dirs = pDirs;
@@ -99,7 +99,8 @@ public class DedicatedFileSystem implements Closeable {
         if (dir == null) {
             // If no directory is registered for the path specified, create a new root-directory.
             // Register the path with the watch-service and use the returned watch-key to create the root directory.
-            dir = directoryFactory.newRoot(wsRegistrar.register(directory));
+            dir = directoryFactory.newRoot(wrapper.register(directory));
+            dirs.put(directory, dir);
 
             // If there are root-directories registered which are children or the newly added
             // root directory, they need to be rebased (including their direct children)
@@ -107,14 +108,16 @@ public class DedicatedFileSystem implements Closeable {
 
             // Register directories; important here is to pass the newly create root-directory
             // (otherwise FileObserver#supplement would not be called).
-            walker.rootRebased(dir, pObservers);
+            walker.rootAdded(dir, pObservers);
         }
 
         // VERY IMPORTANT: in any case, add the directory with the directory-key
         dir.addDirectoryKey(key);
     }
 
-
+    // Note: Despite a ConcurrentMap is used it's necessary to synchronize this method.
+    // The reason is because all sub-directories need to be discarded before another WatchedDirectory
+    // is being unregistered through this method.
     public synchronized void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
                                                      final Collection<FileObserver> pObservers) {
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
@@ -122,14 +125,17 @@ public class DedicatedFileSystem implements Closeable {
         watchtedDirectories.remove(key);
 
         final Directory dir = dirs.get(directory);
+        if (dir == null) {
+            LOG.warn(format("Directory %s is unknown; nothing unregistered", directory));
+        } else {
+            // Remove the directory-key of the watched directory from the key list
+            dir.removeDirectoryKey(key, pObservers);
 
-        // Remove the directory-key of the watched directory from the key list
-        dir.removeDirectoryKey(key, pObservers);
-
-        // If all watched-directories which referenced the directory have been de-registered,
-        // it's time to clean-up.
-        if (!dir.hasKeys()) {
-            rebase.cancelAndRebaseDiscardedDirectory(dir);
+            // If all watched-directories which referenced the directory have been de-registered,
+            // it's time to clean-up.
+            if (!dir.hasKeys()) {
+                rebase.cancelAndRebaseDiscardedDirectory(dir);
+            }
         }
     }
 
@@ -169,13 +175,13 @@ public class DedicatedFileSystem implements Closeable {
     @Override
     public void close() {
         try {
-            wsRegistrar.close();
+            wrapper.close();
         } finally {
             dirs.clear();
         }
     }
 
     public WatchKey poll() {
-        return wsRegistrar.poll();
+        return wrapper.poll();
     }
 }

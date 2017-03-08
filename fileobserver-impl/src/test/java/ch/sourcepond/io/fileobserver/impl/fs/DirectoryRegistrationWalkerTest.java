@@ -126,7 +126,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     public void rootRebased() throws IOException {
         final Directory newRoot = mock(Directory.class);
         when(newRoot.getPath()).thenReturn(root_dir_path);
-        walker.rootRebased(newRoot, observers);
+        walker.rootAdded(newRoot, observers);
         verifyDirectoryWalk(newRoot);
     }
 
