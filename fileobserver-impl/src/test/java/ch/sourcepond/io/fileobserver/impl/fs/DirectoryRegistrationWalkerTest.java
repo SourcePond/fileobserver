@@ -19,7 +19,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.*;
 
 /**
@@ -85,22 +86,16 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         when(directoryFactory.newBranch(subdir_2, subdir_22_watchKey)).thenReturn(subdir_22);
     }
 
-    /**
-     *
-     */
-    @Test
-    public void directoryCreatedRootRegistered() throws IOException {
-        walker.directoryCreated(root_dir_path, observers);
-
-        verify(subdir_111, timeout(200)).informIfChanged(observers, testfile_1111_txt_path);
-        verify(subdir_11, timeout(200)).informIfChanged(observers, testfile_111_txt_path);
-        verify(subdir_12, timeout(200)).informIfChanged(observers, testfile_121_txt_path);
-        verify(subdir_1, timeout(200)).informIfChanged(observers, testfile_11_xml_path);
-        verify(subdir_211, timeout(200)).informIfChanged(observers, testfile_2111_txt_path);
-        verify(subdir_21, timeout(200)).informIfChanged(observers, testfile_211_txt_path);
-        verify(subdir_22, timeout(200)).informIfChanged(observers, testfile_221_txt_path);
-        verify(subdir_2, timeout(200)).informIfChanged(observers, testfile_21_xml_path);
-        verify(root_dir, timeout(200)).informIfChanged(observers, testfile_txt_path);
+    private void verifyDirectoryWalk(final Directory pNewRootOrNull) throws IOException {
+        verify(subdir_111, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_1111_txt_path);
+        verify(subdir_11, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_111_txt_path);
+        verify(subdir_12, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_121_txt_path);
+        verify(subdir_1, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_11_xml_path);
+        verify(subdir_211, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_2111_txt_path);
+        verify(subdir_21, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_211_txt_path);
+        verify(subdir_22, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_221_txt_path);
+        verify(subdir_2, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_21_xml_path);
+        verify(root_dir, timeout(200)).informIfChanged(pNewRootOrNull, observers, testfile_txt_path);
         verifyNoMoreInteractions(subdir_111,
                 subdir_11, subdir_12, subdir_1,
                 subdir_211, subdir_21, subdir_22,
@@ -116,6 +111,23 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         assertSame(subdir_22, dirs.get(subdir_22_path));
         assertSame(subdir_2, dirs.get(subdir_2_path));
         assertSame(root_dir, dirs.get(root_dir_path));
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void directoryCreated() throws IOException {
+        walker.directoryCreated(root_dir_path, observers);
+        verifyDirectoryWalk(null);
+    }
+
+    @Test
+    public void rootRebased() throws IOException {
+        final Directory newRoot = mock(Directory.class);
+        when(newRoot.getPath()).thenReturn(root_dir_path);
+        walker.rootRebased(newRoot, observers);
+        verifyDirectoryWalk(newRoot);
     }
 
     @Test
