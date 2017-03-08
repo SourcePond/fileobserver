@@ -125,7 +125,7 @@ public class VirtualRoot {
             getDedicatedFileSystem(pPath).directoryCreated(pPath, observers);
         } else {
             final Directory dir = getDedicatedFileSystem(pPath).getDirectory(pPath.getParent());
-            if (null == dir) {
+            if (dir == null) {
                 throw new NullPointerException(format("No directory registered for file %s", pPath));
             }
             dir.informIfChanged(observers, pPath);
@@ -137,6 +137,10 @@ public class VirtualRoot {
 
         // The deleted path was a directory
         if (!dfs.directoryDiscarded(observers, pPath)) {
+            final Directory parentDirectory = dfs.getDirectory(pPath.getParent());
+            if (parentDirectory == null) {
+                throw new NullPointerException(format("Parent directory does not exist for discarded file %s", pPath));
+            }
 
             // The deleted path was a file
             dfs.getDirectory(pPath.getParent()).informDiscard(observers, pPath);
