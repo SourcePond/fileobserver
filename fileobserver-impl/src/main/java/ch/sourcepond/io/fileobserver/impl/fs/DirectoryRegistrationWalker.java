@@ -15,7 +15,6 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import org.slf4j.Logger;
@@ -28,6 +27,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
@@ -44,46 +44,46 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 class DirectoryRegistrationWalker {
     private final Logger logger;
-    private final ExecutorServices executorServices;
     private final WatchServiceWrapper wrapper;
     private final DirectoryFactory directoryFactory;
     private final ConcurrentMap<Path, Directory> dirs;
+    private final ExecutorService directoryWalkerExecutor;
 
     /**
      * Constructor for bundle activator.
      *
-     * @param pExecutorServices
      * @param pWrapper
      * @param pDirectoryFactory
+     * @param pDirectoryWalkterExecutor
      * @param pDirs
      */
-    DirectoryRegistrationWalker(final ExecutorServices pExecutorServices,
-                                final WatchServiceWrapper pWrapper,
+    DirectoryRegistrationWalker(final WatchServiceWrapper pWrapper,
                                 final DirectoryFactory pDirectoryFactory,
+                                final ExecutorService pDirectoryWalkterExecutor,
                                 final ConcurrentMap<Path, Directory> pDirs) {
-        this(getLogger(DirectoryRegistrationWalker.class),
-                pExecutorServices,
-                pWrapper,
-                pDirectoryFactory,
-                pDirs);
+        logger = getLogger(getClass());
+        wrapper = pWrapper;
+        directoryFactory = pDirectoryFactory;
+        directoryWalkerExecutor = pDirectoryWalkterExecutor;
+        dirs = pDirs;
     }
 
     /**
      * Constructor for testing
      *
      * @param pLogger
-     * @param pExecutorServices
+     * @param pDirectoryWalkerExecutor
      * @param pWrapper
      * @param pDirectoryFactory
      * @param pDirs
      */
     DirectoryRegistrationWalker(final Logger pLogger,
-                                final ExecutorServices pExecutorServices,
+                                final ExecutorService pDirectoryWalkerExecutor,
                                 final WatchServiceWrapper pWrapper,
                                 final DirectoryFactory pDirectoryFactory,
                                 final ConcurrentMap<Path, Directory> pDirs) {
         logger = pLogger;
-        executorServices = pExecutorServices;
+        directoryWalkerExecutor = pDirectoryWalkerExecutor;
         wrapper = pWrapper;
         directoryFactory = pDirectoryFactory;
         dirs = pDirs;
@@ -129,7 +129,7 @@ class DirectoryRegistrationWalker {
                           final Collection<FileObserver> pObservers) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered FileObservers
-        executorServices.getDirectoryWalkerExecutor().execute(() -> {
+        directoryWalkerExecutor.execute(() -> {
             try {
                 walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pNewRootOrNull, pObservers));
             } catch (final IOException e) {

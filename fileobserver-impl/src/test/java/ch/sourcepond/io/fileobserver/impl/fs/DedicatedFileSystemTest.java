@@ -1,12 +1,10 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -17,10 +15,8 @@ import java.nio.file.WatchKey;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 
 import static java.util.Arrays.asList;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -32,8 +28,6 @@ public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
-    private final ExecutorServices executors = mock(ExecutorServices.class);
-    private final ExecutorService executor = newCachedThreadPool();
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -63,14 +57,15 @@ public class DedicatedFileSystemTest {
         when(directoryFactory.newRoot(rootWatchKey1)).thenReturn(rootDir1);
         when(rootDir1.getPath()).thenReturn(rootDirPath1);
 
-        // Setup fs
-        when(executors.getDirectoryWalkerExecutor()).thenReturn(executor);
-        fs = new DedicatedFileSystem(executors, directoryFactory, wrapper, rebase, walker, dirs);
-    }
+        // Simulate DirectoryRebase behaviour
+        doAnswer(inv -> {
+            final Directory newRoot = inv.getArgument(0);
+            dirs.put(newRoot.getPath(), newRoot);
+            return null;
+        }).when(rebase).rebaseExistingRootDirectories(notNull());
 
-    @After
-    public void tearDown() {
-        executor.shutdown();
+        // Setup fs
+        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, walker, dirs);
     }
 
     @Test

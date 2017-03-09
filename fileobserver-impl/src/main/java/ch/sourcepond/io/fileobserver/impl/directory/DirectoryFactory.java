@@ -17,35 +17,36 @@ import ch.sourcepond.io.checksum.api.Algorithm;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
-import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Created by rolandhauser on 08.02.17.
  */
 public class DirectoryFactory {
     private final DefaultFileKeyFactory fileKeyFactory;
-    private final ExecutorServices executorServices;
+
+    // Injected by Felix DM; this field must not be renamed!
+    private volatile ExecutorService observerExecutor;
 
     // Injected by Felix DM
     private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
-    public DirectoryFactory(final ExecutorServices pExecutorServices) {
-        executorServices = pExecutorServices;
+    public DirectoryFactory() {
         fileKeyFactory = new DefaultFileKeyFactory();
     }
 
     // Constructor for testing
     public DirectoryFactory(final ResourcesFactory pResourcesFactory,
                             final DefaultFileKeyFactory pFileKeyFactory,
-                            final ExecutorServices pExecutorServices) {
+                            final ExecutorService pObserverExecutor) {
         resourcesFactory = pResourcesFactory;
         fileKeyFactory = pFileKeyFactory;
-        executorServices = pExecutorServices;
+        observerExecutor = pObserverExecutor;
     }
 
     public RootDirectory newRoot(final WatchKey pWatchKey) {
@@ -91,6 +92,6 @@ public class DirectoryFactory {
      * @param pTask Task to be executed, must not be {@code null}
      */
     void execute(final Runnable pTask) {
-        executorServices.getObserverExecutor().execute(pTask);
+        observerExecutor.execute(pTask);
     }
 }

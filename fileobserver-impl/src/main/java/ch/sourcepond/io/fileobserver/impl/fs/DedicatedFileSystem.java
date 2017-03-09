@@ -15,7 +15,6 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -39,19 +38,16 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DedicatedFileSystem implements Closeable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
     private final ConcurrentMap<Path, Directory> dirs;
-    private final ExecutorServices executorServices;
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
     private final DirectoryRegistrationWalker walker;
 
-    DedicatedFileSystem(final ExecutorServices pExecutorServices,
-                        final DirectoryFactory pDirectoryFactory,
+    DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final DirectoryRegistrationWalker pWalker,
                         final ConcurrentMap<Path, Directory> pDirs) {
-        executorServices = pExecutorServices;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
@@ -90,13 +86,12 @@ public class DedicatedFileSystem implements Closeable {
             // If no directory is registered for the path specified, create a new root-directory.
             // Register the path with the watch-service and use the returned watch-key to create the root directory.
             dir = directoryFactory.newRoot(wrapper.register(directory));
-            dirs.put(directory, dir);
 
             // If there are root-directories registered which are children or the newly added
             // root directory, they need to be rebased (including their direct children)
             rebase.rebaseExistingRootDirectories(dir);
 
-            // Register directories; important here is to pass the newly create root-directory
+            // Register directories; important here is to pass the newly created root-directory
             // (otherwise FileObserver#supplement would not be called).
             walker.rootAdded(dir, pObservers);
         }

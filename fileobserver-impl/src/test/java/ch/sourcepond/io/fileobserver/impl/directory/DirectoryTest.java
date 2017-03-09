@@ -19,11 +19,11 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -35,7 +35,8 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /**
  *
@@ -44,9 +45,8 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     static final Object ROOT_DIR_KEY = "rootDirKey";
     static final Object SUB_DIR_KEY1 = "subDirKey1";
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
-    final ExecutorService executorService = newSingleThreadExecutor();
-    final ExecutorServices executorServices = mock(ExecutorServices.class);
-    final DirectoryFactory factory = new DirectoryFactory(resourcesFactory, new DefaultFileKeyFactory(), executorServices);
+    final ExecutorService observerExecutor = newSingleThreadExecutor();
+    final DirectoryFactory factory = new DirectoryFactory(resourcesFactory, new DefaultFileKeyFactory(), observerExecutor);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
     final FileObserver observer = mock(FileObserver.class);
@@ -55,14 +55,19 @@ public abstract class DirectoryTest extends CopyResourcesTest {
 
     @Before
     public void setupFactories() throws IOException {
-        when(executorServices.getObserverExecutor()).thenReturn(executorService);
         wrapper = new WatchServiceWrapper(getDefault().newWatchService());
     }
 
     @After
     public void shutdownExecutor() {
-        executorService.shutdown();
+        observerExecutor.shutdown();
         wrapper.close();
+    }
+
+    @Test
+    public void verifyDirectoryFactoryDefaultConstructor() {
+        // Should not throw an exception
+        new DirectoryFactory();
     }
 
     void setupChecksumAnswer(final Resource pResource, final Checksum pChecksum2) {

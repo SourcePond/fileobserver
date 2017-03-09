@@ -1,7 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl;
 
 
-import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
 import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -14,13 +13,13 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by rolandhauser on 08.02.17.
  */
 public class ActivatorTest {
-    private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final DirectoryScanner directoryScanner = mock(DirectoryScanner.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
@@ -30,8 +29,7 @@ public class ActivatorTest {
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final WatchedDirectory secondWatchedDirectory = mock(WatchedDirectory.class);
-    private final ExecutorServices executorServices = mock(ExecutorServices.class);
-    private final Activator manager = new Activator(executorServices, directoryFactory, virtualRoot, directoryScanner);
+    private final Activator manager = new Activator(virtualRoot, directoryScanner);
 
     @Before
     public void setup() throws IOException {
@@ -47,47 +45,8 @@ public class ActivatorTest {
         when(secondWatchedDirectory.getDirectory()).thenReturn(secondDirectory);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void bindKeyIsNull() throws IOException {
-        when(watchedDirectory.getKey()).thenReturn(null);
-        manager.bind(watchedDirectory);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void bindDirectoryIsNull() throws IOException {
-        when(watchedDirectory.getDirectory()).thenReturn(null);
-        manager.bind(watchedDirectory);
-    }
-
-
-    @Test(expected = IllegalArgumentException.class)
-    public void bindPathIsNotADirectory() throws IOException {
-        when(attrs.isDirectory()).thenReturn(false);
-        manager.bind(watchedDirectory);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void bindKeyAlreadyOccupied() throws IOException {
-        manager.bind(watchedDirectory);
-
-        // This should cause an exception to be thrown
-        manager.bind(watchedDirectory);
-    }
-
-    @Test(expected = IOException.class)
-    public void bindFailed() throws IOException {
-        final IOException expected = new IOException();
-        doThrow(expected).when(virtualRoot).addRoot(watchedDirectory);
-
-        // This should not cause an exception
-        manager.bind(watchedDirectory);
-    }
-
     @Test
-    public void bindNoRootAdditionNecessary() throws IOException {
-        manager.bind(watchedDirectory);
-        when(secondWatchedDirectory.getDirectory()).thenReturn(directory);
-        manager.bind(secondWatchedDirectory);
-        //verify(virtualRoot).addRoot();
+    public void empty() {
+
     }
 }

@@ -1,11 +1,12 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.impl.directory.SubDirectory;
+import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,20 +20,19 @@ import java.util.concurrent.ExecutorService;
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY1;
 import static java.nio.file.FileSystems.getDefault;
-import static java.util.concurrent.Executors.newCachedThreadPool;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by rolandhauser on 06.03.17.
  */
 public class DirectoryRebaseTest extends CopyResourcesTest {
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
-    private final ExecutorService executor = newCachedThreadPool();
-    private final ExecutorServices executorServices = mock(ExecutorServices.class);
-    private final DirectoryFactory directoryFactory = new DirectoryFactory(executorServices);
-    private WatchServiceWrapper wsRegistrar;
+    private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
+    private final ExecutorService observerExecutor = newSingleThreadExecutor();
+    private final DirectoryFactory directoryFactory = new DirectoryFactory(resourcesFactory, new DefaultFileKeyFactory(), observerExecutor);
+    private WatchServiceWrapper wrapper;
     private Directory dir;
     private Directory dir_1;
     private Directory dir_111;
@@ -42,29 +42,27 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
 
     @Before
     public void setupDirectories() throws IOException {
-        wsRegistrar = new WatchServiceWrapper(getDefault().newWatchService());
-        dir = directoryFactory.newRoot(wsRegistrar.register(root_dir_path));
-        dir_1 = directoryFactory.newRoot(wsRegistrar.register(subdir_1_path));
-        dir_111 = directoryFactory.newRoot(wsRegistrar.register(subdir_111_path));
-        dir_2 = directoryFactory.newRoot(wsRegistrar.register(subdir_2_path));
-        dir_211 = directoryFactory.newRoot(wsRegistrar.register(subdir_211_path));
-        when(executorServices.getDirectoryWalkerExecutor()).thenReturn(executor);
-        when(executorServices.getObserverExecutor()).thenReturn(executor);
-        rebase = new DirectoryRebase(directoryFactory, wsRegistrar, dirs);
+        wrapper = new WatchServiceWrapper(getDefault().newWatchService());
+        dir = directoryFactory.newRoot(wrapper.register(root_dir_path));
+        dir_1 = directoryFactory.newRoot(wrapper.register(subdir_1_path));
+        dir_111 = directoryFactory.newRoot(wrapper.register(subdir_111_path));
+        dir_2 = directoryFactory.newRoot(wrapper.register(subdir_2_path));
+        dir_211 = directoryFactory.newRoot(wrapper.register(subdir_211_path));
+        rebase = new DirectoryRebase(directoryFactory, wrapper, dirs);
     }
 
     @After
     public void shutdownExecutor() {
-        wsRegistrar.close();
-        executor.shutdown();
+        wrapper.close();
+        observerExecutor.shutdown();
     }
 
     @Test
     public void rebaseDirectoryWithNonExistingDirectoriesInBetween() throws IOException {
         // For the test, dir_111 must be a root directory
-        dir_111 = directoryFactory.newRoot(wsRegistrar.register(subdir_111_path));
+        dir_111 = directoryFactory.newRoot(wrapper.register(subdir_111_path));
         // For the test, dir_12 must be a root directory
-        dir_211 = directoryFactory.newRoot(wsRegistrar.register(subdir_211_path));
+        dir_211 = directoryFactory.newRoot(wrapper.register(subdir_211_path));
 
         dirs.put(subdir_111_path, dir_111);
         dirs.put(subdir_211_path, dir_211);
@@ -135,9 +133,9 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     public void insureParentsOfDirectSubDirectoriesChangedAfterRebase() throws IOException {
         dirs.put(subdir_1_path, dir_1);
         dirs.put(subdir_2_path, dir_2);
-        final Directory dir_11 = directoryFactory.newBranch(dir_1, wsRegistrar.register(subdir_11_path));
+        final Directory dir_11 = directoryFactory.newBranch(dir_1, wrapper.register(subdir_11_path));
         dirs.put(subdir_11_path, dir_11);
-        final Directory dir_21 = directoryFactory.newBranch(dir_2, wsRegistrar.register(subdir_21_path));
+        final Directory dir_21 = directoryFactory.newBranch(dir_2, wrapper.register(subdir_21_path));
         dirs.put(subdir_21_path, dir_21);
 
         rebase.rebaseExistingRootDirectories(dir);
@@ -163,18 +161,18 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     @Test
     public void rebaseExistingChildDirectoriesAfterRootDiscard() throws IOException {
         // For the test, dir_11 must be a root directory, and, it must contain a key
-        final Directory dir_11 = directoryFactory.newRoot(wsRegistrar.register(subdir_11_path));
+        final Directory dir_11 = directoryFactory.newRoot(wrapper.register(subdir_11_path));
         ((RootDirectory)dir_11).addDirectoryKey(TEST_KEY);
         dirs.put(subdir_11_path, dir_11);
         // For the test, dir_12 must be a root directory, and, it must contain a key
-        final Directory dir_21 = directoryFactory.newRoot(wsRegistrar.register(subdir_21_path));
+        final Directory dir_21 = directoryFactory.newRoot(wrapper.register(subdir_21_path));
         ((RootDirectory)dir_21).addDirectoryKey(TEST_KEY1);
         dirs.put(subdir_21_path, dir_21);
 
 
-        dir_111 = directoryFactory.newBranch(dir_11, wsRegistrar.register(subdir_111_path));
+        dir_111 = directoryFactory.newBranch(dir_11, wrapper.register(subdir_111_path));
         dirs.put(subdir_111_path, dir_111);
-        dir_211 = directoryFactory.newBranch(dir_21, wsRegistrar.register(subdir_211_path));
+        dir_211 = directoryFactory.newBranch(dir_21, wrapper.register(subdir_211_path));
         dirs.put(subdir_211_path, dir_211);
 
         assertSame(dir_11, ((SubDirectory)dir_111).getParent());
@@ -206,10 +204,10 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     @Test
     public void insureFormerRootDirectoriesAreConvertedBackAfterRootDiscard() throws IOException {
         // For the test, dir_111 must be a root directory, and, it must contain a key
-        dir_111 = directoryFactory.newRoot(wsRegistrar.register(subdir_111_path));
+        dir_111 = directoryFactory.newRoot(wrapper.register(subdir_111_path));
         ((RootDirectory)dir_111).addDirectoryKey(TEST_KEY);
         // For the test, dir_211 must be a root directory, and, it must contain a key
-        dir_211 = directoryFactory.newRoot(wsRegistrar.register(subdir_211_path));
+        dir_211 = directoryFactory.newRoot(wrapper.register(subdir_211_path));
         ((RootDirectory)dir_211).addDirectoryKey(TEST_KEY1);
 
         dirs.put(subdir_111_path, dir_111);
@@ -228,5 +226,10 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
         assertNotNull(rebasedRoot2);
         assertTrue(rebasedRoot2.isRoot());
         assertNotSame(dir_211, rebasedRoot2);
+    }
+
+    @Test
+    public void ignoreAlreadyAddedRootDuringExistingRootsCollection() throws IOException {
+
     }
 }

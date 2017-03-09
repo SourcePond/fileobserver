@@ -49,7 +49,8 @@ class DirectoryRebase {
         final Path parentPath = pNewRoot.getPath();
         final Collection<Directory> pathsToRebase = new LinkedList<>();
         dirs.entrySet().forEach(e -> {
-            if (e.getKey().startsWith(parentPath) && e.getValue().isRoot()) {
+            final Path childPath = e.getKey();
+            if (childPath.startsWith(parentPath) && e.getValue().isRoot()) {
                 pathsToRebase.add(e.getValue());
             }
         });

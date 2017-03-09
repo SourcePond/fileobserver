@@ -54,8 +54,8 @@ public class VirtualRoot {
     private final List<DedicatedFileSystem> roots = new CopyOnWriteArrayList<>();
 
     // Constructor for BundleActivator
-    public VirtualRoot(final DirectoryFactory pDirectoryFactory) {
-        this(new DedicatedFileSystemFactory(pDirectoryFactory));
+    public VirtualRoot() {
+        this(new DedicatedFileSystemFactory(new DirectoryFactory()));
     }
 
     // Constructor for BundleActivator
@@ -63,25 +63,37 @@ public class VirtualRoot {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
     }
 
+    /**
+     * Returns the objects which need to have service dependencies injected. This method
+     * must not be renamed!
+     *
+     * @return
+     */
     // Composition callback for Felix DM
     public Object[] getComposition() {
-        return new Object[]{dedicatedFileSystemFactory, dedicatedFileSystemFactory.getDirectoryFactory()};
+        return new Object[]{this, dedicatedFileSystemFactory, dedicatedFileSystemFactory.getDirectoryFactory()};
     }
 
-    public void addObserver(final FileObserver pObserver) {
-        if (null == pObserver) {
-            LOG.warn("Observer is null; nothing to add");
-        } else if (observers.add(pObserver)) {
-            children.values().forEach(f -> f.forceInform(pObserver));
-        }
+    /**
+     * Whiteboard bind-method for {@link FileObserver} services exported by any client bundle. This
+     * method is called when a client exports a service which implements the {@link FileObserver} interface.
+     *
+     * @param pObserver File observer service to be registered.
+     */
+    void addObserver(final FileObserver pObserver) {
+        requireNonNull(pObserver, "Observer is null");
+        children.values().forEach(f -> f.forceInform(pObserver));
     }
 
-    public void removeObserver(final FileObserver pObserver) {
-        if (null == pObserver) {
-            LOG.warn("Observer is null; nothing to remove");
-        } else {
-            observers.remove(pObserver);
-        }
+    /**
+     * Whiteboard unbind-method {@link FileObserver} services exported by any client bundle. This method is
+     * called when a client unregisters a service which implements the {@link FileObserver} interface.
+     *
+     * @param pObserver File observer service to be unregistered.
+     */
+    void removeObserver(final FileObserver pObserver) {
+        requireNonNull(pObserver, "Observer is null");
+        observers.remove(pObserver);
     }
 
     private DedicatedFileSystem newDirectories(final FileSystem pFs) {
@@ -94,36 +106,60 @@ public class VirtualRoot {
         }
     }
 
+    /**
+     * Whiteboard bind-method for {@link WatchedDirectory} services exported by any client bundle. This
+     * method is called when a client exports a service which implements the {@link WatchedDirectory} interface.
+     *
+     * @param pWatchedDirectory Watched-directory service to be registered.
+     * @throws IOException Thrown, if the root directory could not be added.
+     */
     // This method must be synchronized because all sub-directories need to be
     // registered before another WatchedDirectory is being registered.
     public synchronized void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
-        // Insure that the directory-key is unique
+        requireNonNull(pWatchedDirectory, "Watched directory is null");
         final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+
+        if (!isDirectory(directory)) {
+            throw new IllegalArgumentException(format("[%s]: %s is not a directory!", key, directory));
+        }
+
+        // Insure that the directory-key is unique
         if (watchtedDirectories.containsKey(key)) {
             throw new IllegalArgumentException(format("Directory-key %s is already used by %s", watchtedDirectories.get(key)));
         }
         watchtedDirectories.put(key, pWatchedDirectory);
-
-        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
         try {
             children.computeIfAbsent(directory.getFileSystem(),
                     this::newDirectories).registerRootDirectory(pWatchedDirectory, observers);
         } catch (final UncheckedIOException e) {
             throw new IOException(e.getMessage(), e);
         }
+        LOG.info("Added watched-directory with directory-key {} and path {}", key, directory);
     }
 
+    /**
+     * Whiteboard unbind-method {@link WatchedDirectory} services exported by any client bundle. This method is
+     * called when a client unregisters a service which implements the {@link WatchedDirectory} interface.
+     *
+     * @param pWatchedDirectory Watched-directory service to be unregistered.
+     */
     // This method must be synchronized because all sub-directories need to be
     // discarded before another WatchedDirectory is being unregistered.
-    public synchronized void removeRoot(final WatchedDirectory pWatchedDirectory) {
+    synchronized void removeRoot(final WatchedDirectory pWatchedDirectory) {
+        requireNonNull(pWatchedDirectory, "Watched directory is null");
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+
         // It's already checked that nothing is null
-        final DedicatedFileSystem fs = children.get(pWatchedDirectory.getDirectory().getFileSystem());
+        final DedicatedFileSystem fs = children.get(directory.getFileSystem());
 
         if (fs == null) {
             LOG.warn(format("Dedicated file system not registered for directory %s! Noting unregistered"));
         } else {
             fs.unregisterRootDirectory(pWatchedDirectory, observers);
-            watchtedDirectories.remove(pWatchedDirectory.getKey());
+            watchtedDirectories.remove(key);
+            LOG.info("Removed watched-directory with directory-key {} and path {}", key, directory);
         }
     }
 
@@ -162,10 +198,16 @@ public class VirtualRoot {
         }
     }
 
+    /**
+     * <p>Closes all active dedicated files systems and removes them.</p>
+     * <p>This must be named "destroy" in order to be called from Felix DM (see
+     * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
+     */
     // Lifecycle method for Felix DM
-    public void stop() {
+    public void destroy() {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
+        LOG.debug("Virtual root destroyed");
     }
 
     /**

@@ -2,7 +2,6 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.ExecutorServices;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import org.junit.Before;
@@ -19,8 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -29,8 +27,7 @@ import static org.mockito.Mockito.*;
 public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private static final String ANY_MESSAGE = "anyMessage";
     private final Logger logger = mock(Logger.class);
-    private final ExecutorService executor = newSingleThreadExecutor();
-    private final ExecutorServices executorServices = mock(ExecutorServices.class);
+    private final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     private final WatchServiceWrapper wrapper = mock(WatchServiceWrapper.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
@@ -54,7 +51,8 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private final Directory subdir_211 = mock(Directory.class);
     private final Directory subdir_22 = mock(Directory.class);
     private DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
-            executorServices,
+            logger,
+            directoryWalkerExecutor,
             wrapper,
             directoryFactory,
             dirs);
@@ -64,8 +62,6 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         // Root directory is already registered before the walker is
         // executed, so simulate this here.
         dirs.put(root_dir_path, root_dir);
-
-        when(executorServices.getDirectoryWalkerExecutor()).thenReturn(executor);
 
         when(wrapper.register(subdir_1_path)).thenReturn(subdir_1_watchKey);
         when(wrapper.register(subdir_11_path)).thenReturn(subdir_11_watchKey);
@@ -134,7 +130,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     public void logWarnWhenIOExceptionOccurs() throws IOException {
         walker = new DirectoryRegistrationWalker(
                 logger,
-                executorServices,
+                directoryWalkerExecutor,
                 wrapper,
                 directoryFactory,
                 dirs);
@@ -151,7 +147,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     public void logErrorWhenRuntimeExceptionOccurs() throws IOException {
         walker = new DirectoryRegistrationWalker(
                 logger,
-                executorServices,
+                directoryWalkerExecutor,
                 wrapper,
                 directoryFactory,
                 dirs);

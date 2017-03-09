@@ -44,22 +44,29 @@ public class DirectoryScanner implements Runnable {
         virtualRoot = pVirtualRoot;
     }
 
+    /**
+     * <p>Starts the scanner thread which observes the watched directories for changes.</p>
+     *
+     * <p>This must be named "start" in order to be called from Felix DM (see
+     * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
+     */
     // Lifecycle method for Felix DM
     public void start() {
         thread.setDaemon(true);
         thread.start();
-        LOG.info("Directory scanner started");
+        LOG.debug("Directory scanner started");
     }
 
     /**
-     * Interrupts the worker thread which takes events from the managed
-     * watch-service. Then, it delegates to the {@link WatchService#close()} method
-     * of the managed watch-service.
+     * <p>Stops the scanner thread which observes the watched directories for changes.</p>
+     *
+     * <p>This must be named "stop" in order to be called from Felix DM (see
+     * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
      */
     // Lifecycle method for Felix DM
     public void stop() {
         thread.interrupt();
-        LOG.info("Directory scanner stopped");
+        LOG.debug("Directory scanner stopped");
     }
 
     private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
