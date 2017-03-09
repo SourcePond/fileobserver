@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
  */
 final class InitialCheckusmCalculationBarrier implements FileObserver {
     private final Set<Path> expectedFiles = new HashSet<>();
-    private int runs = 5;
+    private int runs = 10;
 
     InitialCheckusmCalculationBarrier() {
         expectedFiles.add(E11);
@@ -31,6 +31,7 @@ final class InitialCheckusmCalculationBarrier implements FileObserver {
     @Override
     public synchronized void modified(final FileKey pKey, final Path pFile) throws IOException {
         expectedFiles.remove(pFile);
+        System.out.println("----> Removed from barrier: " + pKey);
         notifyAll();
     }
 
@@ -40,9 +41,10 @@ final class InitialCheckusmCalculationBarrier implements FileObserver {
     }
 
     public synchronized void waitUntilChecksumsCalculated() throws InterruptedException {
-        while (runs-- >= 0) {
+        while (runs-- >= 0 && !expectedFiles.isEmpty()) {
             wait(5000);
         }
+        System.out.println("-----> All keys removed from barrier");
         assertTrue("Not all files have been calculated within expected time! " + expectedFiles, expectedFiles.isEmpty());
     }
 }

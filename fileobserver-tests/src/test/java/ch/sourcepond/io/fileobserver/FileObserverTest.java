@@ -18,6 +18,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.nio.file.Path;
 
 import static ch.sourcepond.io.fileobserver.DirectoryKey.ROOT;
@@ -131,7 +132,7 @@ public class FileObserverTest {
      *
      */
     @Test
-    public void verifyFileObserverUnregistration() throws Exception {
+    public void insureNoInteractionWithUnregisteredFileObserver() throws Exception {
         fileObserverRegistration.unregister();
 
         delete(E11);
@@ -153,18 +154,40 @@ public class FileObserverTest {
     public void unregisterAndRegisterAdditionalWatchedDirectory() throws Exception {
         // Insure observer gets informed about unregistration
         watchedDirectoryRegistration.unregister();
-        verify(observer, timeout(10000)).discard(key(ROOT, R.relativize(R)));
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(R)));
 
         // Now, observer should be informed about newly registered root
         watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
 
-        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
-        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
-        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
-        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
-        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
-        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
-        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(C)), eq(C));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(C)), eq(C));
+        verifyNoMoreInteractions(observer);
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void observerShouldBeInformedAboutFileDeletion() throws IOException {
+        delete(E11);
+        delete(E12);
+        delete(E2);
+        delete(H11);
+        delete(H12);
+        delete(H2);
+        delete(C);
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E2)));
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H2)));
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(C)));
         verifyNoMoreInteractions(observer);
     }
 }
