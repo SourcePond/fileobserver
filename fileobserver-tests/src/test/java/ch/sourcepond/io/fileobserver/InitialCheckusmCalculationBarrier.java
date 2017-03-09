@@ -16,6 +16,7 @@ import static org.junit.Assert.*;
  */
 final class InitialCheckusmCalculationBarrier implements FileObserver {
     private final Set<Path> expectedFiles = new HashSet<>();
+    private int runs = 5;
 
     InitialCheckusmCalculationBarrier() {
         expectedFiles.add(E11);
@@ -39,8 +40,8 @@ final class InitialCheckusmCalculationBarrier implements FileObserver {
     }
 
     public synchronized void waitUntilChecksumsCalculated() throws InterruptedException {
-        for (int i = 0 ; i < 5 && !expectedFiles.isEmpty(); i++) {
-            wait(10000);
+        while (runs-- >= 0) {
+            wait(5000);
         }
         assertTrue("Not all files have been calculated within expected time! " + expectedFiles, expectedFiles.isEmpty());
     }
