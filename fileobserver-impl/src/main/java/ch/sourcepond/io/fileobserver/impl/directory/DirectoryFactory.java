@@ -30,6 +30,9 @@ public class DirectoryFactory {
     private final DefaultFileKeyFactory fileKeyFactory;
 
     // Injected by Felix DM; this field must not be renamed!
+    private volatile ExecutorService directoryWalkerExecutor;
+
+    // Injected by Felix DM; this field must not be renamed!
     private volatile ExecutorService observerExecutor;
 
     // Injected by Felix DM
@@ -43,9 +46,11 @@ public class DirectoryFactory {
     // Constructor for testing
     public DirectoryFactory(final ResourcesFactory pResourcesFactory,
                             final DefaultFileKeyFactory pFileKeyFactory,
+                            final ExecutorService pDirectoryWalkerExecutor,
                             final ExecutorService pObserverExecutor) {
         resourcesFactory = pResourcesFactory;
         fileKeyFactory = pFileKeyFactory;
+        directoryWalkerExecutor = pDirectoryWalkerExecutor;
         observerExecutor = pObserverExecutor;
     }
 
@@ -87,11 +92,22 @@ public class DirectoryFactory {
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      *
-     * Asynchronously executes the task specified.
+     * Asynchronously executes the task specified using the observer executor service.
      *
      * @param pTask Task to be executed, must not be {@code null}
      */
-    void execute(final Runnable pTask) {
+    void executeObserverTask(final Runnable pTask) {
         observerExecutor.execute(pTask);
+    }
+
+    /**
+     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
+     *
+     * Asynchronously executes the task specified using the directory walker executor service.
+     *
+     * @param pTask Task to be executed, must not be {@code null}
+     */
+    void executeDirectoryWalkerTask(final Runnable pTask) {
+        directoryWalkerExecutor.execute(pTask);
     }
 }

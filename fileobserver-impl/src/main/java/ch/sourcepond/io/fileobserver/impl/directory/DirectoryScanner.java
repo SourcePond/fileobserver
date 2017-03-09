@@ -54,7 +54,7 @@ public class DirectoryScanner implements Runnable {
     public void start() {
         thread.setDaemon(true);
         thread.start();
-        LOG.debug("Directory scanner started");
+        LOG.info("Directory scanner started");
     }
 
     /**
@@ -66,7 +66,7 @@ public class DirectoryScanner implements Runnable {
     // Lifecycle method for Felix DM
     public void stop() {
         thread.interrupt();
-        LOG.debug("Directory scanner stopped");
+        LOG.info("Directory scanner stopped");
     }
 
     private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
@@ -86,28 +86,32 @@ public class DirectoryScanner implements Runnable {
     private void processEvent(final WatchKey pWatchKey) {
         final Path directory = (Path) pWatchKey.watchable();
 
-        for (final WatchEvent<?> event : pWatchKey.pollEvents()) {
-            final WatchEvent.Kind<?> kind = event.kind();
+        // It's possible that the watch-key has been cancelled since it was
+        // scheduled for processing.
+        if (pWatchKey.isValid()) {
+            for (final WatchEvent<?> event : pWatchKey.pollEvents()) {
+                final WatchEvent.Kind<?> kind = event.kind();
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(format("Changed detected [%s]: %s, context: %s", kind, directory, event.context()));
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(format("Changed detected [%s]: %s, context: %s", kind, directory, event.context()));
+                }
+
+                // An OVERFLOW event can
+                // occur regardless if events
+                // are lost or discarded.
+                if (OVERFLOW == kind) {
+                    continue;
+                }
+
+                // Only process if it's not a repeated event.
+                if (event.count() == 1) {
+                    processPath(kind, directory.resolve((Path) event.context()));
+                }
             }
 
-            // An OVERFLOW event can
-            // occur regardless if events
-            // are lost or discarded.
-            if (OVERFLOW == kind) {
-                continue;
+            if (!pWatchKey.reset()) {
+                virtualRoot.pathDiscarded((Path) pWatchKey.watchable());
             }
-
-            // Only process if it's not a repeated event.
-            if (event.count() == 1) {
-                processPath(kind, directory.resolve((Path) event.context()));
-            }
-        }
-
-        if (!pWatchKey.reset()) {
-            virtualRoot.pathDiscarded((Path) pWatchKey.watchable());
         }
     }
 

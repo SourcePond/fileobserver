@@ -46,6 +46,7 @@ public abstract class Directory {
     private final WatchKey watchKey;
 
     Directory(final WatchKey pWatchKey) {
+        assert pWatchKey != null : "pWatchKey";
         watchKey = pWatchKey;
     }
 
@@ -60,7 +61,7 @@ public abstract class Directory {
                                final FileObserver pObserver,
                                final Path pFile) {
         for (final FileKey key : pKeys) {
-            getFactory().execute(() -> {
+           getFactory().executeObserverTask(() -> {
                 try {
                     informSupplement(pObserver, key, pParentKeys);
                     pObserver.modified(key, pFile);
@@ -84,7 +85,6 @@ public abstract class Directory {
                  *
                  */
                 if (!pKey.key().equals(parentKey.key())) {
-                    System.out.println(pKey + " " + parentKey);
                     pObserver.supplement(pKey, parentKey);
                 }
             }
@@ -206,7 +206,7 @@ public abstract class Directory {
         // Now, the key can be safely removed
         if (removeDirectoryKey(pDirectoryKey)) {
             final FileKey key = getFactory().newKey(pDirectoryKey, relativePath);
-            pObservers.forEach(o -> getFactory().execute(() -> o.discard(key)));
+            pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
         }
     }
 
@@ -231,7 +231,7 @@ public abstract class Directory {
      * @param pObserver Observer to be informed, must not be {@code null}.
      */
     public void forceInform(final FileObserver pObserver) {
-        getFactory().execute(() -> streamDirectoryAndForceInform(pObserver));
+        getFactory().executeDirectoryWalkerTask(() -> streamDirectoryAndForceInform(pObserver));
     }
 
     /**
@@ -256,7 +256,7 @@ public abstract class Directory {
         resources.remove(pFile);
 
         for (final FileKey key : createKeys(pFile)) {
-            pObservers.forEach(o -> getFactory().execute(() -> o.discard(key)));
+            pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
         }
     }
 

@@ -11,6 +11,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
+import static java.lang.Thread.sleep;
 import static java.nio.file.FileSystems.getDefault;
 import static java.nio.file.Files.*;
 import static org.junit.Assert.*;
@@ -98,6 +99,7 @@ public class DirectorySetup implements TestRule {
             public void evaluate() throws Throwable {
                 copyDirectories();
                 validate();
+                sleep(5000);
                 try {
                     base.evaluate();
                 } finally {

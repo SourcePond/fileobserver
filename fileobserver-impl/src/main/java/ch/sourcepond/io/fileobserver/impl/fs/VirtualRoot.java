@@ -34,6 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 /**
  *
@@ -42,7 +43,7 @@ public class VirtualRoot {
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
-    private final Set<FileObserver> observers = ConcurrentHashMap.newKeySet();
+    private final Set<FileObserver> observers = newKeySet();
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
 
     /**
@@ -82,6 +83,7 @@ public class VirtualRoot {
      */
     void addObserver(final FileObserver pObserver) {
         requireNonNull(pObserver, "Observer is null");
+        observers.add(pObserver);
         children.values().forEach(f -> f.forceInform(pObserver));
     }
 
@@ -126,7 +128,7 @@ public class VirtualRoot {
 
         // Insure that the directory-key is unique
         if (watchtedDirectories.containsKey(key)) {
-            throw new IllegalArgumentException(format("Directory-key %s is already used by %s", watchtedDirectories.get(key)));
+            throw new IllegalArgumentException(format("Key %s already used by %s", key, watchtedDirectories.get(key)));
         }
         watchtedDirectories.put(key, pWatchedDirectory);
         try {
@@ -135,7 +137,7 @@ public class VirtualRoot {
         } catch (final UncheckedIOException e) {
             throw new IOException(e.getMessage(), e);
         }
-        LOG.info("Added watched-directory with directory-key {} and path {}", key, directory);
+        LOG.info("Added [{}:{}]", key, directory);
     }
 
     /**
@@ -158,8 +160,10 @@ public class VirtualRoot {
             LOG.warn(format("Dedicated file system not registered for directory %s! Noting unregistered"));
         } else {
             fs.unregisterRootDirectory(pWatchedDirectory, observers);
+
+            // IMPORTANT: remove watched-directory with key specified.
             watchtedDirectories.remove(key);
-            LOG.info("Removed watched-directory with directory-key {} and path {}", key, directory);
+            LOG.info("Removed [{}:{}]", key, directory);
         }
     }
 
@@ -175,10 +179,9 @@ public class VirtualRoot {
         if (isDirectory(pPath)) {
             getDedicatedFileSystem(pPath).directoryCreated(pPath, observers);
         } else {
-            final Directory dir = getDedicatedFileSystem(pPath).getDirectory(pPath.getParent());
-            if (dir == null) {
-                throw new NullPointerException(format("No directory registered for file %s", pPath));
-            }
+            final Directory dir = requireNonNull(
+                    getDedicatedFileSystem(pPath).getDirectory(pPath.getParent()),
+                    () -> format("No directory registered for file %s", pPath));
             dir.informIfChanged(observers, pPath);
         }
     }
@@ -190,11 +193,11 @@ public class VirtualRoot {
         if (!dfs.directoryDiscarded(observers, pPath)) {
             final Directory parentDirectory = dfs.getDirectory(pPath.getParent());
             if (parentDirectory == null) {
-                throw new NullPointerException(format("Parent directory does not exist for discarded file %s", pPath));
+                LOG.warn("Parent of {} does not exist. Nothing to discard", pPath);
+            } else {
+                // The deleted path was a file
+                dfs.getDirectory(pPath.getParent()).informDiscard(observers, pPath);
             }
-
-            // The deleted path was a file
-            dfs.getDirectory(pPath.getParent()).informDiscard(observers, pPath);
         }
     }
 
@@ -207,7 +210,7 @@ public class VirtualRoot {
     public void destroy() {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
-        LOG.debug("Virtual root destroyed");
+        LOG.info("Virtual root destroyed");
     }
 
     /**

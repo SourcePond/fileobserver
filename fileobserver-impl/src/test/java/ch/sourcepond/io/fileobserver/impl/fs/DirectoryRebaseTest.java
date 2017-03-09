@@ -30,8 +30,13 @@ import static org.mockito.Mockito.mock;
 public class DirectoryRebaseTest extends CopyResourcesTest {
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
+    private final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
-    private final DirectoryFactory directoryFactory = new DirectoryFactory(resourcesFactory, new DefaultFileKeyFactory(), observerExecutor);
+    private final DirectoryFactory directoryFactory = new DirectoryFactory(
+            resourcesFactory,
+            new DefaultFileKeyFactory(),
+            directoryWalkerExecutor,
+            observerExecutor);
     private WatchServiceWrapper wrapper;
     private Directory dir;
     private Directory dir_1;
@@ -54,6 +59,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     @After
     public void shutdownExecutor() {
         wrapper.close();
+        directoryWalkerExecutor.shutdown();
         observerExecutor.shutdown();
     }
 

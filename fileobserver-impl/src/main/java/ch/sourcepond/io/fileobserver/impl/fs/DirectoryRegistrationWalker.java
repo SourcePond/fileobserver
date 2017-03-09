@@ -29,8 +29,10 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
+import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -38,9 +40,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * will be informed through their {@link FileObserver#modified(FileKey, Path)}. Each detected
  * directory will be registered with the {@link WatchServiceWrapper}, and, be stored in the
  * directory-map specified.</p>
- *
+ * <p>
  * <p>There should exist exactly one instance of this class (singleton).</p>
- *
  */
 class DirectoryRegistrationWalker {
     private final Logger logger;
@@ -107,7 +108,7 @@ class DirectoryRegistrationWalker {
      * Additionally, it passes any detected file to {@link FileObserver#modified(FileKey, Path)} to the observers
      * specified.
      *
-     * @param pNewRoot Newly created directory, must not be {@code null}
+     * @param pNewRoot   Newly created directory, must not be {@code null}
      * @param pObservers Observers to be informed about detected files, must not be {@code null}
      */
     void rootAdded(final Directory pNewRoot,
@@ -121,12 +122,12 @@ class DirectoryRegistrationWalker {
      * specified.
      *
      * @param pNewRootOrNull New root-directory which causes a rebase, or, {@code null}
-     * @param pDirectory Newly created directory, must not be {@code null}
-     * @param pObservers Observers to be informed about detected files, must not be {@code null}
+     * @param pDirectory     Newly created directory, must not be {@code null}
+     * @param pObservers     Observers to be informed about detected files, must not be {@code null}
      */
     private void directoryCreated(final Directory pNewRootOrNull,
-                          final Path pDirectory,
-                          final Collection<FileObserver> pObservers) {
+                                  final Path pDirectory,
+                                  final Collection<FileObserver> pObservers) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered FileObservers
         directoryWalkerExecutor.execute(() -> {
@@ -176,18 +177,22 @@ class DirectoryRegistrationWalker {
             try {
                 // Only put a new directory if not already present. This is important, otherwise
                 // multiple threads would overwrite them.
-                dirs.computeIfAbsent(dir,
-                        p -> {
-                            try {
-                                return directoryFactory.newBranch(dirs.get(dir.getParent()), wrapper.register(dir));
-                            } catch (final IOException e) {
-                                throw new UncheckedIOException(e.getMessage(), e);
-                            }
-                        });
+                dirs.computeIfAbsent(dir, this::createBranch);
                 return CONTINUE;
             } catch (final UncheckedIOException e) {
                 throw new IOException(e.getMessage(), e);
             }
+        }
+
+        private Directory createBranch(final Path pDir) {
+            final Directory parentDir = requireNonNull(dirs.get(pDir.getParent()), () -> format("No parent registered for %s", pDir));
+            final Directory newDirectory;
+            try {
+                newDirectory = directoryFactory.newBranch(parentDir, wrapper.register(pDir));
+            } catch (final IOException e) {
+                throw new UncheckedIOException(e.getMessage(), e);
+            }
+            return newDirectory;
         }
     }
 }

@@ -4,8 +4,7 @@ import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import ch.sourcepond.testing.BundleContextClassLoaderRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.ops4j.pax.exam.Configuration;
@@ -16,6 +15,7 @@ import org.ops4j.pax.exam.options.MavenUrlReference;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 import javax.inject.Inject;
 import java.nio.file.Path;
@@ -26,6 +26,8 @@ import static ch.sourcepond.io.fileobserver.spi.WatchedDirectory.create;
 import static ch.sourcepond.testing.OptionsHelper.karafContainer;
 import static ch.sourcepond.testing.OptionsHelper.mockitoBundles;
 import static java.lang.String.format;
+import static java.lang.Thread.sleep;
+import static java.nio.file.Files.delete;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 import static org.ops4j.pax.exam.CoreOptions.maven;
@@ -82,39 +84,87 @@ public class FileObserverTest {
     @Inject
     private BundleContext context;
 
-    /**
-     * Registers a new observer.
-     *
-     * <h3>Preconditions</h3>
-     * <ul>
-     *     <li>Fileobserver bundle is watching {@link DirectorySetup#R}</li>
-     *     <li>No observers have been added yet</li>
-     * </ul>
-     *
-     * <h3>Expected result</h3>
-     * {@link ch.sourcepond.io.fileobserver.api.FileObserver#modified(FileKey, Path)} has been called for every
-     * file contained in {@link DirectorySetup#R} and its sub-directories.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void registerObserver() throws Exception {
+    private final FileObserver observer = mock(FileObserver.class);
+    private ServiceRegistration<WatchedDirectory> watchedDirectoryRegistration;
+    private ServiceRegistration<FileObserver> fileObserverRegistration;
+    private WatchedDirectory watchedDirectory;
+
+    @Before
+    public void setup() throws Exception {
         // Step 1: make fileobserver bundle watching R by
         // registering an appropriate service.
-        final WatchedDirectory r = create(ROOT, R);
-        context.registerService(WatchedDirectory.class, r, null);
+        final InitialCheckusmCalculationBarrier wait = new InitialCheckusmCalculationBarrier();
+        final ServiceRegistration<FileObserver> waitReg = fileObserverRegistration = context.registerService(FileObserver.class, wait, null);
+        watchedDirectory = create(ROOT, R);
+        watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
+        wait.waitUntilChecksumsCalculated();
+        waitReg.unregister();
 
         // Step 2: register FileObserver
-        final FileObserver observer = mock(FileObserver.class);
-        context.registerService(FileObserver.class, observer, null);
+        fileObserverRegistration = context.registerService(FileObserver.class, observer, null);
 
-        verify(observer, timeout(2000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
-        verify(observer, timeout(2000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
-        verify(observer, timeout(2000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
-        verify(observer, timeout(2000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
-        verify(observer, timeout(2000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
-        verify(observer, timeout(2000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
-        verify(observer, timeout(2000)).modified(key(ROOT, R.relativize(C)), eq(C));
+        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(E11)), eq(E11));
+        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(E12)), eq(E12));
+        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(E2)), eq(E2));
+        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(H11)), eq(H11));
+        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(H12)), eq(H12));
+        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(H2)), eq(H2));
+        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(C)), eq(C));
+
+    }
+
+    private void unregisterService(final ServiceRegistration<?> pRegistration) {
+        try {
+            pRegistration.unregister();
+        } catch (final IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @After
+    public void tearDown() throws InterruptedException {
+        unregisterService(watchedDirectoryRegistration);
+        unregisterService(fileObserverRegistration);
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void verifyFileObserverUnregistration() throws Exception {
+        fileObserverRegistration.unregister();
+
+        delete(E11);
+        delete(E12);
+        delete(E2);
+        delete(H11);
+        delete(H12);
+        delete(H2);
+        delete(C);
+
+        sleep(6000);
+        verifyNoMoreInteractions(observer);
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void unregisterAndRegisterAdditionalWatchedDirectory() throws Exception {
+        // Insure observer gets informed about unregistration
+        watchedDirectoryRegistration.unregister();
+        verify(observer, timeout(10000)).discard(key(ROOT, R.relativize(R)));
+
+        // Now, observer should be informed about newly registered root
+        watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
+
+        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
+        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
+        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
+        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
+        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
+        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
+        verify(observer, timeout(10000)).modified(key(ROOT, R.relativize(C)), eq(C));
         verifyNoMoreInteractions(observer);
     }
 }

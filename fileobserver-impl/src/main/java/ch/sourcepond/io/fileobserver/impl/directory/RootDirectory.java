@@ -97,8 +97,7 @@ public class RootDirectory extends Directory {
 
     @Override
     public boolean hasKeys() {
-        // A root directory has always keys
-        return true;
+        return !directoryKeys.isEmpty();
     }
 
     @Override

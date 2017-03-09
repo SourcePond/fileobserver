@@ -19,6 +19,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  *
  */
@@ -27,8 +29,7 @@ public class SubDirectory extends Directory {
     private volatile Collection<Object> directoryKeysOrNull;
 
     SubDirectory(final Directory pParent, final WatchKey pWatchKey) {
-        super(pWatchKey);
-        parent = pParent;
+        this(pParent, pWatchKey, null);
     }
 
     /**
@@ -42,7 +43,7 @@ public class SubDirectory extends Directory {
                  final WatchKey pWatchKey,
                  final Collection<Object> pDirectoryKeysOrNull) {
         super(pWatchKey);
-        parent = pParent;
+        parent = requireNonNull(pParent,"Parent is null");;
         directoryKeysOrNull = pDirectoryKeysOrNull;
     }
 

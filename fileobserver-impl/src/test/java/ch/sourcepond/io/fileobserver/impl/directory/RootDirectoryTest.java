@@ -36,9 +36,11 @@ public class RootDirectoryTest extends DirectoryTest {
 
     @Test
     public void hasKeys() {
-        // It's assumed that this method returns always true for
-        // root directories (event when no keys are added)
+        assertFalse(root.hasKeys());
+        root.addDirectoryKey(ROOT_DIR_KEY);
         assertTrue(root.hasKeys());
+        root.removeDirectoryKey(ROOT_DIR_KEY);
+        assertFalse(root.hasKeys());
     }
 
     @Test

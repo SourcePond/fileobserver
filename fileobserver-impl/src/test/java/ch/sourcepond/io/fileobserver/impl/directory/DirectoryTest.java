@@ -45,8 +45,13 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     static final Object ROOT_DIR_KEY = "rootDirKey";
     static final Object SUB_DIR_KEY1 = "subDirKey1";
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
+    final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     final ExecutorService observerExecutor = newSingleThreadExecutor();
-    final DirectoryFactory factory = new DirectoryFactory(resourcesFactory, new DefaultFileKeyFactory(), observerExecutor);
+    final DirectoryFactory factory = new DirectoryFactory(
+            resourcesFactory,
+            new DefaultFileKeyFactory(),
+            directoryWalkerExecutor,
+            observerExecutor);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
     final FileObserver observer = mock(FileObserver.class);
@@ -61,6 +66,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     @After
     public void shutdownExecutor() {
         observerExecutor.shutdown();
+        directoryWalkerExecutor.shutdown();
         wrapper.close();
     }
 
