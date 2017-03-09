@@ -21,8 +21,6 @@ import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.apache.felix.dm.DependencyManager;
 import org.osgi.framework.BundleContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 
@@ -34,7 +32,6 @@ import static java.util.concurrent.Executors.newWorkStealingPool;
  * Bundle activator; this class manages the lifecycle of the bundle.
  */
 public class Activator extends SmartSwitchActivatorBase {
-    private static final Logger LOG = LoggerFactory.getLogger(Activator.class);
     private final VirtualRoot virtualRoot;
     private final DirectoryScanner directoryScanner;
 

@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
@@ -27,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
-import static java.nio.file.Files.isRegularFile;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -99,7 +99,7 @@ public abstract class Directory {
      * @param pObserver Observer to be informed, must not be {@code null}
      */
     private void streamDirectoryAndForceInform(final FileObserver pObserver) {
-        try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), p -> isRegularFile(p))) {
+        try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
             stream.forEach(p -> forceModified(emptyList(), createKeys(p), pObserver, p));
         } catch (final IOException e) {
             LOG.warn("Exception occurred while trying to inform single observers!", e);

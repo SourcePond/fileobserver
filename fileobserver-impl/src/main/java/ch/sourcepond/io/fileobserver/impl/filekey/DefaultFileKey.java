@@ -44,11 +44,15 @@ final class DefaultFileKey implements FileKey {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final DefaultFileKey that = (DefaultFileKey) o;
-        return Objects.equals(key, that.key) &&
-                Objects.equals(relativePath, that.relativePath);
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final DefaultFileKey other = (DefaultFileKey) o;
+        return Objects.equals(key, other.key) &&
+                Objects.equals(relativePath, other.relativePath);
     }
 
     @Override

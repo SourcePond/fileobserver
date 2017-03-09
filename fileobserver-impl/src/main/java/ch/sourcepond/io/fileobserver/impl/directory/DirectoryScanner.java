@@ -152,10 +152,7 @@ public class DirectoryScanner implements Runnable {
             while(index < roots.size()) {
                 try {
                     next = roots.get(index);
-                    key = next.poll();
-                    if (key != null) {
-                        keys.add(key);
-                    }
+                    addToKeysIfNecessary(keys, next);
 
                     // Only increment index if the underlying watch-service is not
                     // closed...
@@ -168,6 +165,14 @@ public class DirectoryScanner implements Runnable {
                     LOG.debug(e.getMessage(), e);
                 }
             }
+        }
+    }
+
+    private void addToKeysIfNecessary(final List<WatchKey> keys, final DedicatedFileSystem next) {
+        final WatchKey key;
+        key = next.poll();
+        if (key != null) {
+            keys.add(key);
         }
     }
 }

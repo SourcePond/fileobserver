@@ -71,6 +71,7 @@ public class RootDirectory extends Directory {
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
      * @return {@code true} if this directory does not contain directory-keys anymore, {@code false} otherwise
      */
+    @Override
     public boolean removeDirectoryKey(final Object pDirectoryKey) {
         return directoryKeys.remove(pDirectoryKey);
     }

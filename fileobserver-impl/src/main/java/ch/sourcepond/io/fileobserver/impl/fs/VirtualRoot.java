@@ -131,6 +131,7 @@ public class VirtualRoot {
             throw new IllegalArgumentException(format("Key %s already used by %s", key, watchtedDirectories.get(key)));
         }
         watchtedDirectories.put(key, pWatchedDirectory);
+
         try {
             children.computeIfAbsent(directory.getFileSystem(),
                     this::newDirectories).registerRootDirectory(pWatchedDirectory, observers);
@@ -157,7 +158,7 @@ public class VirtualRoot {
         final DedicatedFileSystem fs = children.get(directory.getFileSystem());
 
         if (fs == null) {
-            LOG.warn(format("Dedicated file system not registered for directory %s! Noting unregistered"));
+            LOG.warn(format("No dedicated file system registered! Path: %s", directory));
         } else {
             fs.unregisterRootDirectory(pWatchedDirectory, observers);
 
