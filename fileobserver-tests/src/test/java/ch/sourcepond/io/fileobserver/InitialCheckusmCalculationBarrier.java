@@ -31,7 +31,6 @@ final class InitialCheckusmCalculationBarrier implements FileObserver {
     @Override
     public synchronized void modified(final FileKey pKey, final Path pFile) throws IOException {
         expectedFiles.remove(pFile);
-        System.out.println("----> Removed from barrier: " + pKey);
         notifyAll();
     }
 
@@ -44,7 +43,6 @@ final class InitialCheckusmCalculationBarrier implements FileObserver {
         while (runs-- >= 0 && !expectedFiles.isEmpty()) {
             wait(5000);
         }
-        System.out.println("-----> All keys removed from barrier");
         assertTrue("Not all files have been calculated within expected time! " + expectedFiles, expectedFiles.isEmpty());
     }
 }

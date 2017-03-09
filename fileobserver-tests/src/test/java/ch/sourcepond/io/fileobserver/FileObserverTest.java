@@ -231,4 +231,15 @@ public class FileObserverTest {
         verify(observer, timeout(25000)).modified(key(ROOT, R.relativize(C)), eq(C));
         verifyNoMoreInteractions(observer);
     }
+
+    /**
+     *
+     */
+    @Test
+    public void observerShouldBeInformedAboutFileCreation() throws IOException {
+        final Path newFile = E1.resolve("newFile.txt");
+        writeArbitraryContent(newFile);
+        verify(observer, timeout(25000)).modified(key(ROOT, R.relativize(newFile)), eq(newFile));
+        verifyNoMoreInteractions(observer);
+    }
 }
