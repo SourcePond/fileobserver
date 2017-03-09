@@ -17,7 +17,10 @@ import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import org.slf4j.Logger;
 
-import java.nio.file.*;
+import java.nio.file.ClosedWatchServiceException;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +49,7 @@ public class DirectoryScanner implements Runnable {
 
     /**
      * <p>Starts the scanner thread which observes the watched directories for changes.</p>
-     *
+     * <p>
      * <p>This must be named "start" in order to be called from Felix DM (see
      * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
      */
@@ -59,7 +62,7 @@ public class DirectoryScanner implements Runnable {
 
     /**
      * <p>Stops the scanner thread which observes the watched directories for changes.</p>
-     *
+     * <p>
      * <p>This must be named "stop" in order to be called from Felix DM (see
      * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
      */
@@ -141,14 +144,14 @@ public class DirectoryScanner implements Runnable {
         while (waitForNextIteration()) {
             // We intentionally use a traditional for-loop to keep object creation
             // count as low as possible. Therefore, do not use an iterator here.
-            for (index = 0 ; index < keys.size() ; index++) {
+            for (index = 0; index < keys.size(); index++) {
                 processEvent(keys.get(index));
             }
 
             // We intentionally use a traditional for-loop to keep object creation
             // count as low as possible. Therefore, do not use an iterator here.
             index = 0;
-            while(index < roots.size()) {
+            while (index < roots.size()) {
                 try {
                     next = roots.get(index);
                     addToKeysIfNecessary(keys, next);

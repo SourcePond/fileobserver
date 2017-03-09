@@ -4,7 +4,10 @@ import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import ch.sourcepond.testing.BundleContextClassLoaderRule;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.ops4j.pax.exam.Configuration;
@@ -18,17 +21,21 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
 import javax.inject.Inject;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 
 import static ch.sourcepond.io.fileobserver.DirectoryKey.ROOT;
 import static ch.sourcepond.io.fileobserver.DirectorySetup.*;
+import static ch.sourcepond.io.fileobserver.RecursiveDeletion.deleteDirectory;
 import static ch.sourcepond.io.fileobserver.spi.WatchedDirectory.create;
 import static ch.sourcepond.testing.OptionsHelper.karafContainer;
 import static ch.sourcepond.testing.OptionsHelper.mockitoBundles;
 import static java.lang.String.format;
 import static java.lang.Thread.sleep;
 import static java.nio.file.Files.delete;
+import static java.nio.file.Files.newBufferedWriter;
+import static java.util.UUID.randomUUID;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 import static org.ops4j.pax.exam.CoreOptions.maven;
@@ -82,6 +89,12 @@ public class FileObserverTest {
         });
     }
 
+    private static void writeArbitraryContent(final Path pFile) throws IOException {
+        try (final BufferedWriter writer = newBufferedWriter(pFile)) {
+            writer.write(randomUUID().toString());
+        }
+    }
+
     @Inject
     private BundleContext context;
 
@@ -112,6 +125,7 @@ public class FileObserverTest {
         verify(observer, timeout(500)).modified(key(ROOT, R.relativize(H2)), eq(H2));
         verify(observer, timeout(500)).modified(key(ROOT, R.relativize(C)), eq(C));
 
+        reset(observer);
     }
 
     private void unregisterService(final ServiceRegistration<?> pRegistration) {
@@ -188,6 +202,33 @@ public class FileObserverTest {
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H2)));
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(C)));
+        verifyNoMoreInteractions(observer);
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void observerShouldBeInformedAboutDirectoryDeletion() throws IOException {
+        deleteDirectory(E1);
+        deleteDirectory(H1);
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E1)));
+        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H1)));
+        verifyNoMoreInteractions(observer);
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void observerShouldBeInformedAboutFileChange() throws IOException {
+        writeArbitraryContent(E12);
+        writeArbitraryContent(H12);
+        writeArbitraryContent(C);
+
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(C)), eq(C));
         verifyNoMoreInteractions(observer);
     }
 }
