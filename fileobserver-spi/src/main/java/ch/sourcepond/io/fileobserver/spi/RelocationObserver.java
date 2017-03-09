@@ -19,6 +19,7 @@ import java.nio.file.Path;
  * Observer to be informed when the destination of a {@link WatchedDirectory} has
  * been relocated (see {@link WatchedDirectory#relocate(Path)}).
  */
+@FunctionalInterface
 public interface RelocationObserver {
 
     /**

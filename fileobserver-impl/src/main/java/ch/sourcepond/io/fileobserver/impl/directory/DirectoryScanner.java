@@ -136,7 +136,6 @@ public class DirectoryScanner implements Runnable {
         final List<WatchKey> keys = new ArrayList<>();
 
         DedicatedFileSystem next = null;
-        WatchKey key;
         int index;
 
         while (waitForNextIteration()) {

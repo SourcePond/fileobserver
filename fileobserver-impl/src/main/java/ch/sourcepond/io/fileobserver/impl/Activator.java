@@ -23,9 +23,9 @@ import org.apache.felix.dm.DependencyManager;
 import org.osgi.framework.BundleContext;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.time.Clock.systemUTC;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newWorkStealingPool;
 
 /**
@@ -65,13 +65,13 @@ public class Activator extends SmartSwitchActivatorBase {
                 ).
                 add(createSmartSwitchBuilder(ExecutorService.class).
                         setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
-                        setShutdownHook(e -> e.shutdown()).
+                        setShutdownHook(ExecutorService::shutdown).
                         build(() -> newWorkStealingPool(5)
                         ).setAutoConfig("observerExecutor")).
                 add(createSmartSwitchBuilder(ExecutorService.class).
                         setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
-                        setShutdownHook(e -> e.shutdown()).
-                        build(() -> newCachedThreadPool()).setAutoConfig("directoryWalkerExecutor")
+                        setShutdownHook(ExecutorService::shutdown).
+                        build(Executors::newCachedThreadPool).setAutoConfig("directoryWalkerExecutor")
                 ).
                 add(createServiceDependency().
                     setService(ResourcesFactory.class).

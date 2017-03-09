@@ -31,10 +31,10 @@ public abstract class BaseFileObserver<T> implements FileObserver {
 
     @Override
     public void discard(final FileKey pKey) {
-        final ConcurrentMap<Path, T> resources = this.resources.get(pKey.key());
-        if (resources != null) {
+        final ConcurrentMap<Path, T> map = resources.get(pKey.key());
+        if (map != null) {
             final Path relativePath = pKey.relativePath();
-            resources.keySet().removeIf(k -> k.startsWith(relativePath));
+            map.keySet().removeIf(k -> k.startsWith(relativePath));
         }
     }
 
