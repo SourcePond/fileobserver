@@ -193,4 +193,12 @@ public class VirtualRootTest {
         virtualRoot.pathModified(modifiedPath);
         verify(dir).informIfChanged(matchObservers(), same(modifiedPath));
     }
+
+    @Test(expected = IllegalStateException.class)
+    public void fileModifiedNoDedicatedFileSystemForPathFound() {
+        final FileSystem otherFs = mock(FileSystem.class);
+        when(otherFs.provider()).thenReturn(provider);
+        when(modifiedPath.getFileSystem()).thenReturn(otherFs);
+        virtualRoot.pathModified(modifiedPath);
+    }
 }
