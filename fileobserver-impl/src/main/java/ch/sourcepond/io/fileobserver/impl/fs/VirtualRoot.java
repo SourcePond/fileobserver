@@ -16,6 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 /**
  *
  */
-public class VirtualRoot {
+public class VirtualRoot implements RelocationObserver {
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
@@ -138,6 +139,8 @@ public class VirtualRoot {
         } catch (final UncheckedIOException e) {
             throw new IOException(e.getMessage(), e);
         }
+
+        pWatchedDirectory.addObserver(this);
         LOG.info("Added [{}:{}]", key, directory);
     }
 
@@ -164,6 +167,7 @@ public class VirtualRoot {
 
             // IMPORTANT: remove watched-directory with key specified.
             watchtedDirectories.remove(key);
+            pWatchedDirectory.removeObserver(this);
             LOG.info("Removed [{}:{}]", key, directory);
         }
     }
@@ -233,5 +237,15 @@ public class VirtualRoot {
 
     public List<DedicatedFileSystem> getRoots() {
         return roots;
+    }
+
+    /**
+     *
+     * @param pWatchedDirectory The watched-directory which has a new destination, never {@code null}
+     * @param pPrevious Previous destination, never {@code null}
+     */
+    @Override
+    public void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) {
+
     }
 }

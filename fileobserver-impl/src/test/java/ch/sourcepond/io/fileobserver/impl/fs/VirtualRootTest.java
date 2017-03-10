@@ -87,6 +87,7 @@ public class VirtualRootTest {
     @Test
     public void addRoot() throws IOException {
         verify(dedicatedFs).registerRootDirectory(same(watchedDir), matchObservers());
+        verify(watchedDir).addObserver(virtualRoot);
     }
 
     @Test
@@ -172,6 +173,7 @@ public class VirtualRootTest {
     public void removeRoot() throws IOException {
         virtualRoot.removeRoot(watchedDir);
         verify(dedicatedFs).unregisterRootDirectory(same(watchedDir), matchObservers());
+        verify(watchedDir).removeObserver(virtualRoot);
 
         // This should not cause an exception
         virtualRoot.addRoot(watchedDir);
