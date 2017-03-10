@@ -246,6 +246,6 @@ public class VirtualRoot implements RelocationObserver {
      */
     @Override
     public void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) {
-
+        // TODO: To be implemented
     }
 }

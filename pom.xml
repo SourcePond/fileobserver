@@ -28,7 +28,6 @@
 		<module>fileobserver-tests</module>
         <module>fileobserver-feature</module>
 		<module>fileobserver-spi</module>
-        <module>fileobserver-lib</module>
     </modules>
 
 	<!-- Remove this when MNG-3244, MNG-5951 are resolved -->
