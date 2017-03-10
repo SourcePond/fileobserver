@@ -62,6 +62,11 @@ public class VirtualRootTest {
         virtualRoot.addObserver(observer);
     }
 
+    @Test
+    public void verifyActivatorConstructor() {
+        new VirtualRoot();
+    }
+
     @Test(expected = NullPointerException.class)
     public void addRootWatchedDirectoryIsNull() throws IOException {
         virtualRoot.addRoot(null);
@@ -234,6 +239,22 @@ public class VirtualRootTest {
     public void destroy() {
         assertFalse(virtualRoot.getRoots().isEmpty());
         virtualRoot.destroy();
+        verify(dedicatedFs).close();
+        final FileObserver otherObserver = mock(FileObserver.class);
+        virtualRoot.addObserver(otherObserver);
+        verifyZeroInteractions(otherObserver);
+        assertTrue(virtualRoot.getRoots().isEmpty());
+    }
+
+    @Test
+    public void closeDedicatedFsIsNull() {
+        // This should not cause an exception
+        virtualRoot.close(null);
+    }
+
+    @Test
+    public void closeDedicatedFs() {
+        virtualRoot.close(dedicatedFs);
         verify(dedicatedFs).close();
         final FileObserver otherObserver = mock(FileObserver.class);
         virtualRoot.addObserver(otherObserver);
