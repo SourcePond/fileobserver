@@ -201,4 +201,43 @@ public class VirtualRootTest {
         when(modifiedPath.getFileSystem()).thenReturn(otherFs);
         virtualRoot.pathModified(modifiedPath);
     }
+
+    @Test(expected = IllegalStateException.class)
+    public void fileDiscardedNoDedicatedFileSystemForPathFound() {
+        final FileSystem otherFs = mock(FileSystem.class);
+        when(otherFs.provider()).thenReturn(provider);
+        when(modifiedPath.getFileSystem()).thenReturn(otherFs);
+        virtualRoot.pathDiscarded(modifiedPath);
+    }
+
+    @Test
+    public void directoryDiscarded() {
+        when(modifiedPath.getParent()).thenReturn(directory);
+        when(attrs.isDirectory()).thenReturn(true);
+        when(dedicatedFs.getDirectory(directory)).thenReturn(dir);
+        virtualRoot.pathDiscarded(modifiedPath);
+        verify(dir).informDiscard(matchObservers(), same(modifiedPath));
+    }
+
+    @Test
+    public void directoryDiscardedNoSuchParent() {
+        when(modifiedPath.getParent()).thenReturn(directory);
+        when(attrs.isDirectory()).thenReturn(true);
+        when(dedicatedFs.getDirectory(directory)).thenReturn(null);
+
+        // This should not cause an exception
+        virtualRoot.pathDiscarded(modifiedPath);
+        verifyZeroInteractions(dir);
+    }
+
+    @Test
+    public void destroy() {
+        assertFalse(virtualRoot.getRoots().isEmpty());
+        virtualRoot.destroy();
+        verify(dedicatedFs).close();
+        final FileObserver otherObserver = mock(FileObserver.class);
+        virtualRoot.addObserver(otherObserver);
+        verifyZeroInteractions(otherObserver);
+        assertTrue(virtualRoot.getRoots().isEmpty());
+    }
 }

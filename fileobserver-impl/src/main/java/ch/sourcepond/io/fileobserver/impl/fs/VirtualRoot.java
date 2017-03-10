@@ -197,7 +197,7 @@ public class VirtualRoot {
                 LOG.warn("Parent of {} does not exist. Nothing to discard", pPath);
             } else {
                 // The deleted path was a file
-                dfs.getDirectory(pPath.getParent()).informDiscard(observers, pPath);
+                parentDirectory.informDiscard(observers, pPath);
             }
         }
     }
@@ -211,6 +211,7 @@ public class VirtualRoot {
     public void destroy() {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
+        roots.clear();
         LOG.info("Virtual root destroyed");
     }
 
