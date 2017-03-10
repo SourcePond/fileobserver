@@ -10,6 +10,7 @@ import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
 import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY1;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by rolandhauser on 13.02.17.
@@ -30,6 +31,16 @@ public class DefaultFileKeyTest {
     @Test
     public void relativePath() {
         assertSame(path, key1.relativePath());
+    }
+
+    @Test
+    public void isSubKey() {
+        when(path.startsWith(path)).thenReturn(true);
+        assertTrue(key1.isSubKey(key2));
+        when(otherPath.startsWith(path)).thenReturn(true);
+        assertTrue(key1.isSubKey(key3));
+        when(otherPath.startsWith(path)).thenReturn(true);
+        assertFalse(key1.isSubKey(key4));
     }
 
     @Test
