@@ -37,11 +37,17 @@ public class DedicatedFileSystemFactory {
         directoryFactory = pDirectoryFactory;
     }
 
+    // Constructor for testing
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ExecutorService pDirectoryWalkerExecutor) {
+        directoryFactory = pDirectoryFactory;
+        directoryWalkerExecutor = pDirectoryWalkerExecutor;
+    }
+
     public DirectoryFactory getDirectoryFactory() {
         return directoryFactory;
     }
 
-    public DedicatedFileSystem newDirectories(final FileSystem pFs) throws IOException {
+    public DedicatedFileSystem newFs(final FileSystem pFs) throws IOException {
         final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
         final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs.newWatchService());
         final DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(

@@ -100,7 +100,7 @@ public class VirtualRoot {
 
     private DedicatedFileSystem newDirectories(final FileSystem pFs) {
         try {
-            final DedicatedFileSystem fsdirs = dedicatedFileSystemFactory.newDirectories(pFs);
+            final DedicatedFileSystem fsdirs = dedicatedFileSystemFactory.newFs(pFs);
             roots.add(fsdirs);
             return fsdirs;
         } catch (final IOException e) {

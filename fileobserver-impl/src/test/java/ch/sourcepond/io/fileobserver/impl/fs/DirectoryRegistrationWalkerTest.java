@@ -32,7 +32,6 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final Collection<FileObserver> observers = mock(Collection.class);
-    private final WatchKey root_dir_watchKey = mock(WatchKey.class);
     private final WatchKey subdir_1_watchKey = mock(WatchKey.class);
     private final WatchKey subdir_11_watchKey = mock(WatchKey.class);
     private final WatchKey subdir_111_watchKey = mock(WatchKey.class);
@@ -107,6 +106,11 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         assertSame(subdir_22, dirs.get(subdir_22_path));
         assertSame(subdir_2, dirs.get(subdir_2_path));
         assertSame(root_dir, dirs.get(root_dir_path));
+    }
+
+    @Test
+    public void verifyActivatorConstructor() {
+        new DirectoryRegistrationWalker(wrapper, directoryFactory, directoryWalkerExecutor, dirs);
     }
 
     /**
