@@ -226,9 +226,9 @@ public class FileObserverTest {
         writeArbitraryContent(H12);
         writeArbitraryContent(C);
 
-        verify(observer, timeout(25000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
-        verify(observer, timeout(25000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
-        verify(observer, timeout(25000)).modified(key(ROOT, R.relativize(C)), eq(C));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(C)), eq(C));
         verifyNoMoreInteractions(observer);
     }
 
@@ -239,7 +239,7 @@ public class FileObserverTest {
     public void observerShouldBeInformedAboutFileCreation() throws IOException {
         final Path newFile = E1.resolve("newFile.txt");
         writeArbitraryContent(newFile);
-        verify(observer, timeout(25000)).modified(key(ROOT, R.relativize(newFile)), eq(newFile));
+        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(newFile)), eq(newFile));
         verifyNoMoreInteractions(observer);
     }
 }

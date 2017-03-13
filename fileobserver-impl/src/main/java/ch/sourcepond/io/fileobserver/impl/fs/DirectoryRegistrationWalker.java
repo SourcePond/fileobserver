@@ -130,7 +130,7 @@ class DirectoryRegistrationWalker {
                                   final Collection<FileObserver> pObservers) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered FileObservers
-       // directoryWalkerExecutor.execute(() -> {
+       directoryWalkerExecutor.execute(() -> {
             try {
                 walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pNewRootOrNull, pObservers));
             } catch (final IOException e) {
@@ -138,7 +138,7 @@ class DirectoryRegistrationWalker {
             } catch (final RuntimeException e) {
                 logger.error(e.getMessage(), e);
             }
-        //});
+        });
     }
 
     /**

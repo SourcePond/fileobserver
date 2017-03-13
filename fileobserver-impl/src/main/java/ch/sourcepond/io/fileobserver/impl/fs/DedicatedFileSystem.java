@@ -236,9 +236,9 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             processPath(kind, directory.resolve((Path) event.context()));
         }
 
-        if (!pWatchKey.reset()) {
-            virtualRoot.pathDiscarded(directory);
-        }
+        // The case when the WatchKey has been cancelled is
+        // already handled at a different place.
+        pWatchKey.reset();
     }
 
     @Override
