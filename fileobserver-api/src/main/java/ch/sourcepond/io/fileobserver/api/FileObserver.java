@@ -15,6 +15,7 @@ package ch.sourcepond.io.fileobserver.api;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 
 /**
  * <p>Observer to receive notifications about changes on files
@@ -57,19 +58,22 @@ public interface FileObserver {
 
     /**
      * <p>Indicates, that the file or directory with the {@link FileKey} specified has been discarded for some reason
-     * (file/directory has been deleted, watched directory is being unregistered etc.). In case a directory is being
-     * discarded, only the file-key of that directory will be delivered. This means, that this method will <em>not</em>
-     * be called for any file or sub-directory within the discarded directory.
-     * <p>
-     * <p>Following code snipped should give an idea how to properly remove all resources which are related to
-     * the path specified from a cache:
+     * (file/directory has been deleted, watched directory is being unregistered etc.). Depending on the operating
+     * system, the delivered keys can <em>differ in case when a directory has been deleted recursively</em>. For instance, on
+     * systems with a native {@link java.nio.file.WatchService} implementation you will probably get a {@link FileKey}
+     * instance for every deleted path. On other systems which work with the default polling watch-service you
+     * likely only get the file key of the deleted base directory.
+     *
+     * <p>If you work with cached objects and you want to avoid different behaviour on varying operating systems,
+     * resource discarding can be safely implemented as follows:
      * <pre>
      *      final Map&lt;FileKey, Object&gt; cache = ...
      *
-     *      // Remove all keys which are a child of the
-     *      // file-key specified.
-     *      cache.keySet().removeIf(k -&gt; p.isSubKey(pKey));
+     *      // Remove any key which is a sub-key of pKey.
+     *      pKey.removeSubKeys(cache.keySet());
      * </pre>
+     *
+     * See {@link FileKey#removeSubKeys(Collection)} and {@link FileKey#findSubKeys(Collection)} for further information.
      *
      * @param pKey File-key of the discarded file or directory, never {@code null}
      */

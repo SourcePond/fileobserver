@@ -84,7 +84,7 @@ public abstract class Directory {
                  * When iterating over parent keys ignore those which are derived from new parent.
                  *
                  */
-                if (!pKey.key().equals(parentKey.key())) {
+                if (!pKey.directoryKey().equals(parentKey.directoryKey())) {
                     pObserver.supplement(pKey, parentKey);
                 }
             }
@@ -254,6 +254,8 @@ public abstract class Directory {
     public void informDiscard(final Collection<FileObserver> pObservers, final Path pFile) {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
+
+        System.out.println("--------->>>>> " + Files.isDirectory(pFile) + " " + pFile);
 
         for (final FileKey key : createKeys(pFile)) {
             pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));

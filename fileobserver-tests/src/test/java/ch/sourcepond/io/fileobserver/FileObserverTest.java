@@ -79,7 +79,7 @@ public class FileObserverTest {
         return argThat(new ArgumentMatcher<FileKey>() {
             @Override
             public boolean matches(final FileKey fileKey) {
-                return pKey.equals(fileKey.key()) && fileKey.relativePath().equals(pRelativePath);
+                return pKey.equals(fileKey.directoryKey()) && fileKey.relativePath().equals(pRelativePath);
             }
 
             @Override
@@ -214,6 +214,12 @@ public class FileObserverTest {
         deleteDirectory(H1);
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E1)));
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H1)));
+
+        //
+        if ("Linux".equals(System.getProperty("os.name"))) {
+
+        }
+
         verifyNoMoreInteractions(observer);
     }
 

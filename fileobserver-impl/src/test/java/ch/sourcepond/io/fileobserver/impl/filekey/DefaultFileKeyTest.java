@@ -25,7 +25,7 @@ public class DefaultFileKeyTest {
 
     @Test
     public void key() {
-        assertSame(TEST_KEY, key1.key());
+        assertSame(TEST_KEY, key1.directoryKey());
     }
 
     @Test
@@ -36,11 +36,11 @@ public class DefaultFileKeyTest {
     @Test
     public void isSubKey() {
         when(path.startsWith(path)).thenReturn(true);
-        assertTrue(key1.isSubKey(key2));
+        assertTrue(key1.isSubKeyOf(key2));
         when(otherPath.startsWith(path)).thenReturn(true);
-        assertTrue(key1.isSubKey(key3));
+        assertTrue(key1.isSubKeyOf(key3));
         when(otherPath.startsWith(path)).thenReturn(true);
-        assertFalse(key1.isSubKey(key4));
+        assertFalse(key1.isSubKeyOf(key4));
     }
 
     @Test

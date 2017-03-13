@@ -16,6 +16,8 @@ package ch.sourcepond.io.fileobserver.impl.filekey;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Objects;
 
 import static java.lang.String.format;
@@ -24,17 +26,17 @@ import static java.lang.String.format;
  *
  */
 final class DefaultFileKey implements FileKey {
-    private final Object key;
+    private final Object directoryKey;
     private final Path relativePath;
 
-    public DefaultFileKey(final Object pKey, final Path pRelativePath) {
-        key = pKey;
+    public DefaultFileKey(final Object pDirectoryKey, final Path pRelativePath) {
+        directoryKey = pDirectoryKey;
         relativePath = pRelativePath;
     }
 
     @Override
-    public Object key() {
-        return key;
+    public Object directoryKey() {
+        return directoryKey;
     }
 
     @Override
@@ -51,22 +53,38 @@ final class DefaultFileKey implements FileKey {
             return false;
         }
         final DefaultFileKey other = (DefaultFileKey) o;
-        return Objects.equals(key, other.key) &&
+        return Objects.equals(directoryKey, other.directoryKey) &&
                 Objects.equals(relativePath, other.relativePath);
     }
 
     @Override
-    public boolean isSubKey(final FileKey pOther) {
-        return key().equals(pOther.key()) && pOther.relativePath().startsWith(relativePath());
+    public boolean isSubKeyOf(final FileKey pOther) {
+        return directoryKey().equals(pOther.directoryKey()) && pOther.relativePath().startsWith(relativePath());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, relativePath);
+        return Objects.hash(directoryKey, relativePath);
     }
 
     @Override
     public String toString() {
-        return format("[%s:%s]", key, relativePath);
+        return format("[%s:%s]", directoryKey, relativePath);
+    }
+
+    @Override
+    public Collection<FileKey> findSubKeys(final Collection<FileKey> pKeys) {
+        final Collection<FileKey> subKeys = new LinkedList<>();
+        pKeys.forEach(k -> {
+            if (k.isSubKeyOf(this)) {
+                subKeys.add(k);
+            }
+        });
+        return subKeys;
+    }
+
+    @Override
+    public void removeSubKeys(final Collection<FileKey> pKeys) {
+        pKeys.removeIf(k -> k.isSubKeyOf(this));
     }
 }
