@@ -77,6 +77,6 @@ public class WatchServiceWrapper implements Closeable {
 
     @Override
     public String toString() {
-        return format("[%s]", fs.provider().getScheme());
+        return fs.provider().getScheme();
     }
 }

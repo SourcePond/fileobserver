@@ -207,7 +207,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         try {
             // The filename is the
             // context of the event.
-            if (ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) {
+            if ((ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind)) {
                 virtualRoot.pathModified(child);
             } else if (ENTRY_DELETE == pKind) {
                 virtualRoot.pathDiscarded(child);
@@ -233,10 +233,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 continue;
             }
 
-            // Only process if it's not a repeated event.
-            if (event.count() == 1) {
-                processPath(kind, directory.resolve((Path) event.context()));
-            }
+            processPath(kind, directory.resolve((Path) event.context()));
         }
 
         if (!pWatchKey.reset()) {

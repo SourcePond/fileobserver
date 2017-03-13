@@ -25,35 +25,38 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.util.List;
+import java.nio.file.attribute.FileTime;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
+import static java.nio.file.Files.getLastModifiedTime;
 import static java.nio.file.Files.isDirectory;
+import static java.time.Clock.systemUTC;
+import static java.time.Instant.now;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 /**
  *
  */
-public class VirtualRoot implements RelocationObserver {
+public class VirtualRoot implements RelocationObserver, Runnable {
+    // TODO: Replace this constant through a configurable value
+    private static final int TIMEOUT = 30000;
+
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Path, FileTime> timestamps = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = newKeySet();
+    private final Thread cleanerThread = new Thread(this, "fileobserver - timestamp-cleaner");
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
-
-    /**
-     * We intentionally do <em>not</em> use {@code children.values()} because we need to iterate
-     * over the children in the scanner-thread loop. If we used {@code children.values()} directly
-     * we must create a new iterator during every loop iteration. This is a potential memory leak
-     * and causes unnecessary GC activity.
-     */
-    private final List<DedicatedFileSystem> roots = new CopyOnWriteArrayList<>();
+    private final Clock clock = systemUTC();
 
     // Constructor for BundleActivator
     public VirtualRoot() {
@@ -101,9 +104,7 @@ public class VirtualRoot implements RelocationObserver {
 
     private DedicatedFileSystem newDirectories(final FileSystem pFs) {
         try {
-            final DedicatedFileSystem fsdirs = dedicatedFileSystemFactory.openFileSystem(this, pFs);
-            roots.add(fsdirs);
-            return fsdirs;
+            return dedicatedFileSystemFactory.openFileSystem(this, pFs);
         } catch (final IOException e) {
             throw new UncheckedIOException(e.getMessage(), e);
         }
@@ -181,13 +182,15 @@ public class VirtualRoot implements RelocationObserver {
     }
 
     public void pathModified(final Path pPath) {
-        if (isDirectory(pPath)) {
-            getDedicatedFileSystem(pPath).directoryCreated(pPath, observers);
-        } else {
-            final Directory dir = requireNonNull(
-                    getDedicatedFileSystem(pPath).getDirectory(pPath.getParent()),
-                    () -> format("No directory registered for file %s", pPath));
-            dir.informIfChanged(observers, pPath);
+        if (hasChanged(pPath)) {
+            if (isDirectory(pPath)) {
+                getDedicatedFileSystem(pPath).directoryCreated(pPath, observers);
+            } else {
+                final Directory dir = requireNonNull(
+                        getDedicatedFileSystem(pPath).getDirectory(pPath.getParent()),
+                        () -> format("No directory registered for file %s", pPath));
+                dir.informIfChanged(observers, pPath);
+            }
         }
     }
 
@@ -206,17 +209,24 @@ public class VirtualRoot implements RelocationObserver {
         }
     }
 
+    // Lifecycle method for Felix DM
+    public void start() {
+        cleanerThread.setDaemon(true);
+        cleanerThread.start();
+        LOG.info("Virtual root started");
+    }
+
     /**
      * <p>Closes all active dedicated files systems and removes them.</p>
      * <p>This must be named "destroy" in order to be called from Felix DM (see
      * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
      */
     // Lifecycle method for Felix DM
-    public void destroy() {
+    public void stop() {
+        cleanerThread.interrupt();
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
-        roots.clear();
-        LOG.info("Virtual root destroyed");
+        LOG.info("Timestamp cleaner stopped");
     }
 
     /**
@@ -228,15 +238,8 @@ public class VirtualRoot implements RelocationObserver {
     public void close(final DedicatedFileSystem pDedicatedFileSystem) {
         if (pDedicatedFileSystem != null) {
             pDedicatedFileSystem.close();
-
-            // Remove closed watch-service from the roots-list and children-map
-            roots.remove(pDedicatedFileSystem);
             children.values().remove(pDedicatedFileSystem);
         }
-    }
-
-    public List<DedicatedFileSystem> getRoots() {
-        return roots;
     }
 
     /**
@@ -247,5 +250,43 @@ public class VirtualRoot implements RelocationObserver {
     @Override
     public void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) {
         // TODO: To be implemented
+    }
+
+    private boolean hasChanged(final Path pPath) {
+        boolean changed = false;
+        try {
+            final FileTime current = getLastModifiedTime(pPath);
+            final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
+            changed = !current.equals(cachedOrNull);
+
+            if (cachedOrNull != null && changed) {
+                timestamps.replace(pPath, cachedOrNull, current);
+            }
+        } catch (final IOException e) {
+            LOG.warn("Modification time could not be determined!", e);
+        }
+        return changed;
+    }
+
+    private boolean waitForNextIteration() {
+        synchronized (this) {
+            final long nextRun = clock.millis() + TIMEOUT;
+            while (nextRun > clock.millis()) {
+                try {
+                    wait(TIMEOUT);
+                } catch (final InterruptedException e) {
+                    currentThread().interrupt();
+                }
+            }
+        }
+        return !currentThread().isInterrupted();
+    }
+
+    @Override
+    public void run() {
+        while (waitForNextIteration()) {
+            final Instant expiration = now().minusMillis(TIMEOUT);
+            timestamps.values().removeIf(timestamp -> expiration.isAfter(timestamp.toInstant()));
+        }
     }
 }

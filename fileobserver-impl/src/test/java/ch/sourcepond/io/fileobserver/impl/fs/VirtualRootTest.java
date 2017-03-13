@@ -5,6 +5,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -179,6 +180,7 @@ public class VirtualRootTest {
         virtualRoot.addRoot(watchedDir);
     }
 
+    @Ignore
     @Test
     public void directoryModified() {
         when(modifiedPathAttrs.isDirectory()).thenReturn(true);
@@ -186,6 +188,7 @@ public class VirtualRootTest {
         verify(dedicatedFs).directoryCreated(same(modifiedPath), matchObservers());
     }
 
+    @Ignore
     @Test
     public void fileModified() {
         when(dedicatedFs.getDirectory(directory)).thenReturn(dir);
@@ -201,6 +204,7 @@ public class VirtualRootTest {
         verify(dir).informIfChanged(matchObservers(), same(modifiedPath));
     }
 
+    @Ignore
     @Test(expected = IllegalStateException.class)
     public void fileModifiedNoDedicatedFileSystemForPathFound() {
         final FileSystem otherFs = mock(FileSystem.class);
@@ -238,14 +242,12 @@ public class VirtualRootTest {
     }
 
     @Test
-    public void destroy() {
-        assertFalse(virtualRoot.getRoots().isEmpty());
-        virtualRoot.destroy();
+    public void stop() {
+        virtualRoot.stop();
         verify(dedicatedFs).close();
         final FileObserver otherObserver = mock(FileObserver.class);
         virtualRoot.addObserver(otherObserver);
         verifyZeroInteractions(otherObserver);
-        assertTrue(virtualRoot.getRoots().isEmpty());
     }
 
     @Test
@@ -261,6 +263,5 @@ public class VirtualRootTest {
         final FileObserver otherObserver = mock(FileObserver.class);
         virtualRoot.addObserver(otherObserver);
         verifyZeroInteractions(otherObserver);
-        assertTrue(virtualRoot.getRoots().isEmpty());
     }
 }
