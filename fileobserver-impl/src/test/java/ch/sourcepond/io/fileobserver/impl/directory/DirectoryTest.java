@@ -60,7 +60,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
 
     @Before
     public void setupFactories() throws IOException {
-        wrapper = new WatchServiceWrapper(getDefault().newWatchService());
+        wrapper = new WatchServiceWrapper(getDefault());
     }
 
     @After

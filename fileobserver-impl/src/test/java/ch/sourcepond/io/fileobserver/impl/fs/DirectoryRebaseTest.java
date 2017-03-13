@@ -47,7 +47,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
 
     @Before
     public void setupDirectories() throws IOException {
-        wrapper = new WatchServiceWrapper(getDefault().newWatchService());
+        wrapper = new WatchServiceWrapper(getDefault());
         dir = directoryFactory.newRoot(wrapper.register(root_dir_path));
         dir_1 = directoryFactory.newRoot(wrapper.register(subdir_1_path));
         dir_111 = directoryFactory.newRoot(wrapper.register(subdir_111_path));

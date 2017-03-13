@@ -27,6 +27,7 @@ public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_1 = "dirKey1";
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
+    private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
@@ -65,7 +66,7 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, walker, dirs);
+        fs = new DedicatedFileSystem(virtualRoot, directoryFactory, wrapper, rebase, walker, dirs);
     }
 
     @Test
@@ -199,11 +200,5 @@ public class DedicatedFileSystemTest {
         fs.close();
         verify(wrapper).close();
         assertTrue(dirs.isEmpty());
-    }
-
-    @Test
-    public void poll() {
-        fs.poll();
-        verify(wrapper).poll();
     }
 }

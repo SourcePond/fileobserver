@@ -18,10 +18,7 @@ import org.slf4j.Logger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.ClosedWatchServiceException;
-import java.nio.file.Path;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.nio.file.*;
 
 import static java.lang.String.format;
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -32,10 +29,12 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class WatchServiceWrapper implements Closeable {
     private static final Logger LOG = getLogger(WatchServiceWrapper.class);
+    private final FileSystem fs;
     private final WatchService watchService;
 
-    public WatchServiceWrapper(final WatchService pWatchService) {
-        watchService = pWatchService;
+    public WatchServiceWrapper(final FileSystem pFs) throws IOException {
+        fs = pFs;
+        watchService = pFs.newWatchService();
     }
 
     @Override
@@ -48,12 +47,12 @@ public class WatchServiceWrapper implements Closeable {
     }
 
     /**
-     * See {@link WatchService#poll}.
+     * See {@link WatchService#take}.
      *
      * @return
      */
-    public WatchKey poll() {
-        return watchService.poll();
+    public WatchKey take() throws InterruptedException {
+        return watchService.take();
     }
 
     /**
@@ -74,5 +73,10 @@ public class WatchServiceWrapper implements Closeable {
         } catch (final ClosedWatchServiceException e) {
             throw new IOException(format("Closed WatchService! Registration failed for %s", pDirectory), e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return format("[%s]", fs.provider().getScheme());
     }
 }

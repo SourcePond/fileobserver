@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.util.Collection;
 import java.util.Iterator;
@@ -30,29 +31,36 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
+import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  *
  */
-public class DedicatedFileSystem implements Closeable {
+public class DedicatedFileSystem implements Closeable, Runnable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
     private final ConcurrentMap<Path, Directory> dirs;
+    private final Thread thread;
+    private final VirtualRoot virtualRoot;
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
     private final DirectoryRegistrationWalker walker;
 
-    DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
+    DedicatedFileSystem(final VirtualRoot pVirtualRoot,
+                        final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final DirectoryRegistrationWalker pWalker,
                         final ConcurrentMap<Path, Directory> pDirs) {
+        virtualRoot = pVirtualRoot;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
         walker = pWalker;
         dirs = pDirs;
+        thread = new Thread(this, format("fileobserver [%s]", this));
     }
 
     /**
@@ -157,16 +165,94 @@ public class DedicatedFileSystem implements Closeable {
         return dirs.get(pPath);
     }
 
+    /**
+     * <p>Stops the scanner thread which observes the watched directories for changes.</p>
+     * <p>
+     * <p>This must be named "stop" in order to be called from Felix DM (see
+     * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
+     */
     @Override
     public void close() {
         try {
-            wrapper.close();
+            thread.interrupt();
+            LOG.info("Event receiver stopped");
         } finally {
-            dirs.clear();
+            try {
+                wrapper.close();
+            } finally {
+                dirs.clear();
+            }
         }
     }
 
-    public WatchKey poll() {
-        return wrapper.poll();
+    @Override
+    public String toString() {
+        return wrapper.toString();
+    }
+
+    /**
+     * <p>Starts the scanner thread which observes the watched directories for changes.</p>
+     * <p>
+     * <p>This must be named "start" in order to be called from Felix DM (see
+     * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
+     */
+    // Lifecycle method for Felix DM
+    public void start() {
+        thread.setDaemon(true);
+        thread.start();
+        LOG.info("Ready for receiving events");
+    }
+
+    private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
+        try {
+            // The filename is the
+            // context of the event.
+            if (ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) {
+                virtualRoot.pathModified(child);
+            } else if (ENTRY_DELETE == pKind) {
+                virtualRoot.pathDiscarded(child);
+            }
+        } catch (final RuntimeException e) {
+            LOG.error(e.getMessage(), e);
+        }
+    }
+
+    private void processEvent(final WatchKey pWatchKey) {
+        final Path directory = (Path) pWatchKey.watchable();
+        for (final WatchEvent<?> event : pWatchKey.pollEvents()) {
+            final WatchEvent.Kind<?> kind = event.kind();
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(format("Changed detected [%s]: %s, context: %s", kind, directory, event.context()));
+            }
+
+            // An OVERFLOW event can
+            // occur regardless if events
+            // are lost or discarded.
+            if (OVERFLOW == kind) {
+                continue;
+            }
+
+            // Only process if it's not a repeated event.
+            if (event.count() == 1) {
+                processPath(kind, directory.resolve((Path) event.context()));
+            }
+        }
+
+        if (!pWatchKey.reset()) {
+            virtualRoot.pathDiscarded(directory);
+        }
+    }
+
+    @Override
+    public void run() {
+        while (!currentThread().isInterrupted()) {
+            try {
+                processEvent(wrapper.take());
+            } catch (final InterruptedException e) {
+                LOG.debug(e.getMessage(), e);
+                currentThread().interrupt();
+            }
+        }
     }
 }

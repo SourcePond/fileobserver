@@ -101,7 +101,7 @@ public class VirtualRoot implements RelocationObserver {
 
     private DedicatedFileSystem newDirectories(final FileSystem pFs) {
         try {
-            final DedicatedFileSystem fsdirs = dedicatedFileSystemFactory.newFs(pFs);
+            final DedicatedFileSystem fsdirs = dedicatedFileSystemFactory.openFileSystem(this, pFs);
             roots.add(fsdirs);
             return fsdirs;
         } catch (final IOException e) {
@@ -198,7 +198,7 @@ public class VirtualRoot implements RelocationObserver {
         if (!dfs.directoryDiscarded(observers, pPath)) {
             final Directory parentDirectory = dfs.getDirectory(pPath.getParent());
             if (parentDirectory == null) {
-                LOG.warn("Parent of {} does not exist. Nothing to discard", pPath);
+                LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
             } else {
                 // The deleted path was a file
                 parentDirectory.informDiscard(observers, pPath);

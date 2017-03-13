@@ -117,13 +117,13 @@ public class FileObserverTest {
         // Step 2: register FileObserver
         fileObserverRegistration = context.registerService(FileObserver.class, observer, null);
 
-        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(E11)), eq(E11));
-        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(E12)), eq(E12));
-        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(E2)), eq(E2));
-        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(H11)), eq(H11));
-        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(H12)), eq(H12));
-        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(H2)), eq(H2));
-        verify(observer, timeout(500)).modified(key(ROOT, R.relativize(C)), eq(C));
+        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
+        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
+        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
+        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
+        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
+        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
+        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(C)), eq(C));
 
         reset(observer);
     }

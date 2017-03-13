@@ -16,7 +16,6 @@ package ch.sourcepond.io.fileobserver.impl;
 import ch.sourcepond.commons.smartswitch.lib.SmartSwitchActivatorBase;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.directory.DirectoryScanner;
 import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.apache.felix.dm.DependencyManager;
@@ -25,33 +24,24 @@ import org.osgi.framework.BundleContext;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static java.time.Clock.systemUTC;
-import static java.util.concurrent.Executors.newWorkStealingPool;
-
 /**
  * Bundle activator; this class manages the lifecycle of the bundle.
  */
 public class Activator extends SmartSwitchActivatorBase {
     private final VirtualRoot virtualRoot;
-    private final DirectoryScanner directoryScanner;
 
     // Constructor for OSGi framework
     public Activator() {
         virtualRoot = new VirtualRoot();
-        directoryScanner = new DirectoryScanner(systemUTC(), virtualRoot);
     }
 
     // Constructor for testing
-    public Activator(final VirtualRoot pVirtualRoot,
-                     final DirectoryScanner pDirectoryScanner) {
+    public Activator(final VirtualRoot pVirtualRoot) {
         virtualRoot = pVirtualRoot;
-        directoryScanner = pDirectoryScanner;
     }
 
     @Override
     public void init(final BundleContext bundleContext, final DependencyManager dependencyManager) throws Exception {
-        dependencyManager.add(createComponent().
-                setImplementation(directoryScanner));
         dependencyManager.add(createComponent().
                 setImplementation(virtualRoot).
                 setComposition("getComposition").
@@ -66,7 +56,7 @@ public class Activator extends SmartSwitchActivatorBase {
                 add(createSmartSwitchBuilder(ExecutorService.class).
                         setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
                         setShutdownHook(ExecutorService::shutdown).
-                        build(() -> newWorkStealingPool(5)
+                        build(Executors::newCachedThreadPool
                         ).setAutoConfig("observerExecutor")).
                 add(createSmartSwitchBuilder(ExecutorService.class).
                         setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").

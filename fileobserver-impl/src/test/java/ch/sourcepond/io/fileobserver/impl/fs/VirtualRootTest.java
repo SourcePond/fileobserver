@@ -55,7 +55,7 @@ public class VirtualRootTest {
 
         when(watchedDir.getKey()).thenReturn(ROOT_KEY);
         when(watchedDir.getDirectory()).thenReturn(directory);
-        when(dedicatedFsFactory.newFs(fs)).thenReturn(dedicatedFs);
+        when(dedicatedFsFactory.openFileSystem(virtualRoot, fs)).thenReturn(dedicatedFs);
         when(dedicatedFsFactory.getDirectoryFactory()).thenReturn(directoryFactory);
 
         virtualRoot.addRoot(watchedDir);
@@ -94,7 +94,7 @@ public class VirtualRootTest {
     public void addRootDirectoriesCouldNotBeCreated() throws IOException {
         virtualRoot = new VirtualRoot(dedicatedFsFactory);
         final IOException expected = new IOException();
-        doThrow(expected).when(dedicatedFsFactory).newFs(fs);
+        doThrow(expected).when(dedicatedFsFactory).openFileSystem(virtualRoot, fs);
         try {
             virtualRoot.addRoot(watchedDir);
             fail("Exception expected");

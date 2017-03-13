@@ -47,18 +47,21 @@ public class DedicatedFileSystemFactory {
         return directoryFactory;
     }
 
-    public DedicatedFileSystem newFs(final FileSystem pFs) throws IOException {
+    public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs) throws IOException {
         final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
-        final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs.newWatchService());
+        final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs);
         final DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
                 wrapper,
                 directoryFactory,
                 directoryWalkerExecutor,
                 dirs);
-        return new DedicatedFileSystem(directoryFactory,
+        DedicatedFileSystem fs = new DedicatedFileSystem(pVirtualRoot,
+                directoryFactory,
                 wrapper,
                 new DirectoryRebase(directoryFactory, wrapper, dirs),
                 walker,
                 dirs);
+        fs.start();
+        return fs;
     }
 }
