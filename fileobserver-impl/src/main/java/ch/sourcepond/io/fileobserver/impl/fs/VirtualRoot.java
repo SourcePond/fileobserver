@@ -25,14 +25,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
-import static java.nio.file.Files.getLastModifiedTime;
 import static java.nio.file.Files.isDirectory;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
@@ -43,7 +41,6 @@ import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 public class VirtualRoot implements RelocationObserver {
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Path, FileTime> timestamps = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = newKeySet();
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
@@ -172,51 +169,29 @@ public class VirtualRoot implements RelocationObserver {
         return fsdirs;
     }
 
-    boolean hasChanged(final Path pPath) {
-        boolean changed = false;
-        try {
-            final FileTime current = getLastModifiedTime(pPath);
-            final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
-            changed = !current.equals(cachedOrNull);
-
-            if (cachedOrNull != null && changed) {
-                timestamps.replace(pPath, cachedOrNull, current);
-            }
-        } catch (final IOException e) {
-            LOG.warn("Modification time could not be determined!", e);
-        }
-        return changed;
-    }
-
     public void pathModified(final Path pPath) {
-        if (hasChanged(pPath)) {
-            if (isDirectory(pPath)) {
-                getDedicatedFileSystem(pPath).directoryCreated(pPath, observers);
-            } else {
-                final Directory dir = requireNonNull(
-                        getDedicatedFileSystem(pPath).getDirectory(pPath.getParent()),
-                        () -> format("No directory registered for file %s", pPath));
-                dir.informIfChanged(observers, pPath);
-            }
+        if (isDirectory(pPath)) {
+            getDedicatedFileSystem(pPath).directoryCreated(pPath, observers);
+        } else {
+            final Directory dir = requireNonNull(
+                    getDedicatedFileSystem(pPath).getDirectory(pPath.getParent()),
+                    () -> format("No directory registered for file %s", pPath));
+            dir.informIfChanged(observers, pPath);
         }
     }
 
     public void pathDiscarded(final Path pPath) {
-        try {
-            final DedicatedFileSystem dfs = getDedicatedFileSystem(pPath);
+        final DedicatedFileSystem dfs = getDedicatedFileSystem(pPath);
 
-            // The deleted path was a directory
-            if (!dfs.directoryDiscarded(observers, pPath)) {
-                final Directory parentDirectory = dfs.getDirectory(pPath.getParent());
-                if (parentDirectory == null) {
-                    LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
-                } else {
-                    // The deleted path was a file
-                    parentDirectory.informDiscard(observers, pPath);
-                }
+        // The deleted path was a directory
+        if (!dfs.directoryDiscarded(observers, pPath)) {
+            final Directory parentDirectory = dfs.getDirectory(pPath.getParent());
+            if (parentDirectory == null) {
+                LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
+            } else {
+                // The deleted path was a file
+                parentDirectory.informDiscard(observers, pPath);
             }
-        } finally {
-            timestamps.remove(pPath);
         }
     }
 
@@ -229,7 +204,6 @@ public class VirtualRoot implements RelocationObserver {
     public void stop() {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
-        timestamps.clear();
         LOG.info("Timestamp cleaner stopped");
     }
 

@@ -25,13 +25,16 @@ import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
+import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
+import static java.nio.file.Files.getLastModifiedTime;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -40,6 +43,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable, Runnable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
+    private final ConcurrentMap<Path, FileTime> timestamps = new ConcurrentHashMap<>();
     private final ConcurrentMap<Path, Directory> dirs;
     private final Thread thread;
     private final VirtualRoot virtualRoot;
@@ -60,7 +64,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         rebase = pRebase;
         walker = pWalker;
         dirs = pDirs;
-        thread = new Thread(this, format("fileobserver [%s]", this));
+        thread = new Thread(this, format("fileobserver %s", this));
     }
 
     /**
@@ -134,7 +138,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
 
     /**
      * Registers the directory specified and all its sub-directories with the watch-service held by this object.
-     * Additionally, it passes any detected file to {@link FileObserver#modified(FileKey, Path)} to the observers
+     * Additionally, it passes any detected file to {@link FileObserver#modified(ch.sourcepond.io.fileobserver.api.FileKey, Path)} to the observers
      * specified.
      *
      * @param pDirectory Newly created directory, must not be {@code null}
@@ -181,6 +185,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 wrapper.close();
             } finally {
                 dirs.clear();
+                timestamps.clear();
                 virtualRoot.removeFileSystem(this);
             }
         }
@@ -204,14 +209,34 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         LOG.info("Ready for receiving events");
     }
 
+    private boolean hasChanged(final Path pPath) {
+        boolean changed = false;
+        try {
+            final FileTime current = getLastModifiedTime(pPath);
+            final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
+            changed = !current.equals(cachedOrNull);
+
+            if (cachedOrNull != null && changed) {
+                timestamps.replace(pPath, cachedOrNull, current);
+            }
+        } catch (final IOException e) {
+            LOG.warn("Modification time could not be determined!", e);
+        }
+        return changed;
+    }
+
     private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
         try {
             // The filename is the
             // context of the event.
-            if ((ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind)) {
+            if ((ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) && hasChanged(child)) {
                 virtualRoot.pathModified(child);
             } else if (ENTRY_DELETE == pKind) {
-                virtualRoot.pathDiscarded(child);
+                try {
+                    virtualRoot.pathDiscarded(child);
+                } finally {
+                    timestamps.remove(child);
+                }
             }
         } catch (final RuntimeException e) {
             LOG.error(e.getMessage(), e);
