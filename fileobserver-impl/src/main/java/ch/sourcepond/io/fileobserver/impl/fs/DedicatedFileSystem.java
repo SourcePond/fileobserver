@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -181,6 +182,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 wrapper.close();
             } finally {
                 dirs.clear();
+                virtualRoot.removeFileSystem(this);
             }
         }
     }
@@ -246,9 +248,9 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         while (!currentThread().isInterrupted()) {
             try {
                 processEvent(wrapper.take());
-            } catch (final InterruptedException e) {
+            } catch (final ClosedWatchServiceException | InterruptedException e) {
                 LOG.debug(e.getMessage(), e);
-                currentThread().interrupt();
+                close();
             }
         }
     }

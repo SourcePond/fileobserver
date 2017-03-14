@@ -251,15 +251,8 @@ public class VirtualRootTest {
     }
 
     @Test
-    public void closeDedicatedFsIsNull() {
-        // This should not cause an exception
-        virtualRoot.close(null);
-    }
-
-    @Test
-    public void closeDedicatedFs() {
-        virtualRoot.close(dedicatedFs);
-        verify(dedicatedFs).close();
+    public void removeFileSystem() {
+        virtualRoot.removeFileSystem(dedicatedFs);
         final FileObserver otherObserver = mock(FileObserver.class);
         virtualRoot.addObserver(otherObserver);
         verifyZeroInteractions(otherObserver);

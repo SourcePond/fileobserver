@@ -102,7 +102,7 @@ public class VirtualRoot implements RelocationObserver, Runnable {
         observers.remove(pObserver);
     }
 
-    private DedicatedFileSystem newDirectories(final FileSystem pFs) {
+    private DedicatedFileSystem newDedicatedFileSystem(final FileSystem pFs) {
         try {
             return dedicatedFileSystemFactory.openFileSystem(this, pFs);
         } catch (final IOException e) {
@@ -136,7 +136,7 @@ public class VirtualRoot implements RelocationObserver, Runnable {
 
         try {
             children.computeIfAbsent(directory.getFileSystem(),
-                    this::newDirectories).registerRootDirectory(pWatchedDirectory, observers);
+                    this::newDedicatedFileSystem).registerRootDirectory(pWatchedDirectory, observers);
         } catch (final UncheckedIOException e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -230,22 +230,20 @@ public class VirtualRoot implements RelocationObserver, Runnable {
     }
 
     /**
-     * Closes the {@link DedicatedFileSystem} instance specified and removes it from
-     * the root list.
+     * Removes the {@link DedicatedFileSystem} instance specified from
+     * this virtual root. This happens when the {@link java.nio.file.WatchService} of the
+     * fs specified had been closed and a {@link java.nio.file.ClosedWatchServiceException} has been
+     * caused to be thrown because that in {@link DedicatedFileSystem#run()}.
      *
      * @param pDedicatedFileSystem
      */
-    public void close(final DedicatedFileSystem pDedicatedFileSystem) {
-        if (pDedicatedFileSystem != null) {
-            pDedicatedFileSystem.close();
-            children.values().remove(pDedicatedFileSystem);
-        }
+    void removeFileSystem(final DedicatedFileSystem pDedicatedFileSystem) {
+        children.values().remove(pDedicatedFileSystem);
     }
 
     /**
-     *
      * @param pWatchedDirectory The watched-directory which has a new destination, never {@code null}
-     * @param pPrevious Previous destination, never {@code null}
+     * @param pPrevious         Previous destination, never {@code null}
      */
     @Override
     public void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) {

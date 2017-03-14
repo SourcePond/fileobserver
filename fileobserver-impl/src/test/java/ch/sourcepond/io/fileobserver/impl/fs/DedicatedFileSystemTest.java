@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
@@ -198,7 +199,17 @@ public class DedicatedFileSystemTest {
     public void close() {
         dirs.put(rootDirPath1, rootDir1);
         fs.close();
-        verify(wrapper).close();
+        verify(wrapper, timeout(2000)).close();
         assertTrue(dirs.isEmpty());
+        verify(virtualRoot).removeFileSystem(fs);
+    }
+
+
+    @Test
+    public void closeAndRemoveFsWhenWatchServiceClosed() throws Exception {
+        final ClosedWatchServiceException expected = new ClosedWatchServiceException();
+        fs.start();
+        doThrow(expected).when(wrapper).take();
+        close();
     }
 }
