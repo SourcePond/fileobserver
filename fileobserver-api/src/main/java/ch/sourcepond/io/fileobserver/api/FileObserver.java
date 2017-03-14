@@ -15,7 +15,6 @@ package ch.sourcepond.io.fileobserver.api;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
 
 /**
  * <p>Observer to receive notifications about changes on files
@@ -73,7 +72,7 @@ public interface FileObserver {
      *      pKey.removeSubKeys(cache.keySet());
      * </pre>
      *
-     * See {@link FileKey#removeSubKeys(Collection)} and {@link FileKey#findSubKeys(Collection)} for further information.
+     * See {@link FileKey#removeSubKeys(java.util.Collection)} and {@link FileKey#findSubKeys(java.util.Collection)} for further information.
      *
      * @param pKey File-key of the discarded file or directory, never {@code null}
      */

@@ -13,7 +13,6 @@ import org.mockito.ArgumentMatcher;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.options.MavenArtifactUrlReference;
 import org.ops4j.pax.exam.options.MavenUrlReference;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
@@ -57,10 +56,6 @@ public class FileObserverTest {
 
     @Configuration
     public Option[] config() {
-        MavenArtifactUrlReference karafUrl = maven()
-                .groupId("org.apache.karaf")
-                .artifactId("apache-karaf").versionAsInProject()
-                .type("tar.gz");
         MavenUrlReference fileObserverRepo = maven()
                 .groupId("ch.sourcepond.io")
                 .artifactId("fileobserver-feature")

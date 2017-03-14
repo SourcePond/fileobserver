@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
@@ -37,7 +36,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * <p>Walks through a directory structure. For each detected file, the observers specified
- * will be informed through their {@link FileObserver#modified(FileKey, Path)}. Each detected
+ * will be informed through their {@link FileObserver#modified(ch.sourcepond.io.fileobserver.api.FileKey, Path)}. Each detected
  * directory will be registered with the {@link WatchServiceWrapper}, and, be stored in the
  * directory-map specified.</p>
  * <p>

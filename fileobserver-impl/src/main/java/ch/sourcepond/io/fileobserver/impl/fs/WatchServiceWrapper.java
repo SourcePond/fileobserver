@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.*;
 
 import static java.lang.String.format;
@@ -57,7 +56,7 @@ public class WatchServiceWrapper implements Closeable {
 
     /**
      * Registers the path specified with the {@link java.nio.file.WatchService} held by this object.
-     * If the path specified is not a directory, an {@link UncheckedIOException} will be caused to be thrown.
+     * If the path specified is not a directory, an {@link java.io.UncheckedIOException} will be caused to be thrown.
      *
      * @param pDirectory Directory to be watched, must not be {@code null}
      * @return A key representing the registration of this object with the watch service

@@ -2,7 +2,6 @@ package ch.sourcepond.io.fileobserver.impl;
 
 
 import ch.sourcepond.io.fileobserver.impl.fs.VirtualRoot;
-import org.apache.felix.dm.DependencyManager;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
@@ -16,7 +15,6 @@ import static org.mockito.Mockito.mock;
 public class ActivatorTest {
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final BundleContext context = mock(BundleContext.class);
-    private final DependencyManager dependencyManager = mock(DependencyManager.class);
     private final Activator activator = new Activator(virtualRoot);
 
     @Test
