@@ -255,8 +255,6 @@ public abstract class Directory {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
-        System.out.println("--------->>>>> " + Files.isDirectory(pFile) + " " + pFile);
-
         for (final FileKey key : createKeys(pFile)) {
             pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
         }

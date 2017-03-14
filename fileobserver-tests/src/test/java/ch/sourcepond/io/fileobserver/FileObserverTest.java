@@ -215,9 +215,12 @@ public class FileObserverTest {
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E1)));
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H1)));
 
-        //
+        // See FileObserver::discard for explanation; the following works not for MacOS X
         if ("Linux".equals(System.getProperty("os.name"))) {
-
+            verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
+            verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
+            verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
+            verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
         }
 
         verifyNoMoreInteractions(observer);
