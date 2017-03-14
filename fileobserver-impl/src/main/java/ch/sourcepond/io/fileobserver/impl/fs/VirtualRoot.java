@@ -26,37 +26,28 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.time.Clock;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
-import static java.lang.Thread.currentThread;
 import static java.nio.file.Files.getLastModifiedTime;
 import static java.nio.file.Files.isDirectory;
-import static java.time.Clock.systemUTC;
-import static java.time.Instant.now;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 /**
  *
  */
-public class VirtualRoot implements RelocationObserver, Runnable {
-    // TODO: Replace this constant through a configurable value
-    private static final int TIMEOUT = 30000;
-
+public class VirtualRoot implements RelocationObserver {
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Path, FileTime> timestamps = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Path, FileTime> timestamps = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = newKeySet();
-    private final Thread cleanerThread = new Thread(this, "fileobserver - timestamp-cleaner");
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
-    private final Clock clock = systemUTC();
+
 
     // Constructor for BundleActivator
     public VirtualRoot() {
@@ -181,6 +172,22 @@ public class VirtualRoot implements RelocationObserver, Runnable {
         return fsdirs;
     }
 
+    boolean hasChanged(final Path pPath) {
+        boolean changed = false;
+        try {
+            final FileTime current = getLastModifiedTime(pPath);
+            final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
+            changed = !current.equals(cachedOrNull);
+
+            if (cachedOrNull != null && changed) {
+                timestamps.replace(pPath, cachedOrNull, current);
+            }
+        } catch (final IOException e) {
+            LOG.warn("Modification time could not be determined!", e);
+        }
+        return changed;
+    }
+
     public void pathModified(final Path pPath) {
         if (hasChanged(pPath)) {
             if (isDirectory(pPath)) {
@@ -195,25 +202,22 @@ public class VirtualRoot implements RelocationObserver, Runnable {
     }
 
     public void pathDiscarded(final Path pPath) {
-        final DedicatedFileSystem dfs = getDedicatedFileSystem(pPath);
+        try {
+            final DedicatedFileSystem dfs = getDedicatedFileSystem(pPath);
 
-        // The deleted path was a directory
-        if (!dfs.directoryDiscarded(observers, pPath)) {
-            final Directory parentDirectory = dfs.getDirectory(pPath.getParent());
-            if (parentDirectory == null) {
-                LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
-            } else {
-                // The deleted path was a file
-                parentDirectory.informDiscard(observers, pPath);
+            // The deleted path was a directory
+            if (!dfs.directoryDiscarded(observers, pPath)) {
+                final Directory parentDirectory = dfs.getDirectory(pPath.getParent());
+                if (parentDirectory == null) {
+                    LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
+                } else {
+                    // The deleted path was a file
+                    parentDirectory.informDiscard(observers, pPath);
+                }
             }
+        } finally {
+            timestamps.remove(pPath);
         }
-    }
-
-    // Lifecycle method for Felix DM
-    public void start() {
-        cleanerThread.setDaemon(true);
-        cleanerThread.start();
-        LOG.info("Virtual root started");
     }
 
     /**
@@ -223,9 +227,9 @@ public class VirtualRoot implements RelocationObserver, Runnable {
      */
     // Lifecycle method for Felix DM
     public void stop() {
-        cleanerThread.interrupt();
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
+        timestamps.clear();
         LOG.info("Timestamp cleaner stopped");
     }
 
@@ -248,43 +252,5 @@ public class VirtualRoot implements RelocationObserver, Runnable {
     @Override
     public void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) {
         // TODO: To be implemented
-    }
-
-    private boolean hasChanged(final Path pPath) {
-        boolean changed = false;
-        try {
-            final FileTime current = getLastModifiedTime(pPath);
-            final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
-            changed = !current.equals(cachedOrNull);
-
-            if (cachedOrNull != null && changed) {
-                timestamps.replace(pPath, cachedOrNull, current);
-            }
-        } catch (final IOException e) {
-            LOG.warn("Modification time could not be determined!", e);
-        }
-        return changed;
-    }
-
-    private boolean waitForNextIteration() {
-        synchronized (this) {
-            final long nextRun = clock.millis() + TIMEOUT;
-            while (nextRun > clock.millis()) {
-                try {
-                    wait(TIMEOUT);
-                } catch (final InterruptedException e) {
-                    currentThread().interrupt();
-                }
-            }
-        }
-        return !currentThread().isInterrupted();
-    }
-
-    @Override
-    public void run() {
-        while (waitForNextIteration()) {
-            final Instant expiration = now().minusMillis(TIMEOUT);
-            timestamps.values().removeIf(timestamp -> expiration.isAfter(timestamp.toInstant()));
-        }
     }
 }
