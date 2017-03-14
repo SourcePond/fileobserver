@@ -63,6 +63,8 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private void writeContent(final Path pPath) throws Exception {
         try (final BufferedWriter writer = newBufferedWriter(pPath, CREATE)) {
             writer.write(randomUUID().toString());
+
+            // HFS+ has timestamps in second(!) intervals
             sleep(5000);
         }
     }
