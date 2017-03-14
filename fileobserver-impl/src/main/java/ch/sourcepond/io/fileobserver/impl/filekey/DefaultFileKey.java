@@ -59,7 +59,7 @@ final class DefaultFileKey implements FileKey {
 
     @Override
     public boolean isSubKeyOf(final FileKey pOther) {
-        return directoryKey().equals(pOther.directoryKey()) && pOther.relativePath().startsWith(relativePath());
+        return directoryKey().equals(pOther.directoryKey()) && relativePath().startsWith(pOther.relativePath());
     }
 
     @Override
