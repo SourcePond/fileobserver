@@ -25,6 +25,7 @@ import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.Iterator;
@@ -34,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
-import static java.nio.file.Files.getLastModifiedTime;
+import static java.nio.file.Files.readAttributes;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -209,28 +210,28 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         LOG.info("Ready for receiving events");
     }
 
-    private boolean hasChanged(final Path pPath) {
-        boolean changed = false;
-        try {
-            final FileTime current = getLastModifiedTime(pPath);
-            final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
-            changed = !current.equals(cachedOrNull);
+    private boolean hasChanged(final Path pPath, final BasicFileAttributes pCurrentAttrs) throws IOException {
+        final FileTime current = pCurrentAttrs.lastModifiedTime();
+        final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
+        final boolean changed = !current.equals(cachedOrNull);
 
-            if (cachedOrNull != null && changed) {
-                timestamps.replace(pPath, cachedOrNull, current);
-            }
-        } catch (final IOException e) {
-            LOG.warn("Modification time could not be determined!", e);
+        if (cachedOrNull != null && changed) {
+            timestamps.replace(pPath, cachedOrNull, current);
         }
         return changed;
     }
 
     private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
         try {
-            // The filename is the
-            // context of the event.
-            if ((ENTRY_CREATE == pKind || ENTRY_MODIFY == pKind) && hasChanged(child)) {
-                virtualRoot.pathModified(child);
+            if (ENTRY_CREATE == pKind) {
+                final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
+                if (currentAttrs.size() > 0 && hasChanged(child, currentAttrs)) {
+                    virtualRoot.pathModified(child);
+                }
+            } else if (ENTRY_MODIFY == pKind) {
+                if (hasChanged(child, readAttributes(child, BasicFileAttributes.class))) {
+                    virtualRoot.pathModified(child);
+                }
             } else if (ENTRY_DELETE == pKind) {
                 try {
                     virtualRoot.pathDiscarded(child);
@@ -238,6 +239,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                     timestamps.remove(child);
                 }
             }
+        } catch (final IOException e) {
+            LOG.warn(format("FileAttributes could not be read for %s", child), e);
         } catch (final RuntimeException e) {
             LOG.error(e.getMessage(), e);
         }
