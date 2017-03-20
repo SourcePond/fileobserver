@@ -57,7 +57,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      *
      */
     @Test
-    public void rootDirInformIfChangedChecksumsEqual() throws InterruptedException {
+    public void rootDirInformIfChangedChecksumsEqual() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum1);
         root_dir.informIfChanged(observers, testfile_txt_path);
         sleep(200);
@@ -79,7 +79,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      *
      */
     @Test
-    public void rootDirInformIfChangedChecksumsDifferentButNoKeyRegistered() throws InterruptedException {
+    public void rootDirInformIfChangedChecksumsDifferentButNoKeyRegistered() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum2);
         root_dir.removeDirectoryKey(ROOT_DIR_KEY);
         root_dir.informIfChanged(observers, testfile_txt_path);
@@ -91,7 +91,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      *
      */
     @Test
-    public void subDirInformIfChangedChecksumsEqual() throws InterruptedException {
+    public void subDirInformIfChangedChecksumsEqual() throws Exception {
         setupChecksumAnswer(testfile_11_xml_resource, checksum1);
         subdir_1.informIfChanged(observers, testfile_11_xml_path);
         sleep(200);
@@ -113,7 +113,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      *
      */
     @Test
-    public void formerRootInformIfChangedChecksumsEqual() throws InterruptedException {
+    public void formerRootInformIfChangedChecksumsEqual() throws Exception {
         subdir_1.addDirectoryKey(SUB_DIR_KEY1);
         setupChecksumAnswer(testfile_11_xml_resource, checksum1);
         subdir_1.informIfChanged(observers, testfile_11_xml_path);

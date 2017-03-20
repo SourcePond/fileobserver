@@ -61,7 +61,7 @@ public abstract class Directory {
                                final FileObserver pObserver,
                                final Path pFile) {
         for (final FileKey key : pKeys) {
-           getFactory().executeObserverTask(() -> {
+            getFactory().executeObserverTask(() -> {
                 try {
                     informSupplement(pObserver, key, pParentKeys);
                     pObserver.modified(key, pFile);
@@ -280,19 +280,23 @@ public abstract class Directory {
      */
     public void informIfChanged(final Directory pNewRootOrNull, final Collection<FileObserver> pObservers, final Path pFile) {
         // TODO: Replace interval with configurable value
-        resources.computeIfAbsent(pFile,
-                f -> getFactory().newResource(SHA256, pFile)).update(TIMEOUT,
-                (pPrevious, pCurrent) -> {
-                    if (!pPrevious.equals(pCurrent)) {
-                        // If the modification is requested because a new root-directory has been registered, we
-                        // need to inform the observers about supplement keys.
-                        final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
-                                emptyList() : pNewRootOrNull.createKeys(pFile);
+        try {
+            resources.computeIfAbsent(pFile,
+                    f -> getFactory().newResource(SHA256, pFile)).update(TIMEOUT,
+                    update -> {
+                        if (update.hasChanged()) {
+                            // If the modification is requested because a new root-directory has been registered, we
+                            // need to inform the observers about supplement keys.
+                            final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
+                                    emptyList() : pNewRootOrNull.createKeys(pFile);
 
-                        final Collection<FileKey> keys = createKeys(pFile);
-                        pObservers.forEach(o -> forceModified(supplementKeys, keys, o, pFile));
-                    }
-                });
+                            final Collection<FileKey> keys = createKeys(pFile);
+                            pObservers.forEach(o -> forceModified(supplementKeys, keys, o, pFile));
+                        }
+                    });
+        } catch (final IOException e) {
+            LOG.warn(e.getMessage(), e);
+        }
     }
 
     /**

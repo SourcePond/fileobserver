@@ -13,10 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.checksum.api.CalculationObserver;
-import ch.sourcepond.io.checksum.api.Checksum;
-import ch.sourcepond.io.checksum.api.Resource;
-import ch.sourcepond.io.checksum.api.ResourcesFactory;
+import ch.sourcepond.io.checksum.api.*;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
@@ -35,8 +32,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -76,10 +72,14 @@ public abstract class DirectoryTest extends CopyResourcesTest {
         new DirectoryFactory();
     }
 
-    void setupChecksumAnswer(final Resource pResource, final Checksum pChecksum2) {
+    void setupChecksumAnswer(final Resource pResource, final Checksum pChecksum2) throws IOException {
         doAnswer(invocationOnMock -> {
-            final CalculationObserver cobsrv = invocationOnMock.getArgument(1);
-            cobsrv.done(checksum1, pChecksum2);
+            final Update upd = mock(Update.class);
+            when(upd.getPrevious()).thenReturn(checksum1);
+            when(upd.getCurrent()).thenReturn(pChecksum2);
+            when(upd.hasChanged()).thenReturn(!checksum1.equals(pChecksum2));
+            final UpdateObserver cobsrv = invocationOnMock.getArgument(1);
+            cobsrv.done(upd);
             return null;
         }).when(pResource).update(eq(TIMEOUT), notNull());
     }
