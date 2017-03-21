@@ -43,9 +43,10 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     final ExecutorService observerExecutor = newSingleThreadExecutor();
+    final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
     final DirectoryFactory factory = new DirectoryFactory(
             resourcesFactory,
-            new DefaultFileKeyFactory(),
+            keyFactory,
             directoryWalkerExecutor,
             observerExecutor);
     final Checksum checksum1 = mock(Checksum.class);
@@ -69,7 +70,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     @Test
     public void verifyDirectoryFactoryDefaultConstructor() {
         // Should not throw an exception
-        new DirectoryFactory();
+        new DirectoryFactory(keyFactory);
     }
 
     void setupChecksumAnswer(final Resource pResource, final Checksum pChecksum2) throws IOException {

@@ -78,19 +78,31 @@ public class WatchedDirectoryTest {
     }
 
     @Test
-    public void relocate() {
+    public void relocate() throws IOException {
         dir.relocate(newPath);
         assertSame(newPath, dir.getDirectory());
         verify(observer).destinationChanged(dir, path);
     }
 
+    @Test
+    public void relocateIOExceptionOccurred() throws IOException {
+        final IOException expected = new IOException();
+        doThrow(expected).when(observer).destinationChanged(dir, path);
+        try {
+            dir.relocate(newPath);
+            fail("Exception expected");
+        } catch (final IOException e) {
+            assertSame(expected, e.getCause().getCause());
+        }
+    }
+
     @Test(expected = NullPointerException.class)
-    public void relocateDirectoryIsNull() {
+    public void relocateDirectoryIsNull() throws IOException {
         dir.relocate(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void relocatePathIsNotADirectory() {
+    public void relocatePathIsNotADirectory() throws  IOException {
         when(newAttrs.isDirectory()).thenReturn(false);
         dir.relocate(newPath);
     }

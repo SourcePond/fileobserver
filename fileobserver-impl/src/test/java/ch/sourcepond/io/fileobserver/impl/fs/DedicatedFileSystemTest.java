@@ -1,6 +1,7 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
@@ -29,6 +30,7 @@ public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
+    private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
@@ -67,7 +69,7 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(virtualRoot, directoryFactory, wrapper, rebase, walker, dirs);
+        fs = new DedicatedFileSystem(virtualRoot, directoryFactory, wrapper, rebase, walker, diffObserverFactory, dirs);
     }
 
     @Test

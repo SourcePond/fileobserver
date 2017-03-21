@@ -1,6 +1,7 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -34,6 +35,7 @@ public class VirtualRootTest {
     private final Path modifiedPath = mock(Path.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
+    private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
     private final DedicatedFileSystem dedicatedFs = mock(DedicatedFileSystem.class);
     private final DedicatedFileSystemFactory dedicatedFsFactory = mock(DedicatedFileSystemFactory.class);
     private final Directory dir = mock(Directory.class);
@@ -57,6 +59,7 @@ public class VirtualRootTest {
         when(watchedDir.getDirectory()).thenReturn(directory);
         when(dedicatedFsFactory.openFileSystem(virtualRoot, fs)).thenReturn(dedicatedFs);
         when(dedicatedFsFactory.getDirectoryFactory()).thenReturn(directoryFactory);
+        when(dedicatedFsFactory.getDiffObserverFactory()).thenReturn(diffObserverFactory);
 
         virtualRoot.addRoot(watchedDir);
         virtualRoot.addObserver(observer);
@@ -107,10 +110,11 @@ public class VirtualRootTest {
     @Test
     public void getComposition() {
         final Object[] composition = virtualRoot.getComposition();
-        assertEquals(3, composition.length);
+        assertEquals(4, composition.length);
         assertSame(virtualRoot, composition[0]);
         assertSame(dedicatedFsFactory, composition[1]);
         assertSame(directoryFactory, composition[2]);
+        assertSame(diffObserverFactory, composition[3]);
     }
 
     @Test(expected = NullPointerException.class)

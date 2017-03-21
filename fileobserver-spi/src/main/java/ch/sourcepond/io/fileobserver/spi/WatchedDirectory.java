@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.spi;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -61,10 +62,11 @@ public interface WatchedDirectory {
      * (see {@link #addObserver(RelocationObserver)}).
      *
      * @param pDirectory Directory which should be watched from now on; must not be {@code null}.
+     * @throws IOException              Thrown, if the relocation could not be performed for some reason.
      * @throws NullPointerException     Thrown, if the directory specified is {@code null}.
      * @throws IllegalArgumentException Thrown, if the path specified is not a directory.
      */
-    void relocate(Path pDirectory);
+    void relocate(Path pDirectory) throws IOException;
 
     /**
      * <p>Creates a new {@link WatchedDirectory} instance. The directory specified can later

@@ -1,5 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +26,8 @@ public class DedicatedFileSystemFactoryTest {
     private final WatchService watchService = mock(WatchService.class);
     private final ExecutorService directoryWalkerExecutor = mock(ExecutorService.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
-    private final DedicatedFileSystemFactory factory = new DedicatedFileSystemFactory(directoryFactory, directoryWalkerExecutor);
+    private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
+    private final DedicatedFileSystemFactory factory = new DedicatedFileSystemFactory(directoryFactory, diffObserverFactory, directoryWalkerExecutor);
 
     @Before
     public void setup() throws IOException {
@@ -35,7 +37,7 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void verifyActivatorConstructor() {
-        new DedicatedFileSystemFactory(directoryFactory);
+        new DedicatedFileSystemFactory(directoryFactory, diffObserverFactory);
     }
 
     @Test

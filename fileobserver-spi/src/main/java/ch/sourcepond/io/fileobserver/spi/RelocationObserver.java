@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.spi;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -28,6 +29,7 @@ public interface RelocationObserver {
      *
      * @param pWatchedDirectory The watched-directory which has a new destination, never {@code null}
      * @param pPrevious Previous destination, never {@code null}
+     * @throws IOException Thrown, if relocation failed for some reason.
      */
-    void destinationChanged(WatchedDirectory pWatchedDirectory, Path pPrevious);
+    void destinationChanged(WatchedDirectory pWatchedDirectory, Path pPrevious) throws IOException;
 }

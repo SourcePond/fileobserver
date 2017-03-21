@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 
@@ -28,23 +29,32 @@ import java.util.concurrent.ExecutorService;
  */
 public class DedicatedFileSystemFactory {
     private final DirectoryFactory directoryFactory;
+    private final DiffObserverFactory diffObserverFactory;
 
     // Injected by Felix DM; this field must not be renamed!
     private volatile ExecutorService directoryWalkerExecutor;
 
     // Constructor for BundleActivator
-    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory) {
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final DiffObserverFactory pDiffObserverFactory) {
         directoryFactory = pDirectoryFactory;
+        diffObserverFactory = pDiffObserverFactory;
     }
 
     // Constructor for testing
-    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ExecutorService pDirectoryWalkerExecutor) {
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
+                                      final DiffObserverFactory pDiffObserverFactory,
+                                      final ExecutorService pDirectoryWalkerExecutor) {
         directoryFactory = pDirectoryFactory;
+        diffObserverFactory = pDiffObserverFactory;
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
     public DirectoryFactory getDirectoryFactory() {
         return directoryFactory;
+    }
+
+    public DiffObserverFactory getDiffObserverFactory() {
+        return diffObserverFactory;
     }
 
     public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs) throws IOException {
@@ -55,11 +65,13 @@ public class DedicatedFileSystemFactory {
                 directoryFactory,
                 directoryWalkerExecutor,
                 dirs);
-        DedicatedFileSystem fs = new DedicatedFileSystem(pVirtualRoot,
+        DedicatedFileSystem fs = new DedicatedFileSystem(
+                pVirtualRoot,
                 directoryFactory,
                 wrapper,
                 new DirectoryRebase(directoryFactory, wrapper, dirs),
                 walker,
+                diffObserverFactory,
                 dirs);
         fs.start();
         return fs;

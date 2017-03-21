@@ -56,8 +56,8 @@ public interface FileKey {
      * <li>The relative path of {@code pOther} starts
      * with the relative path of this key (see {@link #relativePath()})</li></ul>
      *
-     * @param pOther Other key to check if it is a sub-key, must not be {@code null}
-     * @return {@code true} if the key specified is a sub-key, {@code false} otherwise.
+     * @param pOther Other key to check whether it is a parent-key of this, must not be {@code null}
+     * @return {@code true} if this key is a sub-key of the key specified, {@code false} otherwise.
      */
     boolean isSubKeyOf(FileKey pOther);
 

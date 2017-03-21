@@ -2,6 +2,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.TestKey;
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -35,6 +36,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
+    private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
     private DedicatedFileSystem child;
     private volatile Throwable threadKiller;
     private Path file;
@@ -48,7 +50,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         wrapper = new WatchServiceWrapper(fs);
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        child = new DedicatedFileSystem(virtualRoot, directoryFactory, wrapper, rebase, walker, new ConcurrentHashMap<>());
+        child = new DedicatedFileSystem(virtualRoot, directoryFactory, wrapper, rebase, walker, diffObserverFactory, new ConcurrentHashMap<>());
         child.registerRootDirectory(watchedDirectory, emptyList());
 
         file = root_dir_path.resolve(NEW_FILE_NAME);

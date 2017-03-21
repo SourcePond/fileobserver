@@ -14,8 +14,10 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
@@ -48,7 +50,10 @@ public class VirtualRoot implements RelocationObserver {
 
     // Constructor for BundleActivator
     public VirtualRoot() {
-        this(new DedicatedFileSystemFactory(new DirectoryFactory()));
+        final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
+        dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
+                new DirectoryFactory(keyFactory),
+                new DiffObserverFactory(keyFactory));
     }
 
     // Constructor for BundleActivator
@@ -64,7 +69,11 @@ public class VirtualRoot implements RelocationObserver {
      */
     // Composition callback for Felix DM
     public Object[] getComposition() {
-        return new Object[]{this, dedicatedFileSystemFactory, dedicatedFileSystemFactory.getDirectoryFactory()};
+        return new Object[]{
+                this,
+                dedicatedFileSystemFactory,
+                dedicatedFileSystemFactory.getDirectoryFactory(),
+                dedicatedFileSystemFactory.getDiffObserverFactory()};
     }
 
     /**
@@ -161,6 +170,22 @@ public class VirtualRoot implements RelocationObserver {
         }
     }
 
+    /**
+     *
+     */
+    @Override
+    public synchronized void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) throws IOException {
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+
+        if (watchtedDirectories.replace(key, pWatchedDirectory) != null) {
+            getDedicatedFileSystem(directory).destinationChanged(
+                    pWatchedDirectory, pPrevious, observers);
+        } else {
+            LOG.warn("Directory with key {} was not mapped; nothing changed", directory);
+        }
+    }
+
     private DedicatedFileSystem getDedicatedFileSystem(final Path pPath) {
         final DedicatedFileSystem fsdirs = children.get(pPath.getFileSystem());
         if (null == fsdirs) {
@@ -217,14 +242,5 @@ public class VirtualRoot implements RelocationObserver {
      */
     void removeFileSystem(final DedicatedFileSystem pDedicatedFileSystem) {
         children.values().remove(pDedicatedFileSystem);
-    }
-
-    /**
-     * @param pWatchedDirectory The watched-directory which has a new destination, never {@code null}
-     * @param pPrevious         Previous destination, never {@code null}
-     */
-    @Override
-    public void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) {
-        // TODO: To be implemented
     }
 }

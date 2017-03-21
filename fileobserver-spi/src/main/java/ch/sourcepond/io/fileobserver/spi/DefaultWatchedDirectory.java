@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.spi;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -67,7 +69,7 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
     }
 
     @Override
-    public void relocate(final Path pDirectory) {
+    public void relocate(final Path pDirectory) throws IOException {
         validate(pDirectory);
         final Path previous = directory;
 
@@ -75,7 +77,17 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
         // different to the directory specified.
         if (!previous.equals(pDirectory)) {
             directory = pDirectory;
-            observers.forEach(o -> o.destinationChanged(this, previous));
+            try {
+                observers.forEach(o -> {
+                    try {
+                        o.destinationChanged(this, previous);
+                    } catch (final IOException e) {
+                        throw new UncheckedIOException(e.getMessage(), e);
+                    }
+                });
+            } catch (final UncheckedIOException e) {
+                throw new IOException(e.getMessage(), e);
+            }
         }
     }
 

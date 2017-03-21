@@ -41,7 +41,7 @@ public abstract class Directory {
     private static final Logger LOG = getLogger(SubDirectory.class);
 
     // TODO: Replace constant with configurable value
-    static final long TIMEOUT = 2000;
+    public static final long TIMEOUT = 2000;
     private final ConcurrentMap<Path, Resource> resources = new ConcurrentHashMap<>();
     private final WatchKey watchKey;
 
@@ -204,7 +204,7 @@ public abstract class Directory {
         final Path relativePath = relativizeAgainstRoot(pDirectoryKey, getPath());
 
         // Now, the key can be safely removed
-        if (removeDirectoryKey(pDirectoryKey)) {
+        if (removeDirectoryKey(pDirectoryKey) && !pObservers.isEmpty()) {
             final FileKey key = getFactory().newKey(pDirectoryKey, relativePath);
             pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
         }
@@ -255,8 +255,10 @@ public abstract class Directory {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
-        for (final FileKey key : createKeys(pFile)) {
-            pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
+        if (!pObservers.isEmpty()) {
+            for (final FileKey key : createKeys(pFile)) {
+                pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
+            }
         }
     }
 
@@ -270,6 +272,10 @@ public abstract class Directory {
         return getPath().equals(pOther.getPath().getParent());
     }
 
+    public Resource getResource(final Path pFile) {
+        return resources.computeIfAbsent(pFile, f -> getFactory().newResource(SHA256, pFile));
+    }
+
     /**
      * Triggers the {@link FileObserver#modified(FileKey, Path)} on all observers specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
@@ -279,23 +285,24 @@ public abstract class Directory {
      * @param pFile      File which potentially has changed, must not be {@code null}
      */
     public void informIfChanged(final Directory pNewRootOrNull, final Collection<FileObserver> pObservers, final Path pFile) {
-        // TODO: Replace interval with configurable value
-        try {
-            resources.computeIfAbsent(pFile,
-                    f -> getFactory().newResource(SHA256, pFile)).update(TIMEOUT,
-                    update -> {
-                        if (update.hasChanged()) {
-                            // If the modification is requested because a new root-directory has been registered, we
-                            // need to inform the observers about supplement keys.
-                            final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
-                                    emptyList() : pNewRootOrNull.createKeys(pFile);
+        if (!pObservers.isEmpty()) {
+            // TODO: Replace interval with configurable value
+            try {
+                getResource(pFile).update(TIMEOUT,
+                        update -> {
+                            if (update.hasChanged()) {
+                                // If the modification is requested because a new root-directory has been registered, we
+                                // need to inform the observers about supplement keys.
+                                final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
+                                        emptyList() : pNewRootOrNull.createKeys(pFile);
 
-                            final Collection<FileKey> keys = createKeys(pFile);
-                            pObservers.forEach(o -> forceModified(supplementKeys, keys, o, pFile));
-                        }
-                    });
-        } catch (final IOException e) {
-            LOG.warn(e.getMessage(), e);
+                                final Collection<FileKey> keys = createKeys(pFile);
+                                pObservers.forEach(o -> forceModified(supplementKeys, keys, o, pFile));
+                            }
+                        });
+            } catch (final IOException e) {
+                LOG.warn(e.getMessage(), e);
+            }
         }
     }
 

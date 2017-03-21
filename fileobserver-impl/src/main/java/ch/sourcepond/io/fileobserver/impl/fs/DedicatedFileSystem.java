@@ -14,6 +14,8 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -37,6 +39,7 @@ import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.nio.file.Files.readAttributes;
 import static java.nio.file.StandardWatchEventKinds.*;
+import static java.util.Arrays.asList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -52,18 +55,21 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
     private final DirectoryRegistrationWalker walker;
+    private final DiffObserverFactory diffObserverFactory;
 
     DedicatedFileSystem(final VirtualRoot pVirtualRoot,
                         final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final DirectoryRegistrationWalker pWalker,
+                        final DiffObserverFactory pDiffObserverFactory,
                         final ConcurrentMap<Path, Directory> pDirs) {
         virtualRoot = pVirtualRoot;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
         walker = pWalker;
+        diffObserverFactory = pDiffObserverFactory;
         dirs = pDirs;
         thread = new Thread(this, format("fileobserver %s", this));
     }
@@ -168,6 +174,23 @@ public class DedicatedFileSystem implements Closeable, Runnable {
 
     public Directory getDirectory(final Path pPath) {
         return dirs.get(pPath);
+    }
+
+    void destinationChanged(final WatchedDirectory pWatchedDirectory,
+                            final Path pPrevious,
+                            final Collection<FileObserver> pObservers) throws IOException {
+        final Directory dir = dirs.get(pPrevious);
+        if (dir == null) {
+            LOG.warn("Destination change has no effect because no directory found for previous path {}");
+        } else {
+            // Unregister and register watched-directory. IMPORTANT: do not
+            // inform observers at all, this will be handled later!
+            final DiffObserver observer = diffObserverFactory.createObserver(this, pObservers, pWatchedDirectory.getKey(), pPrevious);
+            final Collection<FileObserver> observers = asList(observer);
+            unregisterRootDirectory(pWatchedDirectory, observers);
+            registerRootDirectory(pWatchedDirectory, observers);
+            observer.finalizeRelocation();
+        }
     }
 
     /**

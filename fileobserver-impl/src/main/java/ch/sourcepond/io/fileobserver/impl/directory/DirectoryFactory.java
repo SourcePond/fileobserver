@@ -39,8 +39,8 @@ public class DirectoryFactory {
     private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
-    public DirectoryFactory() {
-        fileKeyFactory = new DefaultFileKeyFactory();
+    public DirectoryFactory(final DefaultFileKeyFactory pFileKeyFactory) {
+        fileKeyFactory = pFileKeyFactory;
     }
 
     // Constructor for testing
