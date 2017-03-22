@@ -17,7 +17,6 @@ import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 
@@ -35,9 +34,7 @@ public class DiffObserverFactory {
     }
 
     public DiffObserver createObserver(final DedicatedFileSystem pFs,
-                                       final Collection<FileObserver> pDelegates,
-                                       final Object pDirectoryKey,
-                                       final Path pPreviousDirectory) {
-        return new DiffObserver(keyFactory, pDirectoryKey, pFs, observerExecutor, pDelegates, pPreviousDirectory);
+                                       final Collection<FileObserver> pDelegates) {
+        return new DiffObserver(pFs, observerExecutor, pDelegates);
     }
 }

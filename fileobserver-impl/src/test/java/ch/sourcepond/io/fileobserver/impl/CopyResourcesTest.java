@@ -4,12 +4,17 @@ import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileSystem;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.UUID;
 
+import static java.lang.System.getProperty;
+import static java.nio.file.FileSystems.getDefault;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.*;
+import static java.util.UUID.randomUUID;
 
 /**
  *
@@ -18,9 +23,9 @@ public abstract class CopyResourcesTest {
     protected static final String TEST_FILE_TXT_NAME = "testfile.txt";
     protected static final String TEST_FILE_XML_NAME = "testfile_11.xml";
     protected static final String SUB_DIR_NAME = "subdir_1";
-    protected final FileSystem fs = FileSystems.getDefault();
-    private final Path sourceDir = fs.getPath(System.getProperty("user.dir"), "src", "test", "resources");
-    protected final Path root_dir_path = fs.getPath(System.getProperty("java.io.tmpdir"), getClass().getName(), UUID.randomUUID().toString());
+    protected final FileSystem fs = getDefault();
+    private final Path sourceDir = fs.getPath(getProperty("user.dir"), "src", "test", "resources");
+    protected final Path root_dir_path = fs.getPath(getProperty("java.io.tmpdir"), getClass().getName(), randomUUID().toString());
     protected Path subdir_1_path;
     protected Path subdir_11_path;
     protected Path subdir_111_path;
@@ -74,7 +79,7 @@ public abstract class CopyResourcesTest {
 
     @After
     public void deleteResources() throws IOException {
-        if (Files.exists(root_dir_path)) {
+        if (exists(root_dir_path)) {
             walkFileTree(root_dir_path, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {

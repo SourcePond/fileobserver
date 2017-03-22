@@ -17,7 +17,7 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import org.slf4j.Logger;
 
@@ -27,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 import static ch.sourcepond.io.fileobserver.impl.directory.Directory.TIMEOUT;
-import static java.nio.file.Files.walkFileTree;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -38,25 +37,16 @@ public class DiffObserver implements FileObserver {
     private final Map<FileKey, Path> modifiedKeys = new HashMap<>();
     private final Set<FileKey> discardedKeys = new HashSet<>();
     private final Map<FileKey, Collection<FileKey>> supplementKeys = new HashMap<>();
-    private final DefaultFileKeyFactory keyFactory;
-    private final Object directoryKey;
     private final DedicatedFileSystem fs;
     private final ExecutorService observerExecutor;
     private final Collection<FileObserver> delegates;
-    private final Path previousDirectory;
 
-    DiffObserver(final DefaultFileKeyFactory pKeyFactory,
-                 final Object pDirectoryKey,
-                 final DedicatedFileSystem pFs,
+    DiffObserver(final DedicatedFileSystem pFs,
                  final ExecutorService pObserverExecutor,
-                 final Collection<FileObserver> pDelegates,
-                 final Path pPreviousWatchedDirectory) {
-        keyFactory = pKeyFactory;
-        directoryKey = pDirectoryKey;
+                 final Collection<FileObserver> pDelegates) {
         fs = pFs;
         observerExecutor = pObserverExecutor;
         delegates = pDelegates;
-        previousDirectory = pPreviousWatchedDirectory;
     }
 
     private void informDiscard(final FileKey pKey) {
@@ -88,24 +78,29 @@ public class DiffObserver implements FileObserver {
     }
 
     private Resource getResource(final Path pFile) {
-        return fs.getDirectory(pFile.getParent()).getResource(pFile);
+        final Directory dir = fs.getDirectory(pFile.getParent());
+        if (dir == null) {
+            LOG.warn("Checksum update cancelled because no directory registered for {}", pFile);
+            return null;
+        }
+        return dir.getResource(pFile);
     }
 
     private void updateResource(final FileKey pKey, final Path pFile) {
-        try {
-            getResource(pFile).update(TIMEOUT, u -> informModified(u, pKey, pFile));
-        } catch (final IOException e) {
-            LOG.warn(e.getMessage(), e);
+        final Resource resource = getResource(pFile);
+        if (resource != null) {
+            try {
+                getResource(pFile).update(TIMEOUT, u -> informModified(u, pKey, pFile));
+            } catch (final IOException e) {
+                LOG.warn(e.getMessage(), e);
+            }
         }
     }
 
     public void finalizeRelocation() throws IOException {
-        final DirectoryContent previousContent =new DirectoryContent(keyFactory, directoryKey, previousDirectory);
-        walkFileTree(previousDirectory, previousContent);
         modifiedKeys.forEach(this::updateResource);
-        final Set<FileKey> previousKeys = previousContent.getKeys();
-        previousKeys.removeAll(modifiedKeys.entrySet());
-        previousKeys.forEach(this::informDiscard);
+        discardedKeys.removeAll(modifiedKeys.keySet());
+        discardedKeys.forEach(this::informDiscard);
     }
 
     @Override

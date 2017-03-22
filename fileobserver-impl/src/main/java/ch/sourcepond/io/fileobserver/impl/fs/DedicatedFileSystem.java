@@ -185,7 +185,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         } else {
             // Unregister and register watched-directory. IMPORTANT: do not
             // inform observers at all, this will be handled later!
-            final DiffObserver observer = diffObserverFactory.createObserver(this, pObservers, pWatchedDirectory.getKey(), pPrevious);
+            final DiffObserver observer = diffObserverFactory.createObserver(this, pObservers);
             final Collection<FileObserver> observers = asList(observer);
             unregisterRootDirectory(pWatchedDirectory, observers);
             registerRootDirectory(pWatchedDirectory, observers);
