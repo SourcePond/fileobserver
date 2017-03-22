@@ -29,11 +29,7 @@ import static org.mockito.Mockito.*;
  *
  */
 public class WatchedDirectoryTest {
-
-    private enum TestKey {
-        TEST_KEY
-    }
-
+    private static final String TEST_KEY = "TEST_KEY";
     private final Path path = mock(Path.class);
     private final Path newPath = mock(Path.class);
     private final BasicFileAttributes attrs = mock(BasicFileAttributes.class);
@@ -52,7 +48,7 @@ public class WatchedDirectoryTest {
         when(fs.provider()).thenReturn(provider);
         when(attrs.isDirectory()).thenReturn(true);
         when(newAttrs.isDirectory()).thenReturn(true);
-        dir = WatchedDirectory.create(TestKey.TEST_KEY, path);
+        dir = WatchedDirectory.create(TEST_KEY, path);
         dir.addObserver(observer);
     }
 
@@ -63,18 +59,31 @@ public class WatchedDirectoryTest {
 
     @Test(expected = NullPointerException.class)
     public void createDirectoryIsNull() {
-        WatchedDirectory.create(TestKey.TEST_KEY, null);
+        WatchedDirectory.create(TEST_KEY, null);
     }
 
     @Test
     public void create() {
-        assertSame(TestKey.TEST_KEY, dir.getKey());
+        assertSame(TEST_KEY, dir.getKey());
         assertSame(path, dir.getDirectory());
     }
 
     @Test(expected = NullPointerException.class)
     public void addNullObserver() {
         dir.addObserver(null);
+    }
+
+    @Test
+    public void removeNullObserver() {
+        // No exception should be caused to be thrown
+        dir.removeObserver(null);
+    }
+
+    @Test
+    public void removeObserver() throws IOException {
+        dir.removeObserver(observer);
+        dir.relocate(newPath);
+        verify(observer, never()).destinationChanged(any(), any());
     }
 
     @Test
@@ -102,8 +111,14 @@ public class WatchedDirectoryTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void relocatePathIsNotADirectory() throws  IOException {
+    public void relocatePathIsNotADirectory() throws IOException {
         when(newAttrs.isDirectory()).thenReturn(false);
         dir.relocate(newPath);
+    }
+
+    @Test
+    public void verifyToString() {
+        assertTrue(dir.toString().contains(TEST_KEY));
+        assertTrue(dir.toString().contains(path.toString()));
     }
 }
