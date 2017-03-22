@@ -24,6 +24,7 @@ import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -61,6 +62,9 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Directory subdir_21 = mock(Directory.class);
     private final Directory subdir_211 = mock(Directory.class);
     private final Directory subdir_22 = mock(Directory.class);
+    private final FileKey supplementKey1 = mock(FileKey.class);
+    private final FileKey supplementKey2 = mock(FileKey.class);
+    private final FileKey supplementKey3 = mock(FileKey.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
     private final DiffObserverFactory factory = new DiffObserverFactory(observerExecutor);
@@ -129,7 +133,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     }
 
     @Test
-    public void verfiyDefaultFactoryConstructor() {
+    public void verifyDefaultFactoryConstructor() {
         new DiffObserverFactory();
     }
 
@@ -234,6 +238,28 @@ public class DiffObserverTest extends CopyResourcesTest {
         verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
         verifyNoMoreInteractions(observer);
     }
+
+    @Test
+    public void insureInformAboutSupplementKeys() throws Exception {
+        when(update.hasChanged()).thenReturn(true);
+        informDiscard(subdir_111_path);
+
+        final FileKey key = key(subdir_111_path, testfile_1111_txt_path);
+        diff.supplement(key, supplementKey1);
+        diff.supplement(key, supplementKey2);
+        diff.supplement(key, supplementKey3);
+
+        informModified(subdir_111_path);
+        diff.finalizeRelocation();
+
+        final InOrder order = inOrder(observer);
+        order.verify(observer).supplement(key, supplementKey1);
+        order.verify(observer).supplement(key, supplementKey2);
+        order.verify(observer).supplement(key, supplementKey3);
+        order.verify(observer).modified(key,testfile_1111_txt_path);
+        verifyNoMoreInteractions(observer);
+    }
+
 
     @Test
     public void noResourcesRegisteredForDirectories() throws Exception {

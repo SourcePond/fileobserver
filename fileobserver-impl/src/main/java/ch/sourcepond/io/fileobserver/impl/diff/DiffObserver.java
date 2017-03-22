@@ -115,6 +115,6 @@ public class DiffObserver implements FileObserver {
 
     @Override
     public void supplement(final FileKey pKnownKey, final FileKey pAdditionalKey) {
-        supplementKeys.computeIfAbsent(pKnownKey, k -> new HashSet<FileKey>()).add(pAdditionalKey);
+        supplementKeys.computeIfAbsent(pKnownKey, k -> new LinkedHashSet<FileKey>()).add(pAdditionalKey);
     }
 }
