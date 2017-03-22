@@ -77,22 +77,26 @@ public abstract class CopyResourcesTest {
         testfile_txt_path = root_dir_path.resolve("testfile.txt");
     }
 
+    protected void deleteDirectory(final Path pDirectory) throws IOException {
+        walkFileTree(pDirectory, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                delete(file);
+                return CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
+                delete(dir);
+                return CONTINUE;
+            }
+        });
+    }
+
     @After
     public void deleteResources() throws IOException {
         if (exists(root_dir_path)) {
-            walkFileTree(root_dir_path, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                    delete(file);
-                    return CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
-                    delete(dir);
-                    return CONTINUE;
-                }
-            });
+            deleteDirectory(root_dir_path);
         }
     }
 }

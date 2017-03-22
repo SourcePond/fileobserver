@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 import static ch.sourcepond.io.fileobserver.impl.directory.Directory.TIMEOUT;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -38,11 +38,11 @@ public class DiffObserver implements FileObserver {
     private final Set<FileKey> discardedKeys = new HashSet<>();
     private final Map<FileKey, Collection<FileKey>> supplementKeys = new HashMap<>();
     private final DedicatedFileSystem fs;
-    private final ExecutorService observerExecutor;
+    private final Executor observerExecutor;
     private final Collection<FileObserver> delegates;
 
     DiffObserver(final DedicatedFileSystem pFs,
-                 final ExecutorService pObserverExecutor,
+                 final Executor pObserverExecutor,
                  final Collection<FileObserver> pDelegates) {
         fs = pFs;
         observerExecutor = pObserverExecutor;

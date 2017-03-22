@@ -22,7 +22,6 @@ import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,14 +31,14 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 import static ch.sourcepond.io.fileobserver.impl.directory.Directory.TIMEOUT;
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.file.FileVisitResult.CONTINUE;
+import static java.nio.file.Files.delete;
 import static java.nio.file.Files.walkFileTree;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
 
@@ -50,7 +49,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private static final Object DIRECTORY_KEY = "directoryKey";
     private final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
     private final DedicatedFileSystem fs = mock(DedicatedFileSystem.class);
-    private final ExecutorService observerExecutor = newSingleThreadExecutor();
+    private final Executor observerExecutor = directExecutor();
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
     private final Directory root_dir = mock(Directory.class);
@@ -64,6 +63,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Directory subdir_22 = mock(Directory.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
+    private final DiffObserverFactory factory = new DiffObserverFactory(keyFactory, observerExecutor);
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {
@@ -92,15 +92,19 @@ public class DiffObserverTest extends CopyResourcesTest {
         return keyFactory.newKey(DIRECTORY_KEY, pRoot.relativize(pFile));
     }
 
-    @Before
-    public void setup() throws Exception {
+    private void setupUpdate(final Resource pResource, final Update pUpdate, boolean pHasChanged) throws Exception {
+        when(pUpdate.hasChanged()).thenReturn(pHasChanged);
         doAnswer(inv -> {
             final UpdateObserver obsrv = (UpdateObserver) inv.getArgument(1);
-            obsrv.done(update);
+            obsrv.done(pUpdate);
             return null;
-        }).when(resource).update(eq(TIMEOUT), notNull());
+        }).when(pResource).update(eq(TIMEOUT), notNull());
+    }
 
-        diff = new DiffObserver(fs, observerExecutor, observers);
+    @Before
+    public void setup() throws Exception {
+        setupUpdate(resource, update, true);
+
         when(fs.getDirectory(root_dir_path)).thenReturn(root_dir);
         when(fs.getDirectory(subdir_1_path)).thenReturn(subdir_1);
         when(fs.getDirectory(subdir_11_path)).thenReturn(subdir_11);
@@ -120,11 +124,13 @@ public class DiffObserverTest extends CopyResourcesTest {
         when(subdir_21.getResource(notNull())).thenReturn(resource);
         when(subdir_211.getResource(notNull())).thenReturn(resource);
         when(subdir_22.getResource(notNull())).thenReturn(resource);
+
+        diff = factory.createObserver(fs, observers);
     }
 
-    @After
-    public void tearDown() throws Exception {
-        observerExecutor.shutdown();
+    @Test
+    public void verfiyDefaultFactoryConstructor() {
+        new DiffObserverFactory(keyFactory);
     }
 
     @Test
@@ -146,4 +152,86 @@ public class DiffObserverTest extends CopyResourcesTest {
         verifyNoMoreInteractions(observer);
     }
 
+    @Test
+    public void directoriesDiscardedAfterRelocate() throws Exception {
+        when(update.hasChanged()).thenReturn(true);
+        informDiscard(root_dir_path);
+        deleteDirectory(subdir_11_path);
+        deleteDirectory(subdir_2_path);
+        informModified(root_dir_path);
+
+        diff.finalizeRelocation();
+        verify(observer).discard(key(root_dir_path, testfile_1111_txt_path));
+        verify(observer).discard(key(root_dir_path, testfile_111_txt_path));
+        verify(observer).discard(key(root_dir_path, testfile_2111_txt_path));
+        verify(observer).discard(key(root_dir_path, testfile_211_txt_path));
+        verify(observer).discard(key(root_dir_path, testfile_221_txt_path));
+        verify(observer).discard(key(root_dir_path, testfile_21_xml_path));
+        verify(observer).modified(key(root_dir_path, testfile_121_txt_path), testfile_121_txt_path);
+        verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
+        verify(observer).modified(key(root_dir_path, testfile_txt_path), testfile_txt_path);
+        verifyNoMoreInteractions(observer);
+    }
+
+
+    @Test
+    public void filesDiscardedAfterRelocate() throws Exception {
+        when(update.hasChanged()).thenReturn(true);
+        informDiscard(root_dir_path);
+
+        delete(testfile_1111_txt_path);
+        delete(testfile_121_txt_path);
+        delete(testfile_221_txt_path);
+        delete(testfile_txt_path);
+
+        informModified(root_dir_path);
+
+        diff.finalizeRelocation();
+        verify(observer).discard(key(root_dir_path, testfile_1111_txt_path));
+        verify(observer).discard(key(root_dir_path, testfile_121_txt_path));
+        verify(observer).discard(key(root_dir_path, testfile_221_txt_path));
+        verify(observer).discard(key(root_dir_path, testfile_txt_path));
+        verify(observer).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
+        verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
+        verify(observer).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
+        verify(observer).modified(key(root_dir_path, testfile_211_txt_path), testfile_211_txt_path);
+        verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
+        verifyNoMoreInteractions(observer);
+    }
+
+
+    @Test
+    public void doOnlyModifyThoseWhichHaveChanged() throws Exception {
+        final Resource resource_testfile_1111_txt = mock(Resource.class);
+        final Resource resource_testfile_121_txt = mock(Resource.class);
+        final Resource resource_testfile_211_txt = mock(Resource.class);
+        final Resource resource_testfile_txt = mock(Resource.class);
+
+        when(subdir_111.getResource(testfile_1111_txt_path)).thenReturn(resource_testfile_1111_txt);
+        when(subdir_12.getResource(testfile_121_txt_path)).thenReturn(resource_testfile_121_txt);
+        when(subdir_21.getResource(testfile_211_txt_path)).thenReturn(resource_testfile_211_txt);
+        when(root_dir.getResource(testfile_txt_path)).thenReturn(resource_testfile_txt);
+
+        final Update update_testfile_1111_txt = mock(Update.class);
+        final Update update_testfile_121_txt = mock(Update.class);
+        final Update update_testfile_211_txt = mock(Update.class);
+        final Update update_testfile_txt = mock(Update.class);
+
+        setupUpdate(resource_testfile_1111_txt, update_testfile_1111_txt, false);
+        setupUpdate(resource_testfile_121_txt, update_testfile_121_txt, false);
+        setupUpdate(resource_testfile_211_txt, update_testfile_211_txt, false);
+        setupUpdate(resource_testfile_txt, update_testfile_txt, false);
+
+
+        informDiscard(root_dir_path);
+        informModified(root_dir_path);
+
+        diff.finalizeRelocation();
+        verify(observer).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
+        verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
+        verify(observer).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
+        verify(observer).modified(key(root_dir_path, testfile_221_txt_path), testfile_221_txt_path);
+        verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
+        verifyNoMoreInteractions(observer);
+    }
 }

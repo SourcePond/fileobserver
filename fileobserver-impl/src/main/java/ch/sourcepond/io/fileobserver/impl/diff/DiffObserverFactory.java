@@ -18,7 +18,7 @@ import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 /**
  *
@@ -26,11 +26,18 @@ import java.util.concurrent.ExecutorService;
 public class DiffObserverFactory {
 
     // Injected by Felix DM; this field must not be renamed!
-    private volatile ExecutorService observerExecutor;
+    private volatile Executor observerExecutor;
     private final DefaultFileKeyFactory keyFactory;
 
+    // Constructor for Bundle-Activator
     public DiffObserverFactory(final DefaultFileKeyFactory pKeyFactory) {
         keyFactory = pKeyFactory;
+    }
+
+    // Constructor for testing
+    DiffObserverFactory(final DefaultFileKeyFactory pKeyFactory, final Executor pObserverExecutor) {
+        keyFactory = pKeyFactory;
+        observerExecutor = pObserverExecutor;
     }
 
     public DiffObserver createObserver(final DedicatedFileSystem pFs,
