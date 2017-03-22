@@ -65,9 +65,7 @@ public class WatchServiceWrapper implements Closeable {
     public WatchKey register(final Path pDirectory) throws IOException {
         try {
             final WatchKey key = pDirectory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(format("Added Directory %s", pDirectory));
-            }
+            LOG.debug("Added Directory {}", pDirectory);
             return key;
         } catch (final ClosedWatchServiceException e) {
             throw new IOException(format("Closed WatchService! Registration failed for %s", pDirectory), e);
