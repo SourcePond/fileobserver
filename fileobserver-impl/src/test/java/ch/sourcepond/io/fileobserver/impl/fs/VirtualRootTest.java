@@ -257,4 +257,49 @@ public class VirtualRootTest {
         virtualRoot.addObserver(otherObserver);
         verifyZeroInteractions(otherObserver);
     }
+
+    @Test(expected = NullPointerException.class)
+    public void destintationChangeWatchedDirectoryIsNull() throws IOException {
+        virtualRoot.destinationChanged(null, directory);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void destintationChangePreviousDirectoryIsNull() throws IOException {
+        virtualRoot.destinationChanged(watchedDir, null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void destintationChangeKeyIsNull() throws IOException {
+        when(watchedDir.getKey()).thenReturn(null);
+        virtualRoot.destinationChanged(watchedDir, directory);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void destintationChangeCurrentDirIsNull() throws IOException {
+        when(watchedDir.getDirectory()).thenReturn(null);
+        virtualRoot.destinationChanged(watchedDir, directory);
+    }
+
+    @Test
+    public void destintationChangeDirectoryNotMapped() throws IOException {
+        virtualRoot.removeRoot(watchedDir);
+
+        // This should not cause an exception
+        virtualRoot.destinationChanged(watchedDir, directory);
+        verify(dedicatedFs, never()).destinationChanged(any(), any(), any());
+    }
+
+    @Test
+    public void destintationChangePreviousAndCurrentDirAreEqual() throws IOException {
+        virtualRoot.destinationChanged(watchedDir, directory);
+        verify(dedicatedFs, never()).destinationChanged(any(), any(), any());
+    }
+
+    @Test
+    public void destintationChange() throws IOException {
+        final Path newDirectory = mock(Path.class);
+        virtualRoot.destinationChanged(watchedDir, newDirectory);
+        verify(dedicatedFs).destinationChanged(same(watchedDir), same(newDirectory), matchObservers());
+    }
+
 }

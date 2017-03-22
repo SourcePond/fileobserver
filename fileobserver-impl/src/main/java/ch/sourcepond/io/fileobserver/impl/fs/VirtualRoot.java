@@ -44,6 +44,7 @@ public class VirtualRoot implements RelocationObserver {
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
     public static final String KEY_IS_NULL = "Key is null";
     public static final String DIRECTORY_IS_NULL = "Directory is null";
+    public static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = newKeySet();
@@ -119,7 +120,7 @@ public class VirtualRoot implements RelocationObserver {
     // This method must be synchronized because all sub-directories need to be
     // registered before another WatchedDirectory is being registered.
     public synchronized void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
-        requireNonNull(pWatchedDirectory, "Watched directory is null");
+        requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
         final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
@@ -153,7 +154,7 @@ public class VirtualRoot implements RelocationObserver {
     // This method must be synchronized because all sub-directories need to be
     // discarded before another WatchedDirectory is being unregistered.
     synchronized void removeRoot(final WatchedDirectory pWatchedDirectory) {
-        requireNonNull(pWatchedDirectory, "Watched directory is null");
+        requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
         final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
@@ -177,12 +178,18 @@ public class VirtualRoot implements RelocationObserver {
      */
     @Override
     public synchronized void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) throws IOException {
+        requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
+        requireNonNull(pPrevious, "Previous directory is null");
         final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
         if (watchtedDirectories.replace(key, pWatchedDirectory) != null) {
-            getDedicatedFileSystem(directory).destinationChanged(
-                    pWatchedDirectory, pPrevious, observers);
+            if (pPrevious.equals(directory)) {
+                LOG.info("Nothing changed; skipped destination change for {}", pPrevious);
+            } else {
+                getDedicatedFileSystem(directory).destinationChanged(
+                        pWatchedDirectory, pPrevious, observers);
+            }
         } else {
             LOG.warn("Directory with key {} was not mapped; nothing changed", directory);
         }

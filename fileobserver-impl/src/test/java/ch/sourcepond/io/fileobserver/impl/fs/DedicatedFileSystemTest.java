@@ -1,6 +1,7 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserver;
 import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -213,5 +215,27 @@ public class DedicatedFileSystemTest {
         fs.start();
         doThrow(expected).when(wrapper).take();
         close();
+    }
+
+    @Test
+    public void destinationChangedDirectoryNotRegistered() throws IOException {
+        final Path previous = mock(Path.class);
+
+        // This should not cause an exception
+        fs.destinationChanged(watchedDirectory1, previous, observers);
+    }
+
+    @Test
+    public void destinationChanged() throws IOException {
+        final DiffObserver diff = mock(DiffObserver.class);
+        when(diffObserverFactory.createObserver(fs, observers)).thenReturn(diff);
+
+        fs.registerRootDirectory(watchedDirectory1, observers);
+        fs.destinationChanged(watchedDirectory1, rootDirPath1, observers);
+
+        final InOrder order = inOrder(rootDir1, walker, diff);
+        order.verify(rootDir1).removeDirectoryKey(same(DIRECTORY_KEY_1), argThat(inv -> inv.size() == 1 && inv.contains(diff)));
+        order.verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
+        order.verify(diff).finalizeRelocation();
     }
 }
