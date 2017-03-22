@@ -21,7 +21,7 @@ import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 /**
  * Created by rolandhauser on 08.02.17.
@@ -30,10 +30,10 @@ public class DirectoryFactory {
     private final DefaultFileKeyFactory fileKeyFactory;
 
     // Injected by Felix DM; this field must not be renamed!
-    private volatile ExecutorService directoryWalkerExecutor;
+    private volatile Executor directoryWalkerExecutor;
 
     // Injected by Felix DM; this field must not be renamed!
-    private volatile ExecutorService observerExecutor;
+    private volatile Executor observerExecutor;
 
     // Injected by Felix DM
     private volatile ResourcesFactory resourcesFactory;
@@ -46,8 +46,8 @@ public class DirectoryFactory {
     // Constructor for testing
     public DirectoryFactory(final ResourcesFactory pResourcesFactory,
                             final DefaultFileKeyFactory pFileKeyFactory,
-                            final ExecutorService pDirectoryWalkerExecutor,
-                            final ExecutorService pObserverExecutor) {
+                            final Executor pDirectoryWalkerExecutor,
+                            final Executor pObserverExecutor) {
         resourcesFactory = pResourcesFactory;
         fileKeyFactory = pFileKeyFactory;
         directoryWalkerExecutor = pDirectoryWalkerExecutor;

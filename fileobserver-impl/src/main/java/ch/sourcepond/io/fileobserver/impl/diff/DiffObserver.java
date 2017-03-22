@@ -90,7 +90,7 @@ public class DiffObserver implements FileObserver {
         final Resource resource = getResource(pFile);
         if (resource != null) {
             try {
-                getResource(pFile).update(TIMEOUT, u -> informModified(u, pKey, pFile));
+                resource.update(TIMEOUT, u -> informModified(u, pKey, pFile));
             } catch (final IOException e) {
                 LOG.warn(e.getMessage(), e);
             }

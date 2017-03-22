@@ -14,7 +14,6 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.diff;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 
 import java.util.Collection;
@@ -27,16 +26,13 @@ public class DiffObserverFactory {
 
     // Injected by Felix DM; this field must not be renamed!
     private volatile Executor observerExecutor;
-    private final DefaultFileKeyFactory keyFactory;
 
     // Constructor for Bundle-Activator
-    public DiffObserverFactory(final DefaultFileKeyFactory pKeyFactory) {
-        keyFactory = pKeyFactory;
+    public DiffObserverFactory() {
     }
 
     // Constructor for testing
-    DiffObserverFactory(final DefaultFileKeyFactory pKeyFactory, final Executor pObserverExecutor) {
-        keyFactory = pKeyFactory;
+    DiffObserverFactory(final Executor pObserverExecutor) {
         observerExecutor = pObserverExecutor;
     }
 

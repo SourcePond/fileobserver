@@ -24,12 +24,12 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 import static ch.sourcepond.io.fileobserver.impl.directory.Directory.TIMEOUT;
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.file.FileSystems.getDefault;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
@@ -41,8 +41,8 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     static final Object ROOT_DIR_KEY = "rootDirKey";
     static final Object SUB_DIR_KEY1 = "subDirKey1";
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
-    final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
-    final ExecutorService observerExecutor = newSingleThreadExecutor();
+    final Executor directoryWalkerExecutor = directExecutor();
+    final Executor observerExecutor = directExecutor();
     final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
     final DirectoryFactory factory = new DirectoryFactory(
             resourcesFactory,
@@ -62,8 +62,6 @@ public abstract class DirectoryTest extends CopyResourcesTest {
 
     @After
     public void shutdownExecutor() {
-        observerExecutor.shutdown();
-        directoryWalkerExecutor.shutdown();
         wrapper.close();
     }
 

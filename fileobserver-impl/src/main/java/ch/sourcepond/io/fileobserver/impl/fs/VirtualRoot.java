@@ -42,6 +42,8 @@ import static java.util.concurrent.ConcurrentHashMap.newKeySet;
  */
 public class VirtualRoot implements RelocationObserver {
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
+    public static final String KEY_IS_NULL = "Key is null";
+    public static final String DIRECTORY_IS_NULL = "Directory is null";
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = newKeySet();
@@ -53,7 +55,7 @@ public class VirtualRoot implements RelocationObserver {
         final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
-                new DiffObserverFactory(keyFactory));
+                new DiffObserverFactory());
     }
 
     // Constructor for BundleActivator
@@ -118,8 +120,8 @@ public class VirtualRoot implements RelocationObserver {
     // registered before another WatchedDirectory is being registered.
     public synchronized void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
         requireNonNull(pWatchedDirectory, "Watched directory is null");
-        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
-        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
         if (!isDirectory(directory)) {
             throw new IllegalArgumentException(format("[%s]: %s is not a directory!", key, directory));
@@ -152,8 +154,8 @@ public class VirtualRoot implements RelocationObserver {
     // discarded before another WatchedDirectory is being unregistered.
     synchronized void removeRoot(final WatchedDirectory pWatchedDirectory) {
         requireNonNull(pWatchedDirectory, "Watched directory is null");
-        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
-        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
         // It's already checked that nothing is null
         final DedicatedFileSystem fs = children.get(directory.getFileSystem());
@@ -175,8 +177,8 @@ public class VirtualRoot implements RelocationObserver {
      */
     @Override
     public synchronized void destinationChanged(final WatchedDirectory pWatchedDirectory, final Path pPrevious) throws IOException {
-        final Object key = requireNonNull(pWatchedDirectory.getKey(), "Key is null");
-        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), "Directory is null");
+        final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
+        final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
         if (watchtedDirectories.replace(key, pWatchedDirectory) != null) {
             getDedicatedFileSystem(directory).destinationChanged(

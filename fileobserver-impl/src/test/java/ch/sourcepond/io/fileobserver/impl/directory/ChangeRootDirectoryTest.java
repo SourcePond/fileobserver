@@ -68,10 +68,10 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
         existing_root_11.informIfChanged(new_root, observers, testfile_111_txt_path);
         existing_root_12.informIfChanged(new_root, observers, testfile_121_txt_path);
         final InOrder order = inOrder(observer);
-        order.verify(observer, timeout(200)).supplement(toKey(SUB_DIR_KEY1, subdir_11_path, testfile_111_txt_path), toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path));
-        order.verify(observer, timeout(200)).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path), eq(testfile_111_txt_path));
-        order.verify(observer, timeout(200)).supplement(toKey(SUB_DIR_KEY2, subdir_12_path, testfile_121_txt_path), toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path));
-        order.verify(observer, timeout(200)).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path), eq(testfile_121_txt_path));
+        order.verify(observer).supplement(toKey(SUB_DIR_KEY1, subdir_11_path, testfile_111_txt_path), toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path));
+        order.verify(observer).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path), eq(testfile_111_txt_path));
+        order.verify(observer).supplement(toKey(SUB_DIR_KEY2, subdir_12_path, testfile_121_txt_path), toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path));
+        order.verify(observer).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path), eq(testfile_121_txt_path));
         order.verifyNoMoreInteractions();
     }
 
@@ -79,13 +79,13 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
     public void forceInformModifiedAfterSubRootUnregistration() throws IOException {
         existing_root_11.removeDirectoryKey(SUB_DIR_KEY1, observers);
         existing_root_12.removeDirectoryKey(SUB_DIR_KEY2, observers);
-        verify(observer, timeout(200)).discard(toKey(SUB_DIR_KEY1, subdir_11_path, subdir_11_path));
-        verify(observer, timeout(200)).discard(toKey(SUB_DIR_KEY2, subdir_12_path, subdir_12_path));
+        verify(observer).discard(toKey(SUB_DIR_KEY1, subdir_11_path, subdir_11_path));
+        verify(observer).discard(toKey(SUB_DIR_KEY2, subdir_12_path, subdir_12_path));
         existing_root_11.informIfChanged(new_root, observers, testfile_111_txt_path);
         existing_root_12.informIfChanged(new_root, observers, testfile_121_txt_path);
         final InOrder order = inOrder(observer);
-        order.verify(observer, timeout(200)).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path), eq(testfile_111_txt_path));
-        order.verify(observer, timeout(200)).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path), eq(testfile_121_txt_path));
+        order.verify(observer).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path), eq(testfile_111_txt_path));
+        order.verify(observer).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path), eq(testfile_121_txt_path));
         order.verifyNoMoreInteractions();
     }
 }

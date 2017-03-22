@@ -63,7 +63,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Directory subdir_22 = mock(Directory.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
-    private final DiffObserverFactory factory = new DiffObserverFactory(keyFactory, observerExecutor);
+    private final DiffObserverFactory factory = new DiffObserverFactory(observerExecutor);
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {
@@ -130,7 +130,7 @@ public class DiffObserverTest extends CopyResourcesTest {
 
     @Test
     public void verfiyDefaultFactoryConstructor() {
-        new DiffObserverFactory(keyFactory);
+        new DiffObserverFactory();
     }
 
     @Test
