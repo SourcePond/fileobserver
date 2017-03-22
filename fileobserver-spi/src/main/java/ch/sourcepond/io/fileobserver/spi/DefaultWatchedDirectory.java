@@ -78,16 +78,18 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
         if (!previous.equals(pDirectory)) {
             directory = pDirectory;
             try {
-                observers.forEach(o -> {
-                    try {
-                        o.destinationChanged(this, previous);
-                    } catch (final IOException e) {
-                        throw new UncheckedIOException(e.getMessage(), e);
-                    }
-                });
+                observers.forEach(o -> destinationChange(o, previous));
             } catch (final UncheckedIOException e) {
                 throw new IOException(e.getMessage(), e);
             }
+        }
+    }
+
+    private void destinationChange(final RelocationObserver pObserver, final Path pPrevious) {
+        try {
+            pObserver.destinationChanged(this, pPrevious);
+        } catch (final IOException e) {
+            throw new UncheckedIOException(e.getMessage(), e);
         }
     }
 

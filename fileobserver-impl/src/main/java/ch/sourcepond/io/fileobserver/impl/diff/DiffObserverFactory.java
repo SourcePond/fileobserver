@@ -27,8 +27,8 @@ public class DiffObserverFactory {
     // Injected by Felix DM; this field must not be renamed!
     private volatile Executor observerExecutor;
 
-    // Constructor for Bundle-Activator
     public DiffObserverFactory() {
+        // Constructor for Bundle-Activator
     }
 
     // Constructor for testing

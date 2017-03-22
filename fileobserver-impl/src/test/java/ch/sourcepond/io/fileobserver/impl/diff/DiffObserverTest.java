@@ -234,4 +234,26 @@ public class DiffObserverTest extends CopyResourcesTest {
         verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
         verifyNoMoreInteractions(observer);
     }
+
+    @Test
+    public void noResourcesRegisteredForDirectories() throws Exception {
+        when(fs.getDirectory(root_dir_path)).thenReturn(null);
+        when(fs.getDirectory(subdir_1_path)).thenReturn(null);
+        when(fs.getDirectory(subdir_11_path)).thenReturn(null);
+        when(fs.getDirectory(subdir_111_path)).thenReturn(null);
+        when(fs.getDirectory(subdir_12_path)).thenReturn(null);
+        when(fs.getDirectory(subdir_2_path)).thenReturn(null);
+        when(fs.getDirectory(subdir_21_path)).thenReturn(null);
+        when(fs.getDirectory(subdir_211_path)).thenReturn(null);
+        when(fs.getDirectory(subdir_22_path)).thenReturn(null);
+
+        informDiscard(root_dir_path);
+        informModified(root_dir_path);
+
+        // This should not cause an exception
+        diff.finalizeRelocation();
+        verifyNoMoreInteractions(observer);
+    }
+
+
 }
