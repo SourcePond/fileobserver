@@ -3,12 +3,12 @@
 	<parent>
 		<groupId>ch.sourcepond</groupId>
 		<artifactId>bundle</artifactId>
-		<version>0.7.5</version>
+		<version>0.7.7</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ch.sourcepond.io</groupId>
 	<artifactId>fileobserver</artifactId>
-	<version>0.9-SNAPSHOT</version>
+	<version>1.0-SNAPSHOT</version>
 	<inceptionYear>2017</inceptionYear>
 	<packaging>pom</packaging>
 	<description>
@@ -17,8 +17,8 @@
 
 	<properties>
 		<repo.domain>${project.artifactId}</repo.domain>
-		<checksum.version>2.0.1</checksum.version>
-		<smartswitch.version>3.0.0</smartswitch.version>
+		<checksum.version>2.0.3</checksum.version>
+		<smartswitch.version>4.0.1</smartswitch.version>
 	</properties>
 
 

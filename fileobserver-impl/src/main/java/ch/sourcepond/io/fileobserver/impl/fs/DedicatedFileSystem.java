@@ -50,14 +50,14 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final ConcurrentMap<Path, FileTime> timestamps = new ConcurrentHashMap<>();
     private final ConcurrentMap<Path, Directory> dirs;
     private final Thread thread;
-    private final VirtualRoot virtualRoot;
+    private final ch.sourcepond.io.fileobserver.impl.VirtualRoot virtualRoot;
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
     private final DirectoryRegistrationWalker walker;
     private final DiffObserverFactory diffObserverFactory;
 
-    DedicatedFileSystem(final VirtualRoot pVirtualRoot,
+    DedicatedFileSystem(final ch.sourcepond.io.fileobserver.impl.VirtualRoot pVirtualRoot,
                         final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
@@ -94,7 +94,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * @param pWatchedDirectory
      * @param pObservers
      */
-    void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
+    public void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
                                final Collection<FileObserver> pObservers)
             throws IOException {
         // It's already checked that the directory is not null
@@ -125,7 +125,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * @param pWatchedDirectory
      * @param pObservers
      */
-    void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
+    public void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
                                  final Collection<FileObserver> pObservers) {
         // It's already checked that the directory-key and the directory are not null
         final Directory dir = dirs.get(pWatchedDirectory.getDirectory());
@@ -151,7 +151,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * @param pDirectory Newly created directory, must not be {@code null}
      * @param pObservers Observers to be informed about detected files, must not be {@code null}
      */
-    void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObservers) {
+    public void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObservers) {
         walker.directoryCreated(pDirectory, pObservers);
     }
 
@@ -176,7 +176,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         return dirs.get(pPath);
     }
 
-    void destinationChanged(final WatchedDirectory pWatchedDirectory,
+    public void destinationChanged(final WatchedDirectory pWatchedDirectory,
                             final Path pPrevious,
                             final Collection<FileObserver> pObservers) throws IOException {
         final Directory dir = dirs.get(pPrevious);

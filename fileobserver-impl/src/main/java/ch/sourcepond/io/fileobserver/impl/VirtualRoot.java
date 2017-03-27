@@ -11,15 +11,24 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.fs;
+package ch.sourcepond.io.fileobserver.impl;
 
+import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
+import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.metatype.annotations.Designate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,22 +38,25 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
+import static org.osgi.service.component.annotations.ReferenceCardinality.MULTIPLE;
+import static org.osgi.service.component.annotations.ReferencePolicy.DYNAMIC;
 
 /**
  *
  */
+@Component(service = {})
+@Designate(ocd = Config.class)
 public class VirtualRoot implements RelocationObserver {
     private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
-    public static final String KEY_IS_NULL = "Key is null";
-    public static final String DIRECTORY_IS_NULL = "Directory is null";
-    public static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
+    private static final String KEY_IS_NULL = "Key is null";
+    private static final String DIRECTORY_IS_NULL = "Directory is null";
+    private static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = newKeySet();
@@ -59,24 +71,35 @@ public class VirtualRoot implements RelocationObserver {
                 new DiffObserverFactory());
     }
 
-    // Constructor for BundleActivator
+    // Constructor for testing
     public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
     }
 
-    /**
-     * Returns the objects which need to have service dependencies injected. This method
-     * must not be renamed!
-     *
-     * @return
-     */
-    // Composition callback for Felix DM
-    public Object[] getComposition() {
-        return new Object[]{
-                this,
-                dedicatedFileSystemFactory,
-                dedicatedFileSystemFactory.getDirectoryFactory(),
-                dedicatedFileSystemFactory.getDiffObserverFactory()};
+    @Activate
+    @Modified
+    public void setConfig(final Config pConfig) {
+        dedicatedFileSystemFactory.setConfig(pConfig);
+    }
+
+    @Reference
+    public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
+        dedicatedFileSystemFactory.setResourcesFactory(pResourcesFactory);
+    }
+
+    @Reference
+    public void initExecutors(final SmartSwitchBuilderFactory pFactory) {
+        final Executor observerExecutor = pFactory.newBuilder(ExecutorService.class).
+                setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
+                setShutdownHook(ExecutorService::shutdown).
+                build(Executors::newCachedThreadPool);
+        dedicatedFileSystemFactory.setObserverExecutor(observerExecutor);
+
+        final Executor directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
+                setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
+                setShutdownHook(ExecutorService::shutdown).
+                build(Executors::newCachedThreadPool);
+        dedicatedFileSystemFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
     /**
@@ -85,7 +108,8 @@ public class VirtualRoot implements RelocationObserver {
      *
      * @param pObserver File observer service to be registered.
      */
-    void addObserver(final FileObserver pObserver) {
+    @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
+    public void addObserver(final FileObserver pObserver) {
         requireNonNull(pObserver, "Observer is null");
         observers.add(pObserver);
         children.values().forEach(f -> f.forceInform(pObserver));
@@ -97,7 +121,7 @@ public class VirtualRoot implements RelocationObserver {
      *
      * @param pObserver File observer service to be unregistered.
      */
-    void removeObserver(final FileObserver pObserver) {
+    public void removeObserver(final FileObserver pObserver) {
         requireNonNull(pObserver, "Observer is null");
         observers.remove(pObserver);
     }
@@ -119,6 +143,7 @@ public class VirtualRoot implements RelocationObserver {
      */
     // This method must be synchronized because all sub-directories need to be
     // registered before another WatchedDirectory is being registered.
+    @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
     public synchronized void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
         requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
         final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
@@ -153,7 +178,7 @@ public class VirtualRoot implements RelocationObserver {
      */
     // This method must be synchronized because all sub-directories need to be
     // discarded before another WatchedDirectory is being unregistered.
-    synchronized void removeRoot(final WatchedDirectory pWatchedDirectory) {
+    public synchronized void removeRoot(final WatchedDirectory pWatchedDirectory) {
         requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
         final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
@@ -249,7 +274,7 @@ public class VirtualRoot implements RelocationObserver {
      *
      * @param pDedicatedFileSystem
      */
-    void removeFileSystem(final DedicatedFileSystem pDedicatedFileSystem) {
+    public void removeFileSystem(final DedicatedFileSystem pDedicatedFileSystem) {
         children.values().remove(pDedicatedFileSystem);
     }
 }

@@ -26,6 +26,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 import static java.lang.String.format;
@@ -47,7 +48,7 @@ class DirectoryRegistrationWalker {
     private final WatchServiceWrapper wrapper;
     private final DirectoryFactory directoryFactory;
     private final ConcurrentMap<Path, Directory> dirs;
-    private final ExecutorService directoryWalkerExecutor;
+    private final Executor directoryWalkerExecutor;
 
     /**
      * Constructor for bundle activator.
@@ -59,7 +60,7 @@ class DirectoryRegistrationWalker {
      */
     DirectoryRegistrationWalker(final WatchServiceWrapper pWrapper,
                                 final DirectoryFactory pDirectoryFactory,
-                                final ExecutorService pDirectoryWalkterExecutor,
+                                final Executor pDirectoryWalkterExecutor,
                                 final ConcurrentMap<Path, Directory> pDirs) {
         logger = getLogger(getClass());
         wrapper = pWrapper;

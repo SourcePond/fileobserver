@@ -14,6 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.diff;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 
 import java.util.Collection;
@@ -24,20 +25,21 @@ import java.util.concurrent.Executor;
  */
 public class DiffObserverFactory {
 
-    // Injected by Felix DM; this field must not be renamed!
-    private volatile Executor observerExecutor;
+    // Injected by SCR
+    private Executor observerExecutor;
 
-    public DiffObserverFactory() {
-        // Constructor for Bundle-Activator
+    private Config config;
+
+    public void setConfig(final Config pConfig) {
+        config = pConfig;
     }
 
-    // Constructor for testing
-    DiffObserverFactory(final Executor pObserverExecutor) {
+    public void setObserverExecutor(final Executor pObserverExecutor) {
         observerExecutor = pObserverExecutor;
     }
 
     public DiffObserver createObserver(final DedicatedFileSystem pFs,
                                        final Collection<FileObserver> pDelegates) {
-        return new DiffObserver(pFs, observerExecutor, pDelegates);
+        return new DiffObserver(pFs, observerExecutor, pDelegates, config);
     }
 }

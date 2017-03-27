@@ -31,7 +31,7 @@ public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_1 = "dirKey1";
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
-    private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
+    private final ch.sourcepond.io.fileobserver.impl.VirtualRoot virtualRoot = mock(ch.sourcepond.io.fileobserver.impl.VirtualRoot.class);
     private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final FileObserver observer = mock(FileObserver.class);

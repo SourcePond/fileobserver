@@ -128,4 +128,9 @@ public class SubDirectory extends Directory {
     public Directory getParent() {
         return parent;
     }
+
+    @Override
+    long getTimeout() {
+        return parent.getTimeout();
+    }
 }

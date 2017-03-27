@@ -39,9 +39,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public abstract class Directory {
     private static final Logger LOG = getLogger(SubDirectory.class);
-
-    // TODO: Replace constant with configurable value
-    public static final long TIMEOUT = 2000;
     private final ConcurrentMap<Path, Resource> resources = new ConcurrentHashMap<>();
     private final WatchKey watchKey;
 
@@ -178,6 +175,8 @@ public abstract class Directory {
      */
     public abstract void addDirectoryKey(Object pDirectoryKey);
 
+    abstract long getTimeout();
+
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
@@ -286,9 +285,8 @@ public abstract class Directory {
      */
     public void informIfChanged(final Directory pNewRootOrNull, final Collection<FileObserver> pObservers, final Path pFile) {
         if (!pObservers.isEmpty()) {
-            // TODO: Replace interval with configurable value
             try {
-                getResource(pFile).update(TIMEOUT,
+                getResource(pFile).update(getTimeout(),
                         update -> {
                             if (update.hasChanged()) {
                                 // If the modification is requested because a new root-directory has been registered, we

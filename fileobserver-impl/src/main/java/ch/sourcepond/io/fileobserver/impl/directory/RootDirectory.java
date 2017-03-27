@@ -108,4 +108,9 @@ public class RootDirectory extends Directory {
     public Directory toRootDirectory() {
         return this;
     }
+
+    @Override
+    long getTimeout() {
+        return factory.getTimeout();
+    }
 }

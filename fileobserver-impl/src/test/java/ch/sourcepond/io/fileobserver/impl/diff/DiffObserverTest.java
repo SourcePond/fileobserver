@@ -18,6 +18,7 @@ import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.checksum.api.UpdateObserver;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
@@ -34,7 +35,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.concurrent.Executor;
 
-import static ch.sourcepond.io.fileobserver.impl.directory.Directory.TIMEOUT;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.delete;
@@ -47,7 +47,9 @@ import static org.mockito.Mockito.*;
  *
  */
 public class DiffObserverTest extends CopyResourcesTest {
+    private static final long TIMEOUT = 2000;
     private static final Object DIRECTORY_KEY = "directoryKey";
+    private final Config config = mock(Config.class);
     private final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
     private final DedicatedFileSystem fs = mock(DedicatedFileSystem.class);
     private final Executor observerExecutor = directExecutor();
@@ -67,7 +69,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final FileKey supplementKey3 = mock(FileKey.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
-    private final DiffObserverFactory factory = new DiffObserverFactory(observerExecutor);
+    private final DiffObserverFactory factory = new DiffObserverFactory();
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {
@@ -107,6 +109,7 @@ public class DiffObserverTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws Exception {
+        when(config.timeout()).thenReturn(TIMEOUT);
         setupUpdate(resource, update, true);
 
         when(fs.getDirectory(root_dir_path)).thenReturn(root_dir);
@@ -129,6 +132,8 @@ public class DiffObserverTest extends CopyResourcesTest {
         when(subdir_211.getResource(notNull())).thenReturn(resource);
         when(subdir_22.getResource(notNull())).thenReturn(resource);
 
+        factory.setObserverExecutor(observerExecutor);
+        factory.setConfig(config);
         diff = factory.createObserver(fs, observers);
     }
 

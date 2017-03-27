@@ -17,41 +17,53 @@ import ch.sourcepond.io.checksum.api.Algorithm;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.concurrent.Executor;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 /**
  * Created by rolandhauser on 08.02.17.
  */
 public class DirectoryFactory {
+    private static final Logger LOG = getLogger(DirectoryFactory.class);
     private final DefaultFileKeyFactory fileKeyFactory;
 
-    // Injected by Felix DM; this field must not be renamed!
-    private volatile Executor directoryWalkerExecutor;
+    // Injected by SCR
+    private Executor directoryWalkerExecutor;
 
-    // Injected by Felix DM; this field must not be renamed!
-    private volatile Executor observerExecutor;
+    // Injected by SCR
+    private Executor observerExecutor;
 
-    // Injected by Felix DM
-    private volatile ResourcesFactory resourcesFactory;
+    // Injected by SCR
+    private ResourcesFactory resourcesFactory;
+
+    private Config config;
 
     // Constructor for BundleActivator
     public DirectoryFactory(final DefaultFileKeyFactory pFileKeyFactory) {
         fileKeyFactory = pFileKeyFactory;
     }
 
-    // Constructor for testing
-    public DirectoryFactory(final ResourcesFactory pResourcesFactory,
-                            final DefaultFileKeyFactory pFileKeyFactory,
-                            final Executor pDirectoryWalkerExecutor,
-                            final Executor pObserverExecutor) {
-        resourcesFactory = pResourcesFactory;
-        fileKeyFactory = pFileKeyFactory;
+    public void setConfig(final Config pConfig) {
+        config = pConfig;
+    }
+
+    public void setDirectoryWalkerExecutor(final Executor pDirectoryWalkerExecutor) {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
+    }
+
+    public void setObserverExecutor(final Executor pObserverExecutor) {
         observerExecutor = pObserverExecutor;
+    }
+
+    public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
+        resourcesFactory = pResourcesFactory;
     }
 
     public RootDirectory newRoot(final WatchKey pWatchKey) {
@@ -64,11 +76,11 @@ public class DirectoryFactory {
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Creates a new checksum {@link Resource} with the algorithm and file specified.
      *
      * @param pAlgorithm Algorithm, must not be {@code null}
-     * @param pFile File on which checksums shall be tracked, must not be {@code null}
+     * @param pFile      File on which checksums shall be tracked, must not be {@code null}
      * @return New resource instance, never {@code null}
      */
     Resource newResource(final Algorithm pAlgorithm, final Path pFile) {
@@ -77,7 +89,7 @@ public class DirectoryFactory {
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Creates a new {@link FileKey} based on the directory-key and
      * relative path specified, see {@link Directory#addDirectoryKey(Object)} for further information.
      *
@@ -91,7 +103,7 @@ public class DirectoryFactory {
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Asynchronously executes the task specified using the observer executor service.
      *
      * @param pTask Task to be executed, must not be {@code null}
@@ -102,12 +114,16 @@ public class DirectoryFactory {
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     *
+     * <p>
      * Asynchronously executes the task specified using the directory walker executor service.
      *
      * @param pTask Task to be executed, must not be {@code null}
      */
     void executeDirectoryWalkerTask(final Runnable pTask) {
         directoryWalkerExecutor.execute(pTask);
+    }
+
+    long getTimeout() {
+        return config.timeout();
     }
 }

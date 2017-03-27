@@ -17,6 +17,7 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import org.slf4j.Logger;
@@ -26,7 +27,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Executor;
 
-import static ch.sourcepond.io.fileobserver.impl.directory.Directory.TIMEOUT;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -40,13 +40,16 @@ public class DiffObserver implements FileObserver {
     private final DedicatedFileSystem fs;
     private final Executor observerExecutor;
     private final Collection<FileObserver> delegates;
+    private final Config config;
 
     DiffObserver(final DedicatedFileSystem pFs,
                  final Executor pObserverExecutor,
-                 final Collection<FileObserver> pDelegates) {
+                 final Collection<FileObserver> pDelegates,
+                 final Config pConfig) {
         fs = pFs;
         observerExecutor = pObserverExecutor;
         delegates = pDelegates;
+        config = pConfig;
     }
 
     private void informDiscard(final FileKey pKey) {
@@ -90,7 +93,7 @@ public class DiffObserver implements FileObserver {
         final Resource resource = getResource(pFile);
         if (resource != null) {
             try {
-                resource.update(TIMEOUT, u -> informModified(u, pKey, pFile));
+                resource.update(config.timeout(), u -> informModified(u, pKey, pFile));
             } catch (final IOException e) {
                 LOG.warn(e.getMessage(), e);
             }

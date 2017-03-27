@@ -103,11 +103,11 @@ public class FileObserverTest {
         // Step 1: make fileobserver bundle watching R by
         // registering an appropriate service.
         final InitialCheckusmCalculationBarrier wait = new InitialCheckusmCalculationBarrier();
-        final ServiceRegistration<FileObserver> waitReg = fileObserverRegistration = context.registerService(FileObserver.class, wait, null);
+        fileObserverRegistration = context.registerService(FileObserver.class, wait, null);
         watchedDirectory = create(ROOT, R);
         watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
         wait.waitUntilChecksumsCalculated();
-        waitReg.unregister();
+        fileObserverRegistration.unregister();
 
         // Step 2: register FileObserver
         fileObserverRegistration = context.registerService(FileObserver.class, observer, null);

@@ -1,6 +1,7 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
@@ -32,11 +33,9 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
+    private final Config config = mock(Config.class);
     private final DirectoryFactory directoryFactory = new DirectoryFactory(
-            resourcesFactory,
-            new DefaultFileKeyFactory(),
-            directoryWalkerExecutor,
-            observerExecutor);
+            new DefaultFileKeyFactory());
     private WatchServiceWrapper wrapper;
     private Directory dir;
     private Directory dir_1;
@@ -48,6 +47,10 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     @Before
     public void setupDirectories() throws IOException {
         wrapper = new WatchServiceWrapper(getDefault());
+        directoryFactory.setConfig(config);
+        directoryFactory.setObserverExecutor(observerExecutor);
+        directoryFactory.setResourcesFactory(resourcesFactory);
+        directoryFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
         dir = directoryFactory.newRoot(wrapper.register(root_dir_path));
         dir_1 = directoryFactory.newRoot(wrapper.register(subdir_1_path));
         dir_111 = directoryFactory.newRoot(wrapper.register(subdir_111_path));

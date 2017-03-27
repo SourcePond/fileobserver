@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 public class DedicatedFileSystemFactoryTest {
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final FileSystem fs = mock(FileSystem.class);
-    private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
+    private final ch.sourcepond.io.fileobserver.impl.VirtualRoot virtualRoot = mock(ch.sourcepond.io.fileobserver.impl.VirtualRoot.class);
     private final WatchService watchService = mock(WatchService.class);
     private final ExecutorService directoryWalkerExecutor = mock(ExecutorService.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);

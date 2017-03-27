@@ -1,7 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.TestKey;
+import ch.sourcepond.io.fileobserver.impl.*;
 import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
@@ -31,7 +30,7 @@ import static org.mockito.Mockito.*;
 public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private static final String NEW_FILE_NAME = "newfile.txt";
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
-    private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
+    private final ch.sourcepond.io.fileobserver.impl.VirtualRoot virtualRoot = mock(ch.sourcepond.io.fileobserver.impl.VirtualRoot.class);
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);

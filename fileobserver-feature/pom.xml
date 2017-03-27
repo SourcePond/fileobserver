@@ -5,7 +5,7 @@
     <parent>
         <groupId>ch.sourcepond.io</groupId>
         <artifactId>fileobserver</artifactId>
-        <version>0.9-SNAPSHOT</version>
+        <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>fileobserver-feature</artifactId>
@@ -15,10 +15,11 @@
         <dependency>
             <scope>provided</scope>
             <groupId>ch.sourcepond.commons</groupId>
-            <artifactId>smartswitch-lib</artifactId>
+            <artifactId>smartswitch-api</artifactId>
             <version>${smartswitch.version}</version>
         </dependency>
         <dependency>
+            <scope>provided</scope>
             <groupId>ch.sourcepond.io</groupId>
             <artifactId>checksum-api</artifactId>
             <version>${checksum.version}</version>

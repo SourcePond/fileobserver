@@ -1,9 +1,11 @@
-package ch.sourcepond.io.fileobserver.impl.fs;
+package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,6 +28,7 @@ import static org.mockito.Mockito.*;
 public class VirtualRootTest {
     private static final Object ROOT_KEY = new Object();
     private static final Object OTHER_KEY = new Object();
+    private final Config config = mock(Config.class);
     private final WatchedDirectory watchedDir = mock(WatchedDirectory.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
@@ -61,6 +64,7 @@ public class VirtualRootTest {
         when(dedicatedFsFactory.getDirectoryFactory()).thenReturn(directoryFactory);
         when(dedicatedFsFactory.getDiffObserverFactory()).thenReturn(diffObserverFactory);
 
+        virtualRoot.setConfig(config);
         virtualRoot.addRoot(watchedDir);
         virtualRoot.addObserver(observer);
     }
@@ -95,7 +99,7 @@ public class VirtualRootTest {
 
     @Test
     public void addRootDirectoriesCouldNotBeCreated() throws IOException {
-        virtualRoot = new VirtualRoot(dedicatedFsFactory);
+        virtualRoot = new ch.sourcepond.io.fileobserver.impl.VirtualRoot(dedicatedFsFactory);
         final IOException expected = new IOException();
         doThrow(expected).when(dedicatedFsFactory).openFileSystem(virtualRoot, fs);
         try {
@@ -105,16 +109,6 @@ public class VirtualRootTest {
             final Throwable cause = e.getCause();
             assertSame(expected, cause.getCause());
         }
-    }
-
-    @Test
-    public void getComposition() {
-        final Object[] composition = virtualRoot.getComposition();
-        assertEquals(4, composition.length);
-        assertSame(virtualRoot, composition[0]);
-        assertSame(dedicatedFsFactory, composition[1]);
-        assertSame(directoryFactory, composition[2]);
-        assertSame(diffObserverFactory, composition[3]);
     }
 
     @Test(expected = NullPointerException.class)
@@ -167,7 +161,7 @@ public class VirtualRootTest {
 
     @Test
     public void removeRootNoSuchDirectoryRegistered() throws IOException {
-        virtualRoot = new VirtualRoot(dedicatedFsFactory);
+        virtualRoot = new ch.sourcepond.io.fileobserver.impl.VirtualRoot(dedicatedFsFactory);
 
         // This should not cause an exception
         virtualRoot.removeRoot(watchedDir);

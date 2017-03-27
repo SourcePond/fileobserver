@@ -15,6 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.*;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
@@ -26,7 +27,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.Executor;
 
-import static ch.sourcepond.io.fileobserver.impl.directory.Directory.TIMEOUT;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.file.FileSystems.getDefault;
 import static java.util.Arrays.asList;
@@ -38,17 +38,16 @@ import static org.mockito.Mockito.*;
  *
  */
 public abstract class DirectoryTest extends CopyResourcesTest {
+    static final long TIMEOUT = 2000;
     static final Object ROOT_DIR_KEY = "rootDirKey";
     static final Object SUB_DIR_KEY1 = "subDirKey1";
+    final Config config =  mock(Config.class);
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     final Executor directoryWalkerExecutor = directExecutor();
     final Executor observerExecutor = directExecutor();
     final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
     final DirectoryFactory factory = new DirectoryFactory(
-            resourcesFactory,
-            keyFactory,
-            directoryWalkerExecutor,
-            observerExecutor);
+            keyFactory);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
     final FileObserver observer = mock(FileObserver.class);
@@ -57,7 +56,12 @@ public abstract class DirectoryTest extends CopyResourcesTest {
 
     @Before
     public void setupFactories() throws IOException {
+        when(config.timeout()).thenReturn(TIMEOUT);
         wrapper = new WatchServiceWrapper(getDefault());
+        factory.setConfig(config);
+        factory.setObserverExecutor(observerExecutor);
+        factory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
+        factory.setResourcesFactory(resourcesFactory);
     }
 
     @After
