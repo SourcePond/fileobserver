@@ -61,14 +61,6 @@ public class DedicatedFileSystemFactory {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
-    public DirectoryFactory getDirectoryFactory() {
-        return directoryFactory;
-    }
-
-    public DiffObserverFactory getDiffObserverFactory() {
-        return diffObserverFactory;
-    }
-
     public DedicatedFileSystem openFileSystem(final ch.sourcepond.io.fileobserver.impl.VirtualRoot pVirtualRoot, final FileSystem pFs) throws IOException {
         final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
         final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs);

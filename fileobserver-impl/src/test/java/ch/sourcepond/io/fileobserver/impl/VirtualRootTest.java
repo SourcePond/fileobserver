@@ -61,8 +61,6 @@ public class VirtualRootTest {
         when(watchedDir.getKey()).thenReturn(ROOT_KEY);
         when(watchedDir.getDirectory()).thenReturn(directory);
         when(dedicatedFsFactory.openFileSystem(virtualRoot, fs)).thenReturn(dedicatedFs);
-        when(dedicatedFsFactory.getDirectoryFactory()).thenReturn(directoryFactory);
-        when(dedicatedFsFactory.getDiffObserverFactory()).thenReturn(diffObserverFactory);
 
         virtualRoot.setConfig(config);
         virtualRoot.addRoot(watchedDir);
