@@ -19,19 +19,15 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
-import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.concurrent.Executor;
 
-import static org.slf4j.LoggerFactory.getLogger;
-
 /**
  * Created by rolandhauser on 08.02.17.
  */
 public class DirectoryFactory {
-    private static final Logger LOG = getLogger(DirectoryFactory.class);
     private final DefaultFileKeyFactory fileKeyFactory;
 
     // Injected by SCR

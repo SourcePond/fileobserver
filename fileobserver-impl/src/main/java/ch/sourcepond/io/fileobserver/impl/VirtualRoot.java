@@ -94,9 +94,8 @@ public class VirtualRoot implements RelocationObserver {
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
         dedicatedFileSystemFactory.setObserverExecutor(observerExecutor);
-
         final Executor directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
-                setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
+                setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
         dedicatedFileSystemFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);

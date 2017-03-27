@@ -1,14 +1,16 @@
 package ch.sourcepond.io.fileobserver.impl;
 
+import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilder;
+import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
+import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
-import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -16,6 +18,8 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -37,11 +41,14 @@ public class VirtualRootTest {
     private final BasicFileAttributes modifiedPathAttrs = mock(BasicFileAttributes.class);
     private final Path modifiedPath = mock(Path.class);
     private final FileObserver observer = mock(FileObserver.class);
-    private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
-    private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
+    private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final DedicatedFileSystem dedicatedFs = mock(DedicatedFileSystem.class);
     private final DedicatedFileSystemFactory dedicatedFsFactory = mock(DedicatedFileSystemFactory.class);
     private final Directory dir = mock(Directory.class);
+    private final SmartSwitchBuilderFactory ssbFactory = mock(SmartSwitchBuilderFactory.class);
+    private final SmartSwitchBuilder<ExecutorService> executorBuilder = mock(SmartSwitchBuilder.class);
+    private ExecutorService observerExecutor;
+    private ExecutorService directoryWalkerExecutor;
     private VirtualRoot virtualRoot = new VirtualRoot(dedicatedFsFactory);
 
     private Collection<FileObserver> matchObservers() {
@@ -65,6 +72,46 @@ public class VirtualRootTest {
         virtualRoot.setConfig(config);
         virtualRoot.addRoot(watchedDir);
         virtualRoot.addObserver(observer);
+    }
+
+    @Test
+    public void setResourcesFactory() {
+        virtualRoot.setResourcesFactory(resourcesFactory);
+        verify(dedicatedFsFactory).setResourcesFactory(resourcesFactory);
+    }
+
+    @Test
+    public void setConfig() {
+        virtualRoot.setConfig(config);
+        verify(dedicatedFsFactory).setConfig(config);
+    }
+
+    private void setupDefaultExecutor(final String pFilter, final SmartSwitchBuilder<ExecutorService> pBuilder, final Answer<ExecutorService> pAnswer) {
+        when(ssbFactory.newBuilder(ExecutorService.class)).thenReturn(executorBuilder);
+        when(executorBuilder.setFilter(pFilter)).thenReturn(pBuilder);
+        when(pBuilder.setShutdownHook(notNull())).thenReturn(pBuilder);
+        when(pBuilder.build(notNull())).thenAnswer(pAnswer);
+    }
+
+    @Test
+    public void initExecutors() {
+        final SmartSwitchBuilder<ExecutorService> observerExecutorBuilder = mock(SmartSwitchBuilder.class);
+        setupDefaultExecutor("(sourcepond.io.fileobserver.observerexecutor=*)", observerExecutorBuilder, inv -> {
+            final Supplier<ExecutorService> s = inv.getArgument(0);
+            observerExecutor = s.get();
+            assertNotNull(observerExecutor);
+            return observerExecutor;
+        });
+        final SmartSwitchBuilder<ExecutorService> directoryWalkerExecutorBuilder = mock(SmartSwitchBuilder.class);
+        setupDefaultExecutor("(sourcepond.io.fileobserver.directorywalkerexecutor=*)", directoryWalkerExecutorBuilder, inv -> {
+            final Supplier<ExecutorService> s = inv.getArgument(0);
+            directoryWalkerExecutor = s.get();
+            assertNotNull(directoryWalkerExecutor);
+            return directoryWalkerExecutor;
+        });
+        virtualRoot.initExecutors(ssbFactory);
+        verify(dedicatedFsFactory).setObserverExecutor(observerExecutor);
+        verify(dedicatedFsFactory).setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
     @Test
