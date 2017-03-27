@@ -109,4 +109,24 @@
             <artifactId>pax-exam-container-karaf</artifactId>
         </dependency>
     </dependencies>
+
+
+    <!-- Remove this when MNG-3244, MNG-5951 are resolved -->
+    <scm>
+        <url>https://${repo.domain}/${repo.path}</url>
+        <connection>scm:git:${project.scm.url}.git</connection>
+        <developerConnection>scm:git:ssh://git@${repo.domain}/${repo.path}.git</developerConnection>
+    </scm>
+
+    <ciManagement>
+        <url>${jenkins.baseurl}/job/${repo.project}</url>
+        <system>Jenkins</system>
+    </ciManagement>
+
+    <distributionManagement>
+        <site>
+            <id>www.sourcepond.ch</id>
+            <url>${site.distribution.url}/${project.groupId}/${project.artifactId}/${project.version}/</url>
+        </site>
+    </distributionManagement>
 </project>

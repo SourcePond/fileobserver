@@ -16,19 +16,19 @@
 	</description>
 
 	<properties>
-		<repo.domain>${project.artifactId}</repo.domain>
+		<repo.project>${project.artifactId}</repo.project>
 		<checksum.version>2.0.3</checksum.version>
 		<smartswitch.version>4.0.1</smartswitch.version>
 	</properties>
-
 
 	<modules>
 		<module>fileobserver-api</module>
 		<module>fileobserver-impl</module>
 		<module>fileobserver-tests</module>
-        <module>fileobserver-feature</module>
+		<module>fileobserver-feature</module>
 		<module>fileobserver-spi</module>
-    </modules>
+	</modules>
+
 
 	<!-- Remove this when MNG-3244, MNG-5951 are resolved -->
 	<url>https://sourcepond.github.io/${repo.project}</url>
@@ -37,7 +37,18 @@
 	<scm>
 		<url>https://${repo.domain}/${repo.path}</url>
 		<connection>scm:git:${project.scm.url}.git</connection>
-		<developerConnection>scm:git:ssh://${repo.domain}/${repo.path}.git</developerConnection>
+		<developerConnection>scm:git:ssh://git@${repo.domain}/${repo.path}.git</developerConnection>
 	</scm>
 
+	<ciManagement>
+		<url>${jenkins.baseurl}/job/${project.artifactId}</url>
+		<system>Jenkins</system>
+	</ciManagement>
+
+	<distributionManagement>
+		<site>
+			<id>www.sourcepond.ch</id>
+			<url>${site.distribution.url}/${project.groupId}/${project.artifactId}/${project.version}/</url>
+		</site>
+	</distributionManagement>
 </project>
