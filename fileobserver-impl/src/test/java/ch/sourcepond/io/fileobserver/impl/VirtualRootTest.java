@@ -82,7 +82,6 @@ public class VirtualRootTest {
 
     @Test
     public void setConfig() {
-        virtualRoot.setConfig(config);
         verify(dedicatedFsFactory).setConfig(config);
     }
 
