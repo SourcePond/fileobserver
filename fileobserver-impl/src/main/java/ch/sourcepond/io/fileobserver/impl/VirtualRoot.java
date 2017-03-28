@@ -188,7 +188,7 @@ public class VirtualRoot implements RelocationObserver {
         if (fs == null) {
             LOG.warn(format("No dedicated file system registered! Path: %s", directory));
         } else {
-            fs.unregisterRootDirectory(pWatchedDirectory, observers);
+            fs.unregisterRootDirectory(pWatchedDirectory.getDirectory(), pWatchedDirectory, observers);
 
             // IMPORTANT: remove watched-directory with key specified.
             watchtedDirectories.remove(key);

@@ -14,8 +14,8 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.diff.DiffObserver;
+import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -95,7 +95,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * @param pObservers
      */
     public void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
-                               final Collection<FileObserver> pObservers)
+                                      final Collection<FileObserver> pObservers)
             throws IOException {
         // It's already checked that the directory is not null
         final Path directory = pWatchedDirectory.getDirectory();
@@ -125,10 +125,12 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * @param pWatchedDirectory
      * @param pObservers
      */
-    public void unregisterRootDirectory(final WatchedDirectory pWatchedDirectory,
-                                 final Collection<FileObserver> pObservers) {
+    public void unregisterRootDirectory(
+            final Path pToBeUnregistered,
+            final WatchedDirectory pWatchedDirectory,
+            final Collection<FileObserver> pObservers) {
         // It's already checked that the directory-key and the directory are not null
-        final Directory dir = dirs.get(pWatchedDirectory.getDirectory());
+        final Directory dir = dirs.get(pToBeUnregistered);
         if (dir == null) {
             LOG.warn(format("Directory %s is unknown; nothing unregistered", pWatchedDirectory.getDirectory()));
         } else {
@@ -177,8 +179,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     }
 
     public void destinationChanged(final WatchedDirectory pWatchedDirectory,
-                            final Path pPrevious,
-                            final Collection<FileObserver> pObservers) throws IOException {
+                                   final Path pPrevious,
+                                   final Collection<FileObserver> pObservers) throws IOException {
         final Directory dir = dirs.get(pPrevious);
         if (dir == null) {
             LOG.warn("Destination change has no effect because no directory found for previous path {}");
@@ -187,7 +189,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             // inform observers at all, this will be handled later!
             final DiffObserver diff = diffObserverFactory.createObserver(this, pObservers);
             final Collection<FileObserver> observers = asList(diff);
-            unregisterRootDirectory(pWatchedDirectory, observers);
+            unregisterRootDirectory(pPrevious, pWatchedDirectory, observers);
             registerRootDirectory(pWatchedDirectory, observers);
             diff.finalizeRelocation();
         }

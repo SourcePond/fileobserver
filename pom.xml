@@ -12,7 +12,7 @@
 	<inceptionYear>2017</inceptionYear>
 	<packaging>pom</packaging>
 	<description>
-		Module to watch changes on files/directories and deliver events for those changes to listeners.
+		Bundle to watch changes on files/directories and deliver events for those changes to observers.
 	</description>
 
 	<properties>

@@ -214,7 +214,7 @@ public class VirtualRootTest {
     @Test
     public void removeRoot() throws IOException {
         virtualRoot.removeRoot(watchedDir);
-        verify(dedicatedFs).unregisterRootDirectory(same(watchedDir), matchObservers());
+        verify(dedicatedFs).unregisterRootDirectory(same(directory), same(watchedDir), matchObservers());
         verify(watchedDir).removeObserver(virtualRoot);
 
         // This should not cause an exception

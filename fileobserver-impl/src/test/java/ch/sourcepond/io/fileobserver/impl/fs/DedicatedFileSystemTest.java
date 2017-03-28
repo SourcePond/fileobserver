@@ -112,15 +112,10 @@ public class DedicatedFileSystemTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void insureDirectoryKeyCannotBeNullDuringUnregistration() throws IOException {
-        fs.unregisterRootDirectory(mock(WatchedDirectory.class), observers);
-    }
-
-    @Test(expected = NullPointerException.class)
     public void insureDirectoryDirectoryCannotBeNullDuringUnregistration() throws IOException {
         final WatchedDirectory invalid = mock(WatchedDirectory.class);
         when(invalid.getKey()).thenReturn(DIRECTORY_KEY_1);
-        fs.unregisterRootDirectory(mock(WatchedDirectory.class), observers);
+        fs.unregisterRootDirectory(null, mock(WatchedDirectory.class), observers);
     }
 
     @Test
@@ -131,7 +126,7 @@ public class DedicatedFileSystemTest {
         when(unknown.getDirectory()).thenReturn(path);
 
         // Should not cause an exception
-        fs.unregisterRootDirectory(unknown, observers);
+        fs.unregisterRootDirectory(path, unknown, observers);
     }
 
     @Test
@@ -139,7 +134,7 @@ public class DedicatedFileSystemTest {
         when(rootDir1.hasKeys()).thenReturn(true);
         fs.registerRootDirectory(watchedDirectory1, observers);
         verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
-        fs.unregisterRootDirectory(watchedDirectory1, observers);
+        fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1, observers);
 
         final InOrder order = inOrder(rootDir1, rebase);
         order.verify(rootDir1).removeDirectoryKey(DIRECTORY_KEY_1, observers);
@@ -151,7 +146,7 @@ public class DedicatedFileSystemTest {
     public void unregisterRootDirectoryAllKeysRemoved() throws IOException {
         fs.registerRootDirectory(watchedDirectory1, observers);
         verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
-        fs.unregisterRootDirectory(watchedDirectory1, observers);
+        fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1, observers);
 
         final InOrder order = inOrder(rootDir1, rebase);
         order.verify(rootDir1).removeDirectoryKey(DIRECTORY_KEY_1, observers);
