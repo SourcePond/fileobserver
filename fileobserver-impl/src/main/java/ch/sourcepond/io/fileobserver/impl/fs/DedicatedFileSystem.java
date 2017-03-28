@@ -192,6 +192,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             unregisterRootDirectory(pPrevious, pWatchedDirectory, observers);
             registerRootDirectory(pWatchedDirectory, observers);
             diff.finalizeRelocation();
+
+            LOG.info("Destination changed to {}", pWatchedDirectory.getDirectory());
         }
     }
 
