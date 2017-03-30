@@ -30,7 +30,6 @@ import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -46,6 +45,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static org.osgi.service.component.annotations.ReferenceCardinality.MULTIPLE;
 import static org.osgi.service.component.annotations.ReferencePolicy.DYNAMIC;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  *
@@ -53,10 +53,12 @@ import static org.osgi.service.component.annotations.ReferencePolicy.DYNAMIC;
 @Component(service = {})
 @Designate(ocd = Config.class)
 public class VirtualRoot implements RelocationObserver {
-    private static final Logger LOG = LoggerFactory.getLogger(VirtualRoot.class);
+    private static final Logger LOG = getLogger(VirtualRoot.class);
     private static final String KEY_IS_NULL = "Key is null";
     private static final String DIRECTORY_IS_NULL = "Directory is null";
     private static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
+    private final InitSwitch<WatchedDirectory> rootInitSwitch = new InitSwitch<>(this::doAddRoot);
+    private final InitSwitch<FileObserver> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final Set<FileObserver> observers = newKeySet();
@@ -77,6 +79,13 @@ public class VirtualRoot implements RelocationObserver {
     }
 
     @Activate
+    public void activate(final Config pConfig) {
+        setConfig(pConfig);
+        rootInitSwitch.init();
+        observerInitSwitch.init();
+        LOG.info("Virtual-root activated");
+    }
+
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
@@ -101,6 +110,11 @@ public class VirtualRoot implements RelocationObserver {
         dedicatedFileSystemFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
+    private void doAddObserver(final FileObserver pObserver) {
+        observers.add(pObserver);
+        children.values().forEach(f -> f.forceInform(pObserver));
+    }
+
     /**
      * Whiteboard bind-method for {@link FileObserver} services exported by any client bundle. This
      * method is called when a client exports a service which implements the {@link FileObserver} interface.
@@ -110,8 +124,7 @@ public class VirtualRoot implements RelocationObserver {
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
     public void addObserver(final FileObserver pObserver) {
         requireNonNull(pObserver, "Observer is null");
-        observers.add(pObserver);
-        children.values().forEach(f -> f.forceInform(pObserver));
+        observerInitSwitch.add(pObserver);
     }
 
     /**
@@ -133,18 +146,9 @@ public class VirtualRoot implements RelocationObserver {
         }
     }
 
-    /**
-     * Whiteboard bind-method for {@link WatchedDirectory} services exported by any client bundle. This
-     * method is called when a client exports a service which implements the {@link WatchedDirectory} interface.
-     *
-     * @param pWatchedDirectory Watched-directory service to be registered.
-     * @throws IOException Thrown, if the root directory could not be added.
-     */
     // This method must be synchronized because all sub-directories need to be
     // registered before another WatchedDirectory is being registered.
-    @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
-    public synchronized void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
-        requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
+    private synchronized void doAddRoot(final WatchedDirectory pWatchedDirectory) {
         final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
@@ -161,12 +165,24 @@ public class VirtualRoot implements RelocationObserver {
         try {
             children.computeIfAbsent(directory.getFileSystem(),
                     this::newDedicatedFileSystem).registerRootDirectory(pWatchedDirectory, observers);
-        } catch (final UncheckedIOException e) {
-            throw new IOException(e.getMessage(), e);
+            pWatchedDirectory.addObserver(this);
+            LOG.info("Added [{}:{}]", key, directory);
+        } catch (final IOException | UncheckedIOException e) {
+            LOG.warn(e.getMessage(), e);
         }
+    }
 
-        pWatchedDirectory.addObserver(this);
-        LOG.info("Added [{}:{}]", key, directory);
+    /**
+     * Whiteboard bind-method for {@link WatchedDirectory} services exported by any client bundle. This
+     * method is called when a client exports a service which implements the {@link WatchedDirectory} interface.
+     *
+     * @param pWatchedDirectory Watched-directory service to be registered.
+     * @throws IOException Thrown, if the root directory could not be added.
+     */
+    @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
+    public void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
+        requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
+        rootInitSwitch.add(pWatchedDirectory);
     }
 
     /**

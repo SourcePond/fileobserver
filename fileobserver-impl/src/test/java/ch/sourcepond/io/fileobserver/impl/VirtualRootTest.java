@@ -1,3 +1,16 @@
+/*Copyright (C) 2017 Roland Hauser, <sourcepond@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilder;
@@ -27,7 +40,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.*;
 
 /**
- * Created by rolandhauser on 08.03.17.
+ *
  */
 public class VirtualRootTest {
     private static final Object ROOT_KEY = new Object();
@@ -69,9 +82,9 @@ public class VirtualRootTest {
         when(watchedDir.getDirectory()).thenReturn(directory);
         when(dedicatedFsFactory.openFileSystem(virtualRoot, fs)).thenReturn(dedicatedFs);
 
-        virtualRoot.setConfig(config);
         virtualRoot.addRoot(watchedDir);
         virtualRoot.addObserver(observer);
+        virtualRoot.activate(config);
     }
 
     @Test
@@ -143,16 +156,11 @@ public class VirtualRootTest {
 
     @Test
     public void addRootDirectoriesCouldNotBeCreated() throws IOException {
-        virtualRoot = new ch.sourcepond.io.fileobserver.impl.VirtualRoot(dedicatedFsFactory);
-        final IOException expected = new IOException();
-        doThrow(expected).when(dedicatedFsFactory).openFileSystem(virtualRoot, fs);
-        try {
-            virtualRoot.addRoot(watchedDir);
-            fail("Exception expected");
-        } catch (final IOException e) {
-            final Throwable cause = e.getCause();
-            assertSame(expected, cause.getCause());
-        }
+        virtualRoot = new VirtualRoot(dedicatedFsFactory);
+        doThrow(IOException.class).when(dedicatedFsFactory).openFileSystem(virtualRoot, fs);
+
+        // This should not cause an exception
+        virtualRoot.addRoot(watchedDir);
     }
 
     @Test(expected = NullPointerException.class)
