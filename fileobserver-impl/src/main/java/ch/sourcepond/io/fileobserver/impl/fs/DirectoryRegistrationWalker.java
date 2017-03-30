@@ -27,7 +27,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
@@ -55,18 +54,18 @@ class DirectoryRegistrationWalker {
      *
      * @param pWrapper
      * @param pDirectoryFactory
-     * @param pDirectoryWalkterExecutor
+     * @param pDirectoryWalkerExecutor
      * @param pDirs
      */
     DirectoryRegistrationWalker(final WatchServiceWrapper pWrapper,
                                 final DirectoryFactory pDirectoryFactory,
-                                final Executor pDirectoryWalkterExecutor,
+                                final Executor pDirectoryWalkerExecutor,
                                 final ConcurrentMap<Path, Directory> pDirs) {
-        logger = getLogger(getClass());
-        wrapper = pWrapper;
-        directoryFactory = pDirectoryFactory;
-        directoryWalkerExecutor = pDirectoryWalkterExecutor;
-        dirs = pDirs;
+        this(getLogger(DirectoryRegistrationWalker.class),
+                pDirectoryFactory,
+                pDirectoryWalkerExecutor,
+                pWrapper,
+                pDirs);
     }
 
     /**
@@ -79,9 +78,9 @@ class DirectoryRegistrationWalker {
      * @param pDirs
      */
     DirectoryRegistrationWalker(final Logger pLogger,
-                                final ExecutorService pDirectoryWalkerExecutor,
-                                final WatchServiceWrapper pWrapper,
                                 final DirectoryFactory pDirectoryFactory,
+                                final Executor pDirectoryWalkerExecutor,
+                                final WatchServiceWrapper pWrapper,
                                 final ConcurrentMap<Path, Directory> pDirs) {
         logger = pLogger;
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
@@ -130,7 +129,7 @@ class DirectoryRegistrationWalker {
                                   final Collection<FileObserver> pObservers) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered FileObservers
-       directoryWalkerExecutor.execute(() -> {
+        directoryWalkerExecutor.execute(() -> {
             try {
                 walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pNewRootOrNull, pObservers));
             } catch (final IOException e) {

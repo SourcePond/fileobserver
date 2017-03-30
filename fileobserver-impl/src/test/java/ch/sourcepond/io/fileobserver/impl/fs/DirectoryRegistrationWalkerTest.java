@@ -51,9 +51,9 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private final Directory subdir_22 = mock(Directory.class);
     private DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
             logger,
+            directoryFactory,
             directoryWalkerExecutor,
             wrapper,
-            directoryFactory,
             dirs);
 
     @Before
@@ -134,9 +134,9 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     public void logWarnWhenIOExceptionOccurs() throws IOException {
         walker = new DirectoryRegistrationWalker(
                 logger,
+                directoryFactory,
                 directoryWalkerExecutor,
                 wrapper,
-                directoryFactory,
                 dirs);
         final IOException expected = new IOException(ANY_MESSAGE);
         doThrow(expected).when(wrapper).register(subdir_11_path);
@@ -151,9 +151,9 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     public void logErrorWhenRuntimeExceptionOccurs() throws IOException {
         walker = new DirectoryRegistrationWalker(
                 logger,
+                directoryFactory,
                 directoryWalkerExecutor,
                 wrapper,
-                directoryFactory,
                 dirs);
         final RuntimeException expected = new RuntimeException(ANY_MESSAGE);
         doThrow(expected).when(wrapper).register(subdir_11_path);
