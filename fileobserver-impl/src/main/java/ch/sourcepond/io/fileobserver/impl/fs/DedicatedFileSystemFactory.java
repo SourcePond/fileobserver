@@ -70,12 +70,11 @@ public class DedicatedFileSystemFactory {
                 directoryWalkerExecutor,
                 dirs);
         DedicatedFileSystem fs = new DedicatedFileSystem(
-                pVirtualRoot,
                 directoryFactory,
                 wrapper,
                 new DirectoryRebase(directoryFactory, wrapper, dirs),
-                walker,
                 diffObserverFactory,
+                new PathChangeHandler(pVirtualRoot, walker, dirs),
                 dirs);
         fs.start();
         return fs;

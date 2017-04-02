@@ -18,8 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
-import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
-import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY1;
 import static java.nio.file.FileSystems.getDefault;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.*;
@@ -29,6 +27,7 @@ import static org.mockito.Mockito.mock;
  * Created by rolandhauser on 06.03.17.
  */
 public class DirectoryRebaseTest extends CopyResourcesTest {
+    private static final String DIRECTORY_KEY = "directoryKey";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
@@ -171,11 +170,11 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     public void rebaseExistingChildDirectoriesAfterRootDiscard() throws IOException {
         // For the test, dir_11 must be a root directory, and, it must contain a key
         final Directory dir_11 = directoryFactory.newRoot(wrapper.register(subdir_11_path));
-        ((RootDirectory)dir_11).addDirectoryKey(TEST_KEY);
+        ((RootDirectory)dir_11).addDirectoryKey(DIRECTORY_KEY);
         dirs.put(subdir_11_path, dir_11);
         // For the test, dir_12 must be a root directory, and, it must contain a key
         final Directory dir_21 = directoryFactory.newRoot(wrapper.register(subdir_21_path));
-        ((RootDirectory)dir_21).addDirectoryKey(TEST_KEY1);
+        ((RootDirectory)dir_21).addDirectoryKey(DIRECTORY_KEY);
         dirs.put(subdir_21_path, dir_21);
 
 
@@ -214,10 +213,10 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     public void insureFormerRootDirectoriesAreConvertedBackAfterRootDiscard() throws IOException {
         // For the test, dir_111 must be a root directory, and, it must contain a key
         dir_111 = directoryFactory.newRoot(wrapper.register(subdir_111_path));
-        ((RootDirectory)dir_111).addDirectoryKey(TEST_KEY);
+        ((RootDirectory)dir_111).addDirectoryKey(DIRECTORY_KEY);
         // For the test, dir_211 must be a root directory, and, it must contain a key
         dir_211 = directoryFactory.newRoot(wrapper.register(subdir_211_path));
-        ((RootDirectory)dir_211).addDirectoryKey(TEST_KEY1);
+        ((RootDirectory)dir_211).addDirectoryKey(DIRECTORY_KEY);
 
         dirs.put(subdir_111_path, dir_111);
         dirs.put(subdir_211_path, dir_211);

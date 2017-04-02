@@ -230,64 +230,6 @@ public class VirtualRootTest {
     }
 
     @Test
-    public void directoryModified() {
-        when(modifiedPathAttrs.isDirectory()).thenReturn(true);
-        virtualRoot.pathModified(modifiedPath);
-        verify(dedicatedFs).directoryCreated(same(modifiedPath), matchObservers());
-    }
-
-    @Test
-    public void fileModified() {
-        when(dedicatedFs.getDirectory(directory)).thenReturn(dir);
-        when(modifiedPath.getParent()).thenReturn(directory);
-        virtualRoot.pathModified(modifiedPath);
-        verify(dir).informIfChanged(matchObservers(), same(modifiedPath));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void fileModifiedDirNotFound() {
-        when(modifiedPath.getParent()).thenReturn(directory);
-        virtualRoot.pathModified(modifiedPath);
-        verify(dir).informIfChanged(matchObservers(), same(modifiedPath));
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void fileModifiedNoDedicatedFileSystemForPathFound() {
-        final FileSystem otherFs = mock(FileSystem.class);
-        when(otherFs.provider()).thenReturn(provider);
-        when(modifiedPath.getFileSystem()).thenReturn(otherFs);
-        virtualRoot.pathModified(modifiedPath);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void fileDiscardedNoDedicatedFileSystemForPathFound() {
-        final FileSystem otherFs = mock(FileSystem.class);
-        when(otherFs.provider()).thenReturn(provider);
-        when(modifiedPath.getFileSystem()).thenReturn(otherFs);
-        virtualRoot.pathDiscarded(modifiedPath);
-    }
-
-    @Test
-    public void directoryDiscarded() {
-        when(modifiedPath.getParent()).thenReturn(directory);
-        when(attrs.isDirectory()).thenReturn(true);
-        when(dedicatedFs.getDirectory(directory)).thenReturn(dir);
-        virtualRoot.pathDiscarded(modifiedPath);
-        verify(dir).informDiscard(matchObservers(), same(modifiedPath));
-    }
-
-    @Test
-    public void directoryDiscardedNoSuchParent() {
-        when(modifiedPath.getParent()).thenReturn(directory);
-        when(attrs.isDirectory()).thenReturn(true);
-        when(dedicatedFs.getDirectory(directory)).thenReturn(null);
-
-        // This should not cause an exception
-        virtualRoot.pathDiscarded(modifiedPath);
-        verifyZeroInteractions(dir);
-    }
-
-    @Test
     public void stop() {
         virtualRoot.stop();
         verify(dedicatedFs).close();

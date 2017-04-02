@@ -6,8 +6,6 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.*;
 
-import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY;
-import static ch.sourcepond.io.fileobserver.impl.TestKey.TEST_KEY1;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -16,16 +14,18 @@ import static org.mockito.Mockito.*;
  * Created by rolandhauser on 13.02.17.
  */
 public class DefaultFileKeyTest {
+    private static final String DIRECTORY_KEY_1 = "directoryKey1";
+    private static final String DIRECTORY_KEY_2 = "directoryKey2";
     private final Path path = mock(Path.class);
     private Path otherPath = mock(Path.class);
-    private final FileKey key1 = new DefaultFileKeyFactory().newKey(TEST_KEY, path);
-    private final FileKey key2 = new DefaultFileKeyFactory().newKey(TEST_KEY, path);
-    private final FileKey key3 = new DefaultFileKeyFactory().newKey(TEST_KEY, otherPath);
-    private FileKey key4 = new DefaultFileKeyFactory().newKey(TEST_KEY1, otherPath);
+    private final FileKey key1 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
+    private final FileKey key2 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
+    private final FileKey key3 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, otherPath);
+    private FileKey key4 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
 
     @Test
     public void key() {
-        assertSame(TEST_KEY, key1.directoryKey());
+        assertSame(DIRECTORY_KEY_1, key1.directoryKey());
     }
 
     @Test
@@ -78,12 +78,12 @@ public class DefaultFileKeyTest {
     @Test
     public void verifyToString() {
         otherPath = mock(Path.class, withSettings().name("SOME_PATH"));
-        key4 = new DefaultFileKeyFactory().newKey(TEST_KEY1, otherPath);
-        assertEquals("[TEST_KEY1:SOME_PATH]", key4.toString());
+        key4 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
+        assertEquals("[directoryKey2:SOME_PATH]", key4.toString());
     }
 
     @Test
     public void verifyHashCode() {
-        assertEquals(Objects.hash(TEST_KEY, path), key1.hashCode());
+        assertEquals(Objects.hash(DIRECTORY_KEY_1, path), key1.hashCode());
     }
 }

@@ -28,14 +28,15 @@ import static org.mockito.Mockito.*;
  * Created by rolandhauser on 14.03.17.
  */
 public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
+    private static final String DIRECTORY_KEY = "directoryKey";
     private static final String NEW_FILE_NAME = "newfile.txt";
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final ch.sourcepond.io.fileobserver.impl.VirtualRoot virtualRoot = mock(ch.sourcepond.io.fileobserver.impl.VirtualRoot.class);
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
-    private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
+    private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private DedicatedFileSystem child;
     private volatile Throwable threadKiller;
     private Path file;
@@ -45,11 +46,11 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     @Before
     public void setup() throws Exception {
         when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
-        when(watchedDirectory.getKey()).thenReturn(TestKey.TEST_KEY);
+        when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);
         wrapper = new WatchServiceWrapper(fs);
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        child = new DedicatedFileSystem(virtualRoot, directoryFactory, wrapper, rebase, walker, diffObserverFactory, new ConcurrentHashMap<>());
+        child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, diffObserverFactory, pathChangeHandler, new ConcurrentHashMap<>());
         child.registerRootDirectory(watchedDirectory, emptyList());
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
@@ -72,15 +73,15 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
 
     private void changeContent(final Path pPath) throws Exception {
         writeContent(pPath);
-        verify(virtualRoot, timeout(15000)).pathModified(pPath);
-        reset(virtualRoot);
+        verify(pathChangeHandler, timeout(15000)).pathModified(notNull(), eq(pPath));
+        reset(pathChangeHandler);
     }
 
     @Test
     public void verifyThreadNotKillWhenRuntimeExceptionOccurs() throws Exception {
-        doThrow(RuntimeException.class).when(virtualRoot).pathModified(any());
+        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(notNull(), eq(file));
         writeContent(file);
-        verify(virtualRoot, timeout(15000)).pathModified(file);
+        verify(pathChangeHandler, timeout(15000)).pathModified(notNull(), eq(file));
         assertNull(threadKiller);
     }
 
@@ -98,6 +99,6 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     public void entryDelete() throws Exception {
         changeContent(file);
         delete(file);
-        verify(virtualRoot, timeout(15000)).pathDiscarded(file);
+        verify(pathChangeHandler, timeout(15000)).pathDiscarded(file);
     }
 }

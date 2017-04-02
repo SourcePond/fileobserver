@@ -17,7 +17,6 @@ import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
@@ -35,6 +34,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -243,32 +243,6 @@ public class VirtualRoot implements RelocationObserver {
         return fsdirs;
     }
 
-    public void pathModified(final Path pPath) {
-        if (isDirectory(pPath)) {
-            getDedicatedFileSystem(pPath).directoryCreated(pPath, observers);
-        } else {
-            final Directory dir = requireNonNull(
-                    getDedicatedFileSystem(pPath).getDirectory(pPath.getParent()),
-                    () -> format("No directory registered for file %s", pPath));
-            dir.informIfChanged(observers, pPath);
-        }
-    }
-
-    public void pathDiscarded(final Path pPath) {
-        final DedicatedFileSystem dfs = getDedicatedFileSystem(pPath);
-
-        // The deleted path was a directory
-        if (!dfs.directoryDiscarded(observers, pPath)) {
-            final Directory parentDirectory = dfs.getDirectory(pPath.getParent());
-            if (parentDirectory == null) {
-                LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
-            } else {
-                // The deleted path was a file
-                parentDirectory.informDiscard(observers, pPath);
-            }
-        }
-    }
-
     /**
      * <p>Closes all active dedicated files systems and removes them.</p>
      * <p>This must be named "destroy" in order to be called from Felix DM (see
@@ -291,5 +265,9 @@ public class VirtualRoot implements RelocationObserver {
      */
     public void removeFileSystem(final DedicatedFileSystem pDedicatedFileSystem) {
         children.values().remove(pDedicatedFileSystem);
+    }
+
+    public Collection<FileObserver> getObservers() {
+        return observers;
     }
 }

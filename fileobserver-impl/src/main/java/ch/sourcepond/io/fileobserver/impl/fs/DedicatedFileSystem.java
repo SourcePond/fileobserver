@@ -30,8 +30,6 @@ import java.nio.file.WatchKey;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -50,25 +48,22 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final ConcurrentMap<Path, FileTime> timestamps = new ConcurrentHashMap<>();
     private final ConcurrentMap<Path, Directory> dirs;
     private final Thread thread;
-    private final ch.sourcepond.io.fileobserver.impl.VirtualRoot virtualRoot;
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
-    private final DirectoryRegistrationWalker walker;
     private final DiffObserverFactory diffObserverFactory;
+    private final PathChangeHandler pathChangeHandler;
 
-    DedicatedFileSystem(final ch.sourcepond.io.fileobserver.impl.VirtualRoot pVirtualRoot,
-                        final DirectoryFactory pDirectoryFactory,
+    DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
-                        final DirectoryRegistrationWalker pWalker,
                         final DiffObserverFactory pDiffObserverFactory,
+                        final PathChangeHandler pPathChangeHandler,
                         final ConcurrentMap<Path, Directory> pDirs) {
-        virtualRoot = pVirtualRoot;
+        pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
-        walker = pWalker;
         diffObserverFactory = pDiffObserverFactory;
         dirs = pDirs;
         thread = new Thread(this, format("fileobserver %s", this));
@@ -78,7 +73,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * <p>Iterates through all registered directories and passes all their files to the
      * {@link FileObserver#modified(ch.sourcepond.io.fileobserver.api.FileKey, Path)} of the observer specified. This is necessary for newly registered
      * observers who need to know about all watched files. See {@link #registerRootDirectory(WatchedDirectory, Collection)} and
-     * {@link #directoryCreated(Path, Collection)} to get an idea how directories are registered with this object.
+     * {@link PathChangeHandler#pathModified(BasicFileAttributes, Path)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      *
@@ -112,7 +107,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
 
             // Register directories; important here is to pass the newly created root-directory
             // (otherwise FileObserver#supplement would not be called).
-            walker.rootAdded(dir, pObservers);
+            pathChangeHandler.rootAdded(dir);
         }
 
         // VERY IMPORTANT: in any case, add the directory with the directory-key
@@ -143,35 +138,6 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 rebase.cancelAndRebaseDiscardedDirectory(dir);
             }
         }
-    }
-
-    /**
-     * Registers the directory specified and all its sub-directories with the watch-service held by this object.
-     * Additionally, it passes any detected file to {@link FileObserver#modified(ch.sourcepond.io.fileobserver.api.FileKey, Path)} to the observers
-     * specified.
-     *
-     * @param pDirectory Newly created directory, must not be {@code null}
-     * @param pObservers Observers to be informed about detected files, must not be {@code null}
-     */
-    public void directoryCreated(final Path pDirectory, final Collection<FileObserver> pObservers) {
-        walker.directoryCreated(pDirectory, pObservers);
-    }
-
-    public boolean directoryDiscarded(final Collection<FileObserver> pObservers, final Path pDirectory) {
-        final Directory dir = dirs.remove(pDirectory);
-        final boolean wasDirectory = dir != null;
-        if (wasDirectory) {
-            dir.cancelKey();
-            for (final Iterator<Map.Entry<Path, Directory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
-                final Map.Entry<Path, Directory> entry = it.next();
-                if (entry.getKey().startsWith(pDirectory)) {
-                    entry.getValue().cancelKey();
-                    it.remove();
-                }
-            }
-            dir.informDiscard(pObservers, pDirectory);
-        }
-        return wasDirectory;
     }
 
     public Directory getDirectory(final Path pPath) {
@@ -214,7 +180,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             } finally {
                 dirs.clear();
                 timestamps.clear();
-                virtualRoot.removeFileSystem(this);
+                pathChangeHandler.removeFileSystem(this);
             }
         }
     }
@@ -253,15 +219,16 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             if (ENTRY_CREATE == pKind) {
                 final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
                 if (currentAttrs.size() > 0 && hasChanged(child, currentAttrs)) {
-                    virtualRoot.pathModified(child);
+                    pathChangeHandler.pathModified(currentAttrs, child);
                 }
             } else if (ENTRY_MODIFY == pKind) {
-                if (hasChanged(child, readAttributes(child, BasicFileAttributes.class))) {
-                    virtualRoot.pathModified(child);
+                final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
+                if (hasChanged(child, currentAttrs)) {
+                    pathChangeHandler.pathModified(currentAttrs, child);
                 }
             } else if (ENTRY_DELETE == pKind) {
                 try {
-                    virtualRoot.pathDiscarded(child);
+                    pathChangeHandler.pathDiscarded(child);
                 } finally {
                     timestamps.remove(child);
                 }

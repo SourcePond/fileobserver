@@ -1,3 +1,16 @@
+/*Copyright (C) 2017 Roland Hauser, <sourcepond@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
@@ -25,15 +38,14 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Created by rolandhauser on 06.03.17.
+ *
  */
 public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_1 = "dirKey1";
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
-    private final ch.sourcepond.io.fileobserver.impl.VirtualRoot virtualRoot = mock(ch.sourcepond.io.fileobserver.impl.VirtualRoot.class);
+    private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
-    private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -71,7 +83,7 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(virtualRoot, directoryFactory, wrapper, rebase, walker, diffObserverFactory, dirs);
+        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, diffObserverFactory, pathChangeHandler, dirs);
     }
 
     @Test
@@ -94,8 +106,8 @@ public class DedicatedFileSystemTest {
         fs.registerRootDirectory(watchedDirectory1, observers);
         fs.registerRootDirectory(watchedDirectory2, observers);
 
-        final InOrder order = inOrder(walker, rootDir1);
-        order.verify(walker).rootAdded(rootDir1, observers);
+        final InOrder order = inOrder(pathChangeHandler, rootDir1);
+        order.verify(pathChangeHandler).rootAdded(rootDir1);
         order.verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_2);
         order.verifyNoMoreInteractions();
     }
@@ -104,9 +116,9 @@ public class DedicatedFileSystemTest {
     public void registerRootDirectory() throws IOException {
         fs.registerRootDirectory(watchedDirectory1, observers);
         assertSame(rootDir1, fs.getDirectory(rootDirPath1));
-        final InOrder order = inOrder(rebase, walker, rootDir1);
+        final InOrder order = inOrder(rebase, pathChangeHandler, rootDir1);
         order.verify(rebase).rebaseExistingRootDirectories(rootDir1);
-        order.verify(walker).rootAdded(rootDir1, observers);
+        order.verify(pathChangeHandler).rootAdded(rootDir1);
         order.verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
         order.verifyNoMoreInteractions();
     }
@@ -156,51 +168,12 @@ public class DedicatedFileSystemTest {
     }
 
     @Test
-    public void directoryCreated() {
-        fs.directoryCreated(rootDirPath1, observers);
-        verify(walker).directoryCreated(rootDirPath1, observers);
-    }
-
-    @Test
-    public void unknownDirectoryDiscarded() {
-        // This should not be removed
-        dirs.put(rootDirPath2, rootDir2);
-        assertFalse(fs.directoryDiscarded(observers, rootDirPath1));
-        assertEquals(1, dirs.size());
-        assertTrue(dirs.containsKey(rootDirPath2));
-        assertTrue(dirs.containsValue(rootDir2));
-    }
-
-    @Test
-    public void directoryDiscardedWithMatchingSubDir() {
-        // This should not be removed
-        dirs.put(rootDirPath2, rootDir2);
-
-        final Path subDirPath = mock(Path.class);
-        when(subDirPath.startsWith(rootDirPath1)).thenReturn(true);
-        final Directory subDir = mock(Directory.class);
-        dirs.put(subDirPath, subDir);
-        dirs.put(rootDirPath1, rootDir1);
-
-        assertTrue(fs.directoryDiscarded(observers, rootDirPath1));
-        verify(rootDir1).cancelKey();
-        verify(subDir).cancelKey();
-        verify(rootDir1).informDiscard(observers, rootDirPath1);
-        verifyNoMoreInteractions(rootDir1, subDir);
-        verifyZeroInteractions(rootDir2);
-
-        assertEquals(1, dirs.size());
-        assertTrue(dirs.containsKey(rootDirPath2));
-        assertTrue(dirs.containsValue(rootDir2));
-    }
-
-    @Test
     public void close() {
         dirs.put(rootDirPath1, rootDir1);
         fs.close();
         verify(wrapper, timeout(2000)).close();
         assertTrue(dirs.isEmpty());
-        verify(virtualRoot).removeFileSystem(fs);
+        verify(pathChangeHandler).removeFileSystem(fs);
     }
 
 
@@ -228,7 +201,7 @@ public class DedicatedFileSystemTest {
         fs.registerRootDirectory(watchedDirectory1, observers);
         fs.destinationChanged(watchedDirectory1, rootDirPath1, observers);
 
-        final InOrder order = inOrder(rootDir1, walker, diff);
+        final InOrder order = inOrder(rootDir1, pathChangeHandler, diff);
         order.verify(rootDir1).removeDirectoryKey(same(DIRECTORY_KEY_1), argThat(inv -> inv.size() == 1 && inv.contains(diff)));
         order.verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
         order.verify(diff).finalizeRelocation();
