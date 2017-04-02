@@ -37,7 +37,6 @@
         <dependency>
             <groupId>ch.sourcepond.io</groupId>
             <artifactId>fileobserver-spi</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.sourcepond.io</groupId>

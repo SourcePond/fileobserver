@@ -16,6 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -106,12 +107,12 @@ public abstract class Directory {
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
-     * Returns the registered directory keys (see {@link #addDirectoryKey(Object)}). Any change
+     * Returns the registered watched-directories (see {@link #addWatchedDirectory(WatchedDirectory)}). Any change
      * on the returned collection could possible change the internal state.
      *
-     * @return (Possibly empty) collection of keys, never {@code null}
+     * @return (Possibly empty) collection of watched-directories, never {@code null}
      */
-    abstract Collection<Object> getDirectoryKeys();
+    abstract Collection<WatchedDirectory> getWatchedDirectories();
 
     abstract DirectoryFactory getFactory();
 
@@ -119,30 +120,33 @@ public abstract class Directory {
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
      * Relatives the first root-directory against the path specified. To determine which is the first
-     * root-directory, the key specified will be matched against every directory in the tree. If a directory directly
+     * root-directory, the key returned by {@link WatchedDirectory#getKey()} of the watched-directoriy
+     * specified will be matched against every directory in the tree. If a directory directly
      * contains the key, it will be used for relativization.
      *
      * @param pPath         Path to be relativized, must not be {@code null}
-     * @param pDirectoryKey Key of the desired root directory, must not be {@code null}
+     * @param pWatchedDirectory Associated watched-directory of the desired root directory, must not be {@code null}
      * @return Relative path between root and the path specified, never {@code null}.
      */
-    abstract Path relativizeAgainstRoot(Object pDirectoryKey, Path pPath);
+    abstract Path relativizeAgainstRoot(WatchedDirectory pWatchedDirectory, Path pPath);
 
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
-     * Creates a new collection of {@link FileKey} objects. Therefore, every directory-key
-     * returned by {@link #getDirectoryKeys()} will be combined with the relative path of the
-     * file specified. The relative path is the relativization between the root-directory and
-     * the file specified (see {@link #relativizeAgainstRoot(Object, Path)}).
+     * Creates a new collection of {@link FileKey} objects. Therefore, the directory-key of every watched-directory
+     * returned by {@link #getWatchedDirectories()} will be combined with the relative path of the
+     * file specified. If a watched-directory does blacklist the file specified, no key for that directory will be
+     * generated. The relative path is the relativization between the root-directory and
+     * the file specified (see {@link #relativizeAgainstRoot(WatchedDirectory, Path)}).
      *
      * @param pFile File to relativize against {@link #getPath()}, must not be {@code null}
      * @return New collection of {@link FileKey} objects, never {@code null}
      */
     private Collection<FileKey> createKeys(final Path pFile) {
-        return getDirectoryKeys().
-                stream().map(
-                k -> getFactory().newKey(k, relativizeAgainstRoot(k, pFile))).
+        return getWatchedDirectories().
+                stream().
+                filter(d -> !d.isBlacklisted(pFile)).
+                map(d -> getFactory().newKey(d.getKey(), relativizeAgainstRoot(d, pFile))).
                 collect(toList());
     }
 
@@ -163,17 +167,17 @@ public abstract class Directory {
     public abstract boolean hasKeys();
 
     /**
-     * <p>Adds the directory-key specified to this directory instance. When a change is detected, a
-     * {@link FileKey} will be generated for every directory-key/relative-path combination.
+     * <p>Adds the watched-directory specified to this directory instance. When a change is detected, a
+     * {@link FileKey} will be generated for every {@link WatchedDirectory#getKey()}/relative-path combination.
      * This {@link FileKey} instance will then be delivered (along with the readable file path)
      * to the {@link FileObserver} objects which should be informed.</p>
      * <p>
-     * <p>Note: The key object should be <em>immutable</em>, {@link String} or an {@link Enum}
-     * objects are good condidates for being directory-keys.</p>
+     * <p>Note: The object returned by {@link WatchedDirectory#getKey()} should be <em>immutable</em>,
+     * {@link String} or an {@link Enum} objects are good condidates for being directory-keys.</p>
      *
      * @param pDirectoryKey Directory key, must not be {@code null}
      */
-    public abstract void addDirectoryKey(Object pDirectoryKey);
+    public abstract void addWatchedDirectory(WatchedDirectory pDirectoryKey);
 
     abstract long getTimeout();
 
@@ -186,25 +190,25 @@ public abstract class Directory {
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
      * @return {@code true} if the directory-key specified was removed, {@code false} otherwise.
      */
-    abstract boolean removeDirectoryKey(Object pDirectoryKey);
+    abstract boolean removeWatchedDirectory(WatchedDirectory pDirectoryKey);
 
     /**
-     * Removes the directory-key specified from this directory instance and informs
+     * Removes the watched-directory specified from this directory instance and informs
      * the observers specified through their {@link FileObserver#discard(FileKey)}. If no such
-     * key is registered nothing happens.
+     * watched-directory is registered nothing happens.
      *
-     * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
+     * @param pWatchedDirectory Directory-key to be removed, must be not {@code null}
      * @param pObservers    Observers to be informed, must not be {@code null}
      */
-    public void removeDirectoryKey(final Object pDirectoryKey, final Collection<FileObserver> pObservers) {
+    public void removeWatchedDirectory(final WatchedDirectory pWatchedDirectory, final Collection<FileObserver> pObservers) {
         // It is important to evaluate to relative path before the
         // has been removed otherwise the resulting key has not the
         // expected value!
-        final Path relativePath = relativizeAgainstRoot(pDirectoryKey, getPath());
+        final Path relativePath = relativizeAgainstRoot(pWatchedDirectory, getPath());
 
         // Now, the key can be safely removed
-        if (removeDirectoryKey(pDirectoryKey) && !pObservers.isEmpty()) {
-            final FileKey key = getFactory().newKey(pDirectoryKey, relativePath);
+        if (removeWatchedDirectory(pWatchedDirectory) && !pObservers.isEmpty()) {
+            final FileKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
             pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
         }
     }

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,24 +38,24 @@ public class SubDirectoryTest extends DirectoryTest {
     @Test
     public void hasKeys() {
         assertFalse(subdir.hasKeys());
-        subdir.addDirectoryKey(SUB_DIR_KEY1);
+        subdir.addWatchedDirectory(watchedSubDir1);
         assertTrue(subdir.hasKeys());
-        subdir.removeDirectoryKey(SUB_DIR_KEY1);
+        subdir.removeWatchedDirectory(watchedSubDir1);
         assertFalse(subdir.hasKeys());
     }
 
     @Test
     public void toSubDirToRootDirecory() {
-        subdir.addDirectoryKey(SUB_DIR_KEY1);
+        subdir.addWatchedDirectory(watchedSubDir1);
         assertFalse(subdir.isRoot());
         final Directory converted = subdir.toRootDirectory();
         assertNotSame(subdir, converted);
         assertTrue(converted.isRoot());
         assertSame(factory, converted.getFactory());
         assertSame(subdir.getWatchKey(), converted.getWatchKey());
-        final Collection<Object> keys = converted.getDirectoryKeys();
+        final Collection<WatchedDirectory> keys = converted.getWatchedDirectories();
         assertEquals(1, keys.size());
-        assertTrue(keys.contains(SUB_DIR_KEY1));
+        assertTrue(keys.contains(watchedSubDir1));
     }
 
     @Test

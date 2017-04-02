@@ -42,7 +42,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         when(resourcesFactory.create(SHA256, testfile_11_xml_path)).thenReturn(testfile_11_xml_resource);
         root_dir = factory.newRoot(wrapper.register(root_dir_path));
         subdir_1 = factory.newBranch(root_dir, wrapper.register(subdir_1_path));
-        root_dir.addDirectoryKey(ROOT_DIR_KEY);
+        root_dir.addWatchedDirectory(watchedRootDir);
     }
 
     private FileKey toKey(final Path pBasePath, final Path pPath) {
@@ -76,7 +76,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     @Test
     public void rootDirInformIfChangedChecksumsDifferentButNoKeyRegistered() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum2);
-        root_dir.removeDirectoryKey(ROOT_DIR_KEY);
+        root_dir.removeWatchedDirectory(watchedRootDir);
         root_dir.informIfChanged(observers, testfile_txt_path);
         verifyZeroInteractions(observer);
     }
@@ -107,7 +107,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      */
     @Test
     public void formerRootInformIfChangedChecksumsEqual() throws Exception {
-        subdir_1.addDirectoryKey(SUB_DIR_KEY1);
+        subdir_1.addWatchedDirectory(watchedSubDir1);
         setupChecksumAnswer(testfile_11_xml_resource, checksum1);
         subdir_1.informIfChanged(observers, testfile_11_xml_path);
         verifyZeroInteractions(observer);
@@ -118,7 +118,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      */
     @Test
     public void formerRootInformIfChangedChecksumsDifferent() throws IOException {
-        subdir_1.addDirectoryKey(SUB_DIR_KEY1);
+        subdir_1.addWatchedDirectory(watchedSubDir1);
         setupChecksumAnswer(testfile_11_xml_resource, checksum2);
         subdir_1.informIfChanged(observers, testfile_11_xml_path);
         verify(observer).modified(toKey(root_dir_path, testfile_11_xml_path), eq(testfile_11_xml_path));
@@ -150,11 +150,11 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      */
     @Test
     public void checkDiscardAfterDirectoryKeyRemoval() throws IOException, InterruptedException {
-        root_dir.removeDirectoryKey(ROOT_DIR_KEY, observers);
+        root_dir.removeWatchedDirectory(watchedRootDir, observers);
         verify(observer).discard(toKey(root_dir_path, root_dir_path));
 
         // This should have no effect
-        root_dir.removeDirectoryKey(ROOT_DIR_KEY, observers);
+        root_dir.removeWatchedDirectory(watchedRootDir, observers);
         verifyNoMoreInteractions(observer);
     }
 

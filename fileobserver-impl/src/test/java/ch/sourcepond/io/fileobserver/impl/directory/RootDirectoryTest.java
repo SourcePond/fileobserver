@@ -1,5 +1,7 @@
 package ch.sourcepond.io.fileobserver.impl.directory;
 
+import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -7,12 +9,13 @@ import java.io.IOException;
 import java.util.Collection;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by rolandhauser on 08.03.17.
  */
 public class RootDirectoryTest extends DirectoryTest {
-    private Directory root;
+    private RootDirectory root;
 
     @Before
     public void setup() throws IOException {
@@ -20,8 +23,17 @@ public class RootDirectoryTest extends DirectoryTest {
     }
 
     @Test
+    public void ignoreBlacklistedFiles() {
+        final FileObserver observer = mock(FileObserver.class);
+        when(watchedRootDir.isBlacklisted(testfile_11_xml_path)).thenReturn(true);
+        root.addWatchedDirectory(watchedRootDir);
+        root.forceInform(observer);
+        verifyZeroInteractions(observer);
+    }
+
+    @Test
     public void rebase() throws IOException {
-        root.addDirectoryKey(ROOT_DIR_KEY);
+        root.addWatchedDirectory(watchedRootDir);
         final Directory newRoot = factory.newRoot(wrapper.register(root_dir_path));
         final Directory rc = root.rebase(newRoot);
         assertNotSame(root, rc);
@@ -29,17 +41,17 @@ public class RootDirectoryTest extends DirectoryTest {
         final SubDirectory rebased = (SubDirectory)rc;
         assertSame(newRoot, rebased.getParent());
         assertSame(root.getWatchKey(), rebased.getWatchKey());
-        final Collection<Object> keys = rebased.getDirectoryKeys();
+        final Collection<WatchedDirectory> keys = rebased.getWatchedDirectories();
         assertEquals(1, keys.size());
-        assertTrue(keys.contains(ROOT_DIR_KEY));
+        assertTrue(keys.contains(watchedRootDir));
     }
 
     @Test
     public void hasKeys() {
         assertFalse(root.hasKeys());
-        root.addDirectoryKey(ROOT_DIR_KEY);
+        root.addWatchedDirectory(watchedRootDir);
         assertTrue(root.hasKeys());
-        root.removeDirectoryKey(ROOT_DIR_KEY);
+        root.removeWatchedDirectory(watchedRootDir);
         assertFalse(root.hasKeys());
     }
 

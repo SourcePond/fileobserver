@@ -9,6 +9,7 @@
     <groupId>ch.sourcepond.io</groupId>
     <artifactId>fileobserver-spi</artifactId>
     <packaging>bundle</packaging>
+    <version>1.1-SNAPSHOT</version>
     <description>
         Service provider interface for the fileobserver bundle.
     </description>

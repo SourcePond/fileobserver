@@ -19,6 +19,7 @@ import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +42,10 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     static final long TIMEOUT = 2000;
     static final Object ROOT_DIR_KEY = "rootDirKey";
     static final Object SUB_DIR_KEY1 = "subDirKey1";
+    static final Object SUB_DIR_KEY2 = "subDirKey2";
+    final WatchedDirectory watchedRootDir = mock(WatchedDirectory.class);
+    final WatchedDirectory watchedSubDir1 = mock(WatchedDirectory.class);
+    final WatchedDirectory watchedSubDir2 = mock(WatchedDirectory.class);
     final Config config =  mock(Config.class);
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     final Executor directoryWalkerExecutor = directExecutor();
@@ -56,6 +61,9 @@ public abstract class DirectoryTest extends CopyResourcesTest {
 
     @Before
     public void setupFactories() throws IOException {
+        when(watchedRootDir.getKey()).thenReturn(ROOT_DIR_KEY);
+        when(watchedSubDir1.getKey()).thenReturn(SUB_DIR_KEY1);
+        when(watchedSubDir2.getKey()).thenReturn(SUB_DIR_KEY2);
         when(config.timeout()).thenReturn(TIMEOUT);
         wrapper = new WatchServiceWrapper(getDefault());
         factory.setConfig(config);

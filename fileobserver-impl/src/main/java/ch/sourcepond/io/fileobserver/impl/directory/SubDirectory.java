@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
+
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
@@ -26,7 +28,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class SubDirectory extends Directory {
     private volatile Directory parent;
-    private volatile Collection<Object> directoryKeysOrNull;
+    private volatile Collection<WatchedDirectory> watchedDirectoriesOrNull;
 
     SubDirectory(final Directory pParent, final WatchKey pWatchKey) {
         this(pParent, pWatchKey, null);
@@ -37,14 +39,14 @@ public class SubDirectory extends Directory {
      *
      * @param pParent
      * @param pWatchKey
-     * @param pDirectoryKeysOrNull
+     * @param pWatchedDirectoriesOrNull
      */
     SubDirectory(final Directory pParent,
                  final WatchKey pWatchKey,
-                 final Collection<Object> pDirectoryKeysOrNull) {
+                 final Collection<WatchedDirectory> pWatchedDirectoriesOrNull) {
         super(pWatchKey);
         parent = requireNonNull(pParent,"Parent is null");;
-        directoryKeysOrNull = pDirectoryKeysOrNull;
+        watchedDirectoriesOrNull = pWatchedDirectoriesOrNull;
     }
 
     @Override
@@ -53,52 +55,52 @@ public class SubDirectory extends Directory {
     }
 
     @Override
-    public void addDirectoryKey(final Object pDirectoryKey) {
-        Collection<Object> keys = directoryKeysOrNull;
-        if (keys == null) {
+    public void addWatchedDirectory(final WatchedDirectory pDirectoryKey) {
+        Collection<WatchedDirectory> dirs = watchedDirectoriesOrNull;
+        if (dirs == null) {
             synchronized (this) {
-                if (directoryKeysOrNull == null) {
-                    keys = directoryKeysOrNull = new CopyOnWriteArraySet<>();
+                if (watchedDirectoriesOrNull == null) {
+                    dirs = watchedDirectoriesOrNull = new CopyOnWriteArraySet<>();
                 }
             }
         }
-        keys.add(pDirectoryKey);
+        dirs.add(pDirectoryKey);
     }
 
     @Override
-    public boolean removeDirectoryKey(final Object pDirectoryKey) {
+    public boolean removeWatchedDirectory(final WatchedDirectory pDirectoryKey) {
         boolean rc = false;
-        final Collection<Object> keys = directoryKeysOrNull;
+        final Collection<WatchedDirectory> keys = watchedDirectoriesOrNull;
         if (keys != null) {
             rc = keys.remove(pDirectoryKey);
             if (keys.isEmpty()) {
-                directoryKeysOrNull = null;
+                watchedDirectoriesOrNull = null;
             }
         }
         return rc;
     }
 
     @Override
-    Collection<Object> getDirectoryKeys() {
-        final Collection<Object> keys;
-        Collection<Object> keysOrNull = directoryKeysOrNull;
-        if (keysOrNull == null) {
-            keys = parent.getDirectoryKeys();
+    Collection<WatchedDirectory> getWatchedDirectories() {
+        final Collection<WatchedDirectory> dirs;
+        Collection<WatchedDirectory> dirsOrNull = watchedDirectoriesOrNull;
+        if (dirsOrNull == null) {
+            dirs = parent.getWatchedDirectories();
         } else {
-            keys = new HashSet<>(parent.getDirectoryKeys());
-            keys.addAll(keysOrNull);
+            dirs = new HashSet<>(parent.getWatchedDirectories());
+            dirs.addAll(dirsOrNull);
         }
-        return keys;
+        return dirs;
     }
 
     @Override
-    Path relativizeAgainstRoot(final Object pDirectoryKey, final Path pPath) {
+    Path relativizeAgainstRoot(final WatchedDirectory pWatchedDirectory, final Path pPath) {
         final Path relativePath;
-        final Collection<Object> keys = directoryKeysOrNull;
-        if (keys != null && keys.contains(pDirectoryKey)) {
+        final Collection<WatchedDirectory> dirs = watchedDirectoriesOrNull;
+        if (dirs != null && dirs.contains(pWatchedDirectory)) {
             relativePath = getPath().relativize(pPath);
         } else {
-            relativePath = parent.relativizeAgainstRoot(pDirectoryKey, pPath);
+            relativePath = parent.relativizeAgainstRoot(pWatchedDirectory, pPath);
         }
         return relativePath;
     }
@@ -110,7 +112,7 @@ public class SubDirectory extends Directory {
 
     @Override
     public boolean hasKeys() {
-        final Collection<Object> keys = directoryKeysOrNull;
+        final Collection<WatchedDirectory> keys = watchedDirectoriesOrNull;
         return keys != null && !keys.isEmpty();
     }
 
@@ -122,7 +124,7 @@ public class SubDirectory extends Directory {
 
     @Override
     public Directory toRootDirectory() {
-        return new RootDirectory(getFactory(), getWatchKey(), directoryKeysOrNull);
+        return new RootDirectory(getFactory(), getWatchKey(), watchedDirectoriesOrNull);
     }
 
     public Directory getParent() {

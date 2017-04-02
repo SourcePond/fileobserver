@@ -17,16 +17,20 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
 import static java.util.Objects.requireNonNull;
+import static java.util.regex.Pattern.compile;
 
 /**
  * Default implementation of the {@link WatchedDirectory} interface.
  */
 final class DefaultWatchedDirectory implements WatchedDirectory {
+    private final Collection<Pattern> blacklistPatterns = new CopyOnWriteArrayList<>();
     private final Collection<RelocationObserver> observers = new CopyOnWriteArraySet<>();
     private final Object key;
     private volatile Path directory;
@@ -35,6 +39,21 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
         key = requireNonNull(pKey, "Key is null");
         validate(pDirectory);
         directory = pDirectory;
+    }
+
+    @Override
+    public boolean isBlacklisted(final Path pPath) {
+        for (final Pattern pattern : blacklistPatterns) {
+            if (pattern.matcher(pPath.toString()).matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void addBlacklistPattern(final String pPattern) {
+        blacklistPatterns.add(compile(pPattern));
     }
 
     private void validate(final Path pDirectory) {

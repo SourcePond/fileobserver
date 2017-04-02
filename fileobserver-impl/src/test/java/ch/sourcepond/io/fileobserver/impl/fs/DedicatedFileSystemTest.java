@@ -108,7 +108,7 @@ public class DedicatedFileSystemTest {
 
         final InOrder order = inOrder(pathChangeHandler, rootDir1);
         order.verify(pathChangeHandler).rootAdded(rootDir1);
-        order.verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_2);
+        order.verify(rootDir1).addWatchedDirectory(watchedDirectory2);
         order.verifyNoMoreInteractions();
     }
 
@@ -119,7 +119,7 @@ public class DedicatedFileSystemTest {
         final InOrder order = inOrder(rebase, pathChangeHandler, rootDir1);
         order.verify(rebase).rebaseExistingRootDirectories(rootDir1);
         order.verify(pathChangeHandler).rootAdded(rootDir1);
-        order.verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
+        order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
         order.verifyNoMoreInteractions();
     }
 
@@ -145,11 +145,11 @@ public class DedicatedFileSystemTest {
     public void unregisterRootDirectoryStillKeysAvailable() throws IOException {
         when(rootDir1.hasKeys()).thenReturn(true);
         fs.registerRootDirectory(watchedDirectory1);
-        verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
+        verify(rootDir1).addWatchedDirectory(watchedDirectory1);
         fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1, observers);
 
         final InOrder order = inOrder(rootDir1, rebase);
-        order.verify(rootDir1).removeDirectoryKey(DIRECTORY_KEY_1, observers);
+        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1, observers);
         order.verify(rootDir1).hasKeys();
         order.verifyNoMoreInteractions();
     }
@@ -157,11 +157,11 @@ public class DedicatedFileSystemTest {
     @Test
     public void unregisterRootDirectoryAllKeysRemoved() throws IOException {
         fs.registerRootDirectory(watchedDirectory1);
-        verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
+        verify(rootDir1).addWatchedDirectory(watchedDirectory1);
         fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1, observers);
 
         final InOrder order = inOrder(rootDir1, rebase);
-        order.verify(rootDir1).removeDirectoryKey(DIRECTORY_KEY_1, observers);
+        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1, observers);
         order.verify(rootDir1).hasKeys();
         order.verify(rebase).cancelAndRebaseDiscardedDirectory(rootDir1);
         order.verifyNoMoreInteractions();
@@ -202,8 +202,8 @@ public class DedicatedFileSystemTest {
         fs.destinationChanged(watchedDirectory1, rootDirPath1, observers);
 
         final InOrder order = inOrder(rootDir1, pathChangeHandler, diff);
-        order.verify(rootDir1).removeDirectoryKey(same(DIRECTORY_KEY_1), argThat(inv -> inv.size() == 1 && inv.contains(diff)));
-        order.verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
+        order.verify(rootDir1).removeWatchedDirectory(same(watchedDirectory1), argThat(inv -> inv.size() == 1 && inv.contains(diff)));
+        order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
         order.verify(diff).finalizeRelocation();
     }
 }

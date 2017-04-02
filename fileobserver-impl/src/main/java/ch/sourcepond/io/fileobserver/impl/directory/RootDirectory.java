@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
+
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.Collection;
@@ -22,7 +24,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Represents a root-directory i.e. a directory which has been registered to watched.
  */
 public class RootDirectory extends Directory {
-    private final Collection<Object> directoryKeys;
+    private final Collection<WatchedDirectory> directoryKeys;
     private final DirectoryFactory factory;
 
     RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey) {
@@ -36,7 +38,7 @@ public class RootDirectory extends Directory {
      * @param pWatchKey
      * @param pDirectoryKeysOrNull
      */
-    RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey, final Collection<Object> pDirectoryKeysOrNull) {
+    RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey, final Collection<WatchedDirectory> pDirectoryKeysOrNull) {
         super(pWatchKey);
         factory = pFactory;
         directoryKeys = pDirectoryKeysOrNull == null ? new CopyOnWriteArraySet<>() : pDirectoryKeysOrNull;
@@ -59,7 +61,7 @@ public class RootDirectory extends Directory {
      * @param pDirectoryKey Directory key, must not be {@code null}
      */
     @Override
-    public void addDirectoryKey(final Object pDirectoryKey) {
+    public void addWatchedDirectory(final WatchedDirectory pDirectoryKey) {
         directoryKeys.add(pDirectoryKey);
     }
 
@@ -70,12 +72,12 @@ public class RootDirectory extends Directory {
      * @return {@code true} if this directory does not contain directory-keys anymore, {@code false} otherwise
      */
     @Override
-    public boolean removeDirectoryKey(final Object pDirectoryKey) {
+    public boolean removeWatchedDirectory(final WatchedDirectory pDirectoryKey) {
         return directoryKeys.remove(pDirectoryKey);
     }
 
     @Override
-    Collection<Object> getDirectoryKeys() {
+    Collection<WatchedDirectory> getWatchedDirectories() {
         return directoryKeys;
     }
 
@@ -83,7 +85,7 @@ public class RootDirectory extends Directory {
      * Relativizes the path specified against the path of this directory.
      */
     @Override
-    Path relativizeAgainstRoot(final Object pDirectoryKey, final Path pPath) {
+    Path relativizeAgainstRoot(final WatchedDirectory pWatchedDirectory, final Path pPath) {
         // Because we are on the last root directory possible we can ignore the
         // directory key here.
         return getPath().relativize(pPath);

@@ -20,7 +20,9 @@ import java.nio.file.Path;
  * This interface represents a watched-directory. The fileobserver implementation
  * uses the whiteboard pattern to register {@link WatchedDirectory} instances.
  */
-public interface WatchedDirectory {
+public interface WatchedDirectory extends Blacklist {
+
+    void addBlacklistPattern(String pPattern);
 
     /**
      * Returns the unique key of this watched directory instance. The key remains

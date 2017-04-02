@@ -52,6 +52,18 @@ public class WatchedDirectoryTest {
         dir.addObserver(observer);
     }
 
+    @Test
+    public void isBlacklisted() {
+        dir.addBlacklistPattern("AAA\\.zip");
+        dir.addBlacklistPattern("BBB\\.zip");
+        final Path aaa = mock(Path.class, withSettings().name("AAA.zip"));
+        final Path bbb = mock(Path.class, withSettings().name("BBB.zip"));
+        final Path ccc = mock(Path.class, withSettings().name("CCC.zip"));
+        assertTrue(dir.isBlacklisted(aaa));
+        assertTrue(dir.isBlacklisted(bbb));
+        assertFalse(dir.isBlacklisted(ccc));
+    }
+
     @Test(expected = NullPointerException.class)
     public void createKeyIsNull() {
         WatchedDirectory.create(null, path);

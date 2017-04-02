@@ -19,6 +19,7 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
@@ -87,7 +88,7 @@ public class DirectoryFactory {
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
      * Creates a new {@link FileKey} based on the directory-key and
-     * relative path specified, see {@link Directory#addDirectoryKey(Object)} for further information.
+     * relative path specified, see {@link Directory#addWatchedDirectory(WatchedDirectory)} for further information.
      *
      * @param pDirectoryKey Directory-key, must not be {@code null}
      * @param pRelativePath Relative path, must not be {@code null}

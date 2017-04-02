@@ -108,8 +108,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             pathChangeHandler.rootAdded(dir);
         }
 
-        // VERY IMPORTANT: in any case, add the directory with the directory-key
-        dir.addDirectoryKey(pWatchedDirectory.getKey());
+        // VERY IMPORTANT: in any case, associate the directory with the watched-directory
+        dir.addWatchedDirectory(pWatchedDirectory);
     }
 
     /**
@@ -128,7 +128,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             LOG.warn(format("Directory %s is unknown; nothing unregistered", pWatchedDirectory.getDirectory()));
         } else {
             // Remove the directory-key of the watched directory from the key list
-            dir.removeDirectoryKey(pWatchedDirectory.getKey(), pObservers);
+            dir.removeWatchedDirectory(pWatchedDirectory, pObservers);
 
             // If all watched-directories which referenced the directory have been de-registered,
             // it's time to clean-up.
