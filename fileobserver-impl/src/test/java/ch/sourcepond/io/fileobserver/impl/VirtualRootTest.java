@@ -17,7 +17,6 @@ import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilder;
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -57,7 +56,6 @@ public class VirtualRootTest {
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final DedicatedFileSystem dedicatedFs = mock(DedicatedFileSystem.class);
     private final DedicatedFileSystemFactory dedicatedFsFactory = mock(DedicatedFileSystemFactory.class);
-    private final Directory dir = mock(Directory.class);
     private final SmartSwitchBuilderFactory ssbFactory = mock(SmartSwitchBuilderFactory.class);
     private final SmartSwitchBuilder<ExecutorService> executorBuilder = mock(SmartSwitchBuilder.class);
     private ExecutorService observerExecutor;
