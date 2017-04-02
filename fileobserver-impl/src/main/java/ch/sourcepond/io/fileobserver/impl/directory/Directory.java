@@ -24,14 +24,15 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -143,11 +144,17 @@ public abstract class Directory {
      * @return New collection of {@link FileKey} objects, never {@code null}
      */
     private Collection<FileKey> createKeys(final Path pFile) {
-        return getWatchedDirectories().
-                stream().
-                filter(d -> !d.isBlacklisted(pFile)).
-                map(d -> getFactory().newKey(d.getKey(), relativizeAgainstRoot(d, pFile))).
-                collect(toList());
+        final Collection<WatchedDirectory> watchedDirectories = getWatchedDirectories();
+        final List<FileKey> keys = new ArrayList<>(watchedDirectories.size());
+        for (final WatchedDirectory watchedDirectory : watchedDirectories) {
+            final Path relativePath = relativizeAgainstRoot(watchedDirectory, pFile);
+
+            if (!watchedDirectory.isBlacklisted(relativePath)) {
+                keys.add(getFactory().newKey(watchedDirectory.getKey(), relativePath));
+            }
+        }
+
+        return keys;
     }
 
     /**

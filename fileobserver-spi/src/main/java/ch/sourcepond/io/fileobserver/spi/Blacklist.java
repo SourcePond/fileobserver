@@ -21,5 +21,5 @@ import java.nio.file.Path;
 @FunctionalInterface
 public interface Blacklist {
 
-    boolean isBlacklisted(Path pPath);
+    boolean isBlacklisted(Path pRelativePath);
 }

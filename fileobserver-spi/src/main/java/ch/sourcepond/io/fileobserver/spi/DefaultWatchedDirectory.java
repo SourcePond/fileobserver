@@ -42,9 +42,9 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
     }
 
     @Override
-    public boolean isBlacklisted(final Path pPath) {
+    public boolean isBlacklisted(final Path pRelativePath) {
         for (final Pattern pattern : blacklistPatterns) {
-            if (pattern.matcher(pPath.toString()).matches()) {
+            if (pattern.matcher(pRelativePath.toString()).matches()) {
                 return true;
             }
         }
