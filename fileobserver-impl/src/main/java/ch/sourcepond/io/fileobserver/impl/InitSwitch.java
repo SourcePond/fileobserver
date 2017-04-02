@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  */
 class InitSwitch<T> {
     private final Consumer<T> consumer;
-    private Set<T> objects = new HashSet<T>();
+    private Set<T> objects = new HashSet<>();
 
     InitSwitch(final Consumer<T> pConsumer) {
         consumer = pConsumer;
@@ -37,7 +37,7 @@ class InitSwitch<T> {
             }
             objects = null;
         }
-        objs.forEach(o -> consumer.accept(o));
+        objs.forEach(consumer::accept);
     }
 
     void add(final T pObj) {

@@ -1,6 +1,6 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.impl.*;
+import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
@@ -19,7 +19,6 @@ import static java.lang.Thread.sleep;
 import static java.nio.file.Files.delete;
 import static java.nio.file.Files.newBufferedWriter;
 import static java.nio.file.StandardOpenOption.CREATE;
-import static java.util.Collections.emptyList;
 import static java.util.UUID.randomUUID;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -51,7 +50,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
         child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, diffObserverFactory, pathChangeHandler, new ConcurrentHashMap<>());
-        child.registerRootDirectory(watchedDirectory, emptyList());
+        child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
         child.start();

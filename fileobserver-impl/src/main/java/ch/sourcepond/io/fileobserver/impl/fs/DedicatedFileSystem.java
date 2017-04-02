@@ -72,7 +72,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     /**
      * <p>Iterates through all registered directories and passes all their files to the
      * {@link FileObserver#modified(ch.sourcepond.io.fileobserver.api.FileKey, Path)} of the observer specified. This is necessary for newly registered
-     * observers who need to know about all watched files. See {@link #registerRootDirectory(WatchedDirectory, Collection)} and
+     * observers who need to know about all watched files. See {@link #registerRootDirectory(WatchedDirectory)} and
      * {@link PathChangeHandler#pathModified(BasicFileAttributes, Path)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
@@ -87,10 +87,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * This method is <em>not</em> thread-safe and must be synchronized externally.
      *
      * @param pWatchedDirectory
-     * @param pObservers
      */
-    public void registerRootDirectory(final WatchedDirectory pWatchedDirectory,
-                                      final Collection<FileObserver> pObservers)
+    public void registerRootDirectory(final WatchedDirectory pWatchedDirectory)
             throws IOException {
         // It's already checked that the directory is not null
         final Path directory = pWatchedDirectory.getDirectory();
@@ -154,9 +152,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             // Unregister and register watched-directory. IMPORTANT: do not
             // inform observers at all, this will be handled later!
             final DiffObserver diff = diffObserverFactory.createObserver(this, pObservers);
-            final Collection<FileObserver> observers = asList(diff);
-            unregisterRootDirectory(pPrevious, pWatchedDirectory, observers);
-            registerRootDirectory(pWatchedDirectory, observers);
+            unregisterRootDirectory(pPrevious, pWatchedDirectory, asList(diff));
+            registerRootDirectory(pWatchedDirectory);
             diff.finalizeRelocation();
 
             LOG.info("Destination changed from {} to {}", pPrevious, pWatchedDirectory.getDirectory());

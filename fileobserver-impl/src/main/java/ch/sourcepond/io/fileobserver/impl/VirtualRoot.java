@@ -164,7 +164,7 @@ public class VirtualRoot implements RelocationObserver {
 
         try {
             children.computeIfAbsent(directory.getFileSystem(),
-                    this::newDedicatedFileSystem).registerRootDirectory(pWatchedDirectory, observers);
+                    this::newDedicatedFileSystem).registerRootDirectory(pWatchedDirectory);
             pWatchedDirectory.addObserver(this);
             LOG.info("Added [{}:{}]", key, directory);
         } catch (final IOException | UncheckedIOException e) {

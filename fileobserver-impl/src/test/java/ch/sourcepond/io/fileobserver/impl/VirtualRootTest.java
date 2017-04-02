@@ -150,7 +150,7 @@ public class VirtualRootTest {
 
     @Test
     public void addRoot() throws IOException {
-        verify(dedicatedFs).registerRootDirectory(same(watchedDir), matchObservers());
+        verify(dedicatedFs).registerRootDirectory(same(watchedDir));
         verify(watchedDir).addObserver(virtualRoot);
     }
 
@@ -179,7 +179,7 @@ public class VirtualRootTest {
         when(watchedDir.getKey()).thenReturn(OTHER_KEY);
         virtualRoot.removeObserver(observer);
         virtualRoot.addRoot(watchedDir);
-        verify(dedicatedFs).registerRootDirectory(same(watchedDir), argThat(o -> o.isEmpty()));
+        verify(dedicatedFs).registerRootDirectory(same(watchedDir));
     }
 
     @Test(expected = IllegalArgumentException.class)

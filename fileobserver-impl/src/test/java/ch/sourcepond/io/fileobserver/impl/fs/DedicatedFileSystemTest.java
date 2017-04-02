@@ -97,14 +97,14 @@ public class DedicatedFileSystemTest {
 
     @Test(expected = NullPointerException.class)
     public void insureDirectoryKeyCannotBeNullDuringRegistration() throws IOException {
-        fs.registerRootDirectory(mock(WatchedDirectory.class), observers);
+        fs.registerRootDirectory(mock(WatchedDirectory.class));
     }
 
     @Test
     public void directoryWithSamePathAlreadyRegistered() throws IOException {
         when(watchedDirectory2.getDirectory()).thenReturn(rootDirPath1);
-        fs.registerRootDirectory(watchedDirectory1, observers);
-        fs.registerRootDirectory(watchedDirectory2, observers);
+        fs.registerRootDirectory(watchedDirectory1);
+        fs.registerRootDirectory(watchedDirectory2);
 
         final InOrder order = inOrder(pathChangeHandler, rootDir1);
         order.verify(pathChangeHandler).rootAdded(rootDir1);
@@ -114,7 +114,7 @@ public class DedicatedFileSystemTest {
 
     @Test
     public void registerRootDirectory() throws IOException {
-        fs.registerRootDirectory(watchedDirectory1, observers);
+        fs.registerRootDirectory(watchedDirectory1);
         assertSame(rootDir1, fs.getDirectory(rootDirPath1));
         final InOrder order = inOrder(rebase, pathChangeHandler, rootDir1);
         order.verify(rebase).rebaseExistingRootDirectories(rootDir1);
@@ -144,7 +144,7 @@ public class DedicatedFileSystemTest {
     @Test
     public void unregisterRootDirectoryStillKeysAvailable() throws IOException {
         when(rootDir1.hasKeys()).thenReturn(true);
-        fs.registerRootDirectory(watchedDirectory1, observers);
+        fs.registerRootDirectory(watchedDirectory1);
         verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
         fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1, observers);
 
@@ -156,7 +156,7 @@ public class DedicatedFileSystemTest {
 
     @Test
     public void unregisterRootDirectoryAllKeysRemoved() throws IOException {
-        fs.registerRootDirectory(watchedDirectory1, observers);
+        fs.registerRootDirectory(watchedDirectory1);
         verify(rootDir1).addDirectoryKey(DIRECTORY_KEY_1);
         fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1, observers);
 
@@ -198,7 +198,7 @@ public class DedicatedFileSystemTest {
         final DiffObserver diff = mock(DiffObserver.class);
         when(diffObserverFactory.createObserver(fs, observers)).thenReturn(diff);
 
-        fs.registerRootDirectory(watchedDirectory1, observers);
+        fs.registerRootDirectory(watchedDirectory1);
         fs.destinationChanged(watchedDirectory1, rootDirPath1, observers);
 
         final InOrder order = inOrder(rootDir1, pathChangeHandler, diff);
