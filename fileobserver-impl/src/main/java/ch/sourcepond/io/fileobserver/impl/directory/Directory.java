@@ -152,7 +152,7 @@ public abstract class Directory {
             if (!watchedDirectory.isBlacklisted(relativePath)) {
                 keys.add(getFactory().newKey(watchedDirectory.getKey(), relativePath));
             } else {
-                LOG.info("{} is blacklisted by {}");
+                LOG.info("{} is blacklisted by {}", relativePath, watchedDirectory);
             }
         }
 
