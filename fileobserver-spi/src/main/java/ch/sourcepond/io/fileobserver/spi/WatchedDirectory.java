@@ -20,8 +20,23 @@ import java.nio.file.Path;
  * This interface represents a watched-directory. The fileobserver implementation
  * uses the whiteboard pattern to register {@link WatchedDirectory} instances.
  */
-public interface WatchedDirectory extends Blacklist {
+public interface WatchedDirectory {
 
+    /**
+     * Checks whether the relative path specified is blacklisted and therefore should not be handled.
+     *
+     * @param pRelativePath Relative path to be checked, must not be {@code null}
+     * @return {@code true} if the relative path is blacklisted, {@code false} otherwise.
+     */
+    boolean isBlacklisted(Path pRelativePath);
+
+    /**
+     * Adds the regular expression to the list of blacklist patterns. If the relative path of a file
+     * matches a pattern (see {@link #isBlacklisted(Path)}), no file-key will be created after it has been
+     * changed. This means, that it will not be passed to any file-observer.
+     *
+     * @param pPattern Regular expression, must not be {@code null} or empty.
+     */
     void addBlacklistPattern(String pPattern);
 
     /**

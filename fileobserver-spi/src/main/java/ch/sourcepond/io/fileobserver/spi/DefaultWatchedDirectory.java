@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.spi;
 
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -25,11 +27,13 @@ import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Default implementation of the {@link WatchedDirectory} interface.
  */
 final class DefaultWatchedDirectory implements WatchedDirectory {
+    private static final Logger LOG = getLogger(DefaultWatchedDirectory.class);
     private final Collection<Pattern> blacklistPatterns = new CopyOnWriteArrayList<>();
     private final Collection<RelocationObserver> observers = new CopyOnWriteArraySet<>();
     private final Object key;
@@ -54,6 +58,7 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
     @Override
     public void addBlacklistPattern(final String pPattern) {
         blacklistPatterns.add(compile(pPattern));
+        LOG.debug("Blacklist pattern added: {}", pPattern);
     }
 
     private void validate(final Path pDirectory) {

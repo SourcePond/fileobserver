@@ -3,16 +3,22 @@
     <parent>
         <groupId>ch.sourcepond.io</groupId>
         <artifactId>fileobserver</artifactId>
-        <version>1.1-SNAPSHOT</version>
+        <version>1.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>ch.sourcepond.io</groupId>
     <artifactId>fileobserver-spi</artifactId>
     <packaging>bundle</packaging>
-    <version>1.1-SNAPSHOT</version>
     <description>
         Service provider interface for the fileobserver bundle.
     </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>

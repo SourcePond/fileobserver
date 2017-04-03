@@ -8,7 +8,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ch.sourcepond.io</groupId>
 	<artifactId>fileobserver</artifactId>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.2-SNAPSHOT</version>
 	<inceptionYear>2017</inceptionYear>
 	<packaging>pom</packaging>
 	<description>
@@ -28,7 +28,6 @@
 		<module>fileobserver-feature</module>
 		<module>fileobserver-spi</module>
 	</modules>
-
 
 	<!-- Remove this when MNG-3244, MNG-5951 are resolved -->
 	<url>https://sourcepond.github.io/${repo.project}</url>
