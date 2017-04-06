@@ -19,6 +19,7 @@ import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -51,8 +52,9 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final Executor directoryWalkerExecutor = directExecutor();
     final Executor observerExecutor = directExecutor();
     final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
+    final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
     final DirectoryFactory factory = new DirectoryFactory(
-            keyFactory);
+            keyFactory, dispatcher);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
     final FileObserver observer = mock(FileObserver.class);
@@ -80,7 +82,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     @Test
     public void verifyDirectoryFactoryDefaultConstructor() {
         // Should not throw an exception
-        new DirectoryFactory(keyFactory);
+        new DirectoryFactory(keyFactory, dispatcher);
     }
 
     void setupChecksumAnswer(final Resource pResource, final Checksum pChecksum2) throws IOException {

@@ -39,25 +39,14 @@ public class ObserverDispatcher {
     private static final Logger LOG = getLogger(ObserverDispatcher.class);
     private final Set<KeyDeliveryHook> hooks = newKeySet();
     private final Set<FileObserver> observers = newKeySet();
-    private final DispatcherTaskFactory taskFactory;
     private Executor dispatcherExecutor;
     private ExecutorService observerExecutor;
 
-    // Constructor for activator
-    ObserverDispatcher() {
-        this(new DispatcherTaskFactory());
-    }
-
-    // Constructor for testing
-    ObserverDispatcher(final DispatcherTaskFactory pTaskFactory) {
-        taskFactory = pTaskFactory;
-    }
-
-    void setDispatcherExecutor(final ExecutorService pDispatcherExecutor) {
+    public void setDispatcherExecutor(final ExecutorService pDispatcherExecutor) {
         dispatcherExecutor = pDispatcherExecutor;
     }
 
-    void setObserverExecutor(final ExecutorService pObserverExecutor) {
+    public void setObserverExecutor(final ExecutorService pObserverExecutor) {
         observerExecutor = pObserverExecutor;
     }
 

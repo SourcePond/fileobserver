@@ -19,6 +19,7 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 
 import java.nio.file.Path;
@@ -30,21 +31,21 @@ import java.util.concurrent.Executor;
  */
 public class DirectoryFactory {
     private final DefaultFileKeyFactory fileKeyFactory;
+    private final ObserverDispatcher dispatcher;
+    private Config config;
 
     // Injected by SCR
     private Executor directoryWalkerExecutor;
 
     // Injected by SCR
     private Executor observerExecutor;
-
     // Injected by SCR
     private ResourcesFactory resourcesFactory;
 
-    private Config config;
-
     // Constructor for BundleActivator
-    public DirectoryFactory(final DefaultFileKeyFactory pFileKeyFactory) {
+    public DirectoryFactory(final DefaultFileKeyFactory pFileKeyFactory, final ObserverDispatcher pDispatcher) {
         fileKeyFactory = pFileKeyFactory;
+        dispatcher = pDispatcher;
     }
 
     public void setConfig(final Config pConfig) {
