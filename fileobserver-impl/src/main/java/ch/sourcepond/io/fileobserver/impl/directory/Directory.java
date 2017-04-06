@@ -95,7 +95,6 @@ public abstract class Directory {
      * Iterates over all files contained by this directory and informs for each entry
      * the currently focused observer. Only direct children will be considered,
      * sub-directories and non-regular files will be ignored.
-     *
      */
     private void streamDirectoryAndForceInform() {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
@@ -127,7 +126,7 @@ public abstract class Directory {
      * specified will be matched against every directory in the tree. If a directory directly
      * contains the key, it will be used for relativization.
      *
-     * @param pPath         Path to be relativized, must not be {@code null}
+     * @param pPath             Path to be relativized, must not be {@code null}
      * @param pWatchedDirectory Associated watched-directory of the desired root directory, must not be {@code null}
      * @return Relative path between root and the path specified, never {@code null}.
      */
@@ -243,7 +242,6 @@ public abstract class Directory {
      * sometime in the future. Such a task will inform the observer specified through its
      * {@link FileObserver#modified(FileKey, Path)} method. Note: only direct children will be
      * considered, sub-directories and non-regular files will be ignored.
-     *
      */
     public void forceInform() {
         getFactory().executeDirectoryWalkerTask(() -> streamDirectoryAndForceInform());
@@ -263,17 +261,15 @@ public abstract class Directory {
      * been discarded through their {@link FileObserver#discard(FileKey)} method. The observers
      * will be called asynchronously sometime in the future.
      *
-     * @param pObservers Observers to be informed, must not be {@code null}
-     * @param pFile      Discarded file, must be {@code null}
+     * @param pFile Discarded file, must be {@code null}
      */
-    public void informDiscard(final Collection<FileObserver> pObservers, final Path pFile) {
+    public void informDiscard(final Path pFile) {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
-        if (!pObservers.isEmpty()) {
-            for (final FileKey key : createKeys(pFile)) {
-                pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
-            }
+        final ObserverDispatcher dispatcher = getFactory().getDispatcher();
+        if (dispatcher.hasObservers()) {
+            createKeys(pFile).forEach(k -> dispatcher.discard(k));
         }
     }
 

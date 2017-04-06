@@ -80,7 +80,7 @@ class PathChangeHandler {
                 LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
             } else {
                 // The deleted path was a file
-                parentDirectory.informDiscard(getObservers(), pPath);
+                parentDirectory.informDiscard(pPath);
             }
         }
     }
@@ -97,7 +97,7 @@ class PathChangeHandler {
                     it.remove();
                 }
             }
-            dir.informDiscard(getObservers(), pDirectory);
+            dir.informDiscard(pDirectory);
         }
         return wasDirectory;
     }

@@ -87,7 +87,7 @@ public class PathChangeHandlerTest {
     public void fileDiscarded() {
         dirs.put(parent, directory);
         handler.pathDiscarded(path);
-        verify(directory).informDiscard(observers, path);
+        verify(directory).informDiscard(path);
     }
 
     @Test
@@ -111,7 +111,7 @@ public class PathChangeHandlerTest {
         final InOrder order = inOrder(directory, subDirectory);
         order.verify(directory).cancelKey();
         order.verify(subDirectory).cancelKey();
-        order.verify(directory).informDiscard(observers, parent);
+        order.verify(directory).informDiscard(parent);
 
         assertFalse(dirs.containsKey(parent));
         assertFalse(dirs.containsKey(path));

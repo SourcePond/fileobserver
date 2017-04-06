@@ -134,7 +134,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      */
     @Test
     public void rootDirInformIfFileDiscarded() throws IOException, InterruptedException {
-        root_dir.informDiscard(dispatcher.getObservers(), testfile_txt_path);
+        root_dir.informDiscard(testfile_txt_path);
         verify(observer, timeout(500)).discard(toKey(root_dir_path, testfile_txt_path));
     }
 
