@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
+import static java.lang.Thread.currentThread;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -60,45 +61,37 @@ class DispatcherTask implements Runnable {
         parentKeys = pParentKeys;
     }
 
-    private void informHooks(final KeyDeliveryConsumer pConsumer) throws InterruptedException {
+    private void informHooks(final KeyDeliveryConsumer pConsumer) {
         if (!hooks.isEmpty()) {
             final Collection<Future<?>> joins = new LinkedList<>();
             hooks.forEach(hook -> joins.add(observerExecutor.submit(() -> pConsumer.consume(hook, key))));
-            for (final Future<?> join : joins) {
-                try {
-                    join.get();
-                } catch (final ExecutionException e) {
-                    LOG.warn(e.getMessage(), e);
-                }
-            }
+            joins.forEach(j -> join(j));
         }
     }
 
-    private void join(final Future<?> pJoin) throws InterruptedException {
+    private void join(final Future<?> pJoin) {
         try {
             pJoin.get();
+        } catch (final InterruptedException e) {
+            currentThread().interrupt();
         } catch (final ExecutionException e) {
             LOG.warn(e.getMessage(), e);
         }
     }
 
-    private void waitForResults(final Collection<Future<?>> joins) throws InterruptedException {
-        for (final Future<?> join : joins) {
-            join(join);
+    private void submitObserverTask(final FileObserver pObserver, final Collection<Future<?>> pJoins) {
+        if (!currentThread().isInterrupted()) {
+            pJoins.add(observerExecutor.submit(() ->
+                    fireEventConsumer.accept(pObserver)));
         }
-        informHooks(afterConsumer);
     }
 
     @Override
     public void run() {
-        try {
-            informHooks(beforeConsumer);
-            final Collection<Future<?>> joins = new LinkedList<>();
-            observers.forEach(observer -> joins.add(observerExecutor.submit(() ->
-                    fireEventConsumer.accept(observer))));
-            waitForResults(joins);
-        } catch (final InterruptedException e) {
-            LOG.warn(e.getMessage(), e);
-        }
+        informHooks(beforeConsumer);
+        final Collection<Future<?>> joins = new LinkedList<>();
+        observers.forEach(observer -> submitObserverTask(observer, joins));
+        joins.forEach(j -> join(j));
+        informHooks(afterConsumer);
     }
 }

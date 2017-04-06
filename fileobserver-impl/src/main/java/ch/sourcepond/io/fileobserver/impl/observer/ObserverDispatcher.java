@@ -70,7 +70,7 @@ public class ObserverDispatcher {
     }
 
     void removeObserver(final FileObserver pObserver) {
-        observers.add(pObserver);
+        observers.remove(pObserver);
     }
 
     void removeHook(final KeyDeliveryHook pHook) {
@@ -110,14 +110,14 @@ public class ObserverDispatcher {
                             final KeyDeliveryConsumer pAfterConsumer,
                             final Collection<FileKey> pParentKeys) {
         if (!observers.isEmpty()) {
-            dispatcherExecutor.execute(taskFactory.createTask(
+            dispatcherExecutor.execute(new DispatcherTask(
                     observerExecutor,
                     hooks,
                     observers,
                     pKey,
                     pFireEventConsumer,
-                    (hook, key) -> hook.beforeModify(key),
-                    (hook, key) -> hook.afterModify(key),
+                    pBeforeConsumer,
+                    pAfterConsumer,
                     pParentKeys
             ));
         }
@@ -137,8 +137,8 @@ public class ObserverDispatcher {
         submitTask(
                 pKey,
                 observer -> observer.discard(pKey),
-                (hook, key) -> hook.beforeModify(key),
-                (hook, key) -> hook.afterModify(key),
+                (hook, key) -> hook.beforeDiscard(key),
+                (hook, key) -> hook.afterDiscard(key),
                 emptyList()
         );
     }
