@@ -18,23 +18,27 @@ package ch.sourcepond.io.fileobserver.api;
  */
 public interface KeyDeliveryHook {
 
-    void before(FileKey pKey);
+    default void before(final FileKey pKey) {
+        // noop by default
+    }
 
-    void after(FileKey pKey);
+    default void after(final FileKey pKey) {
+        // noop by default
+    }
 
-    default void beforeModify(FileKey pKey) {
+    default void beforeModify(final FileKey pKey) {
         before(pKey);
     }
 
-    default void beforeDiscard(FileKey pKey) {
+    default void beforeDiscard(final FileKey pKey) {
         before(pKey);
     }
 
-    default void afterModify(FileKey pKey) {
+    default void afterModify(final FileKey pKey) {
         after(pKey);
     }
 
-    default  void afterDiscard(FileKey pKey) {
+    default void afterDiscard(final FileKey pKey) {
         after(pKey);
     }
 }

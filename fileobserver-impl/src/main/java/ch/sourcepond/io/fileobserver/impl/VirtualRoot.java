@@ -16,6 +16,7 @@ package ch.sourcepond.io.fileobserver.impl;
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
@@ -151,6 +152,15 @@ public class VirtualRoot implements RelocationObserver {
         } catch (final IOException e) {
             throw new UncheckedIOException(e.getMessage(), e);
         }
+    }
+
+    @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
+    public void addHook(final KeyDeliveryHook pHook) {
+        dispatcher.addHook(pHook);
+    }
+
+    public void removeHook(final KeyDeliveryHook pHook) {
+        dispatcher.addHook(pHook);
     }
 
     // This method must be synchronized because all sub-directories need to be
