@@ -30,7 +30,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
-import static java.util.Collections.emptyList;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -121,8 +120,7 @@ public class ObserverDispatcher {
     private void submitTask(final FileKey pKey,
                             final Consumer<FileObserver> pFireEventConsumer,
                             final KeyDeliveryConsumer pBeforeConsumer,
-                            final KeyDeliveryConsumer pAfterConsumer,
-                            final Collection<FileKey> pParentKeys) {
+                            final KeyDeliveryConsumer pAfterConsumer) {
         if (!observers.isEmpty()) {
             dispatcherExecutor.execute(new DispatcherTask(
                     observerExecutor,
@@ -131,8 +129,7 @@ public class ObserverDispatcher {
                     pKey,
                     pFireEventConsumer,
                     pBeforeConsumer,
-                    pAfterConsumer,
-                    pParentKeys
+                    pAfterConsumer
             ));
         }
     }
@@ -146,8 +143,7 @@ public class ObserverDispatcher {
                 pKey,
                 observer -> fireModification(observer, pKey, pFile, pParentKeys),
                 (hook, key) -> hook.beforeModify(key),
-                (hook, key) -> hook.afterModify(key),
-                pParentKeys
+                (hook, key) -> hook.afterModify(key)
         );
     }
 
@@ -156,8 +152,7 @@ public class ObserverDispatcher {
                 pKey,
                 observer -> observer.discard(pKey),
                 (hook, key) -> hook.beforeDiscard(key),
-                (hook, key) -> hook.afterDiscard(key),
-                emptyList()
+                (hook, key) -> hook.afterDiscard(key)
         );
     }
 

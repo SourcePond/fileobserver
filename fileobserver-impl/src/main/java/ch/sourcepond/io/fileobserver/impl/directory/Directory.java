@@ -203,7 +203,7 @@ public abstract class Directory {
      * considered, sub-directories and non-regular files will be ignored.
      */
     public void forceInform() {
-        getFactory().executeDirectoryWalkerTask(() -> streamDirectoryAndForceInform());
+        getFactory().executeDirectoryWalkerTask(this::streamDirectoryAndForceInform);
     }
 
     /**
@@ -228,7 +228,7 @@ public abstract class Directory {
 
         final ObserverDispatcher dispatcher = getFactory().getDispatcher();
         if (dispatcher.hasObservers()) {
-            createKeys(pFile).forEach(k -> dispatcher.discard(k));
+            createKeys(pFile).forEach(dispatcher::discard);
         }
     }
 
@@ -265,7 +265,6 @@ public abstract class Directory {
                                 final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
                                         emptyList() : pNewRootOrNull.createKeys(pFile);
 
-                                final Collection<FileKey> keys = createKeys(pFile);
                                 createKeys(pFile).forEach(k -> dispatcher.modified(k, pFile, supplementKeys));
                             }
                         });

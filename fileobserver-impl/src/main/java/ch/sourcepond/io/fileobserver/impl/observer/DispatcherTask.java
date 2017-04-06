@@ -37,7 +37,6 @@ class DispatcherTask implements Runnable {
     private final ExecutorService observerExecutor;
     private final Collection<KeyDeliveryHook> hooks;
     private final Collection<FileObserver> observers;
-    private final Collection<FileKey> parentKeys;
     private final Consumer<FileObserver> fireEventConsumer;
     private final KeyDeliveryConsumer beforeConsumer;
     private final KeyDeliveryConsumer afterConsumer;
@@ -49,8 +48,7 @@ class DispatcherTask implements Runnable {
                    final FileKey pKey,
                    final Consumer<FileObserver> pFireEventConsumer,
                    final KeyDeliveryConsumer pBeforeConsumer,
-                   final KeyDeliveryConsumer pAfterConsumer,
-                   final Collection<FileKey> pParentKeys) {
+                   final KeyDeliveryConsumer pAfterConsumer) {
         observerExecutor = pObserverExecutor;
         hooks = pHooks;
         observers = pObservers;
@@ -58,14 +56,13 @@ class DispatcherTask implements Runnable {
         fireEventConsumer = pFireEventConsumer;
         beforeConsumer = pBeforeConsumer;
         afterConsumer = pAfterConsumer;
-        parentKeys = pParentKeys;
     }
 
     private void informHooks(final KeyDeliveryConsumer pConsumer) {
         if (!hooks.isEmpty()) {
             final Collection<Future<?>> joins = new LinkedList<>();
             hooks.forEach(hook -> joins.add(observerExecutor.submit(() -> pConsumer.consume(hook, key))));
-            joins.forEach(j -> join(j));
+            joins.forEach(this::join);
         }
     }
 
@@ -91,7 +88,7 @@ class DispatcherTask implements Runnable {
         informHooks(beforeConsumer);
         final Collection<Future<?>> joins = new LinkedList<>();
         observers.forEach(observer -> submitObserverTask(observer, joins));
-        joins.forEach(j -> join(j));
+        joins.forEach(this::join);
         informHooks(afterConsumer);
     }
 }
