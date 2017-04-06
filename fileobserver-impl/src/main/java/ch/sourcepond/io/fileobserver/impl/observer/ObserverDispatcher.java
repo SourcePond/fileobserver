@@ -69,8 +69,14 @@ public class ObserverDispatcher {
         observerExecutor = pObserverExecutor;
     }
 
-    public void addObserver(final FileObserver pObserver) {
+    public void addObserver(final FileObserver pObserver, final Runnable pPostAddAction) {
+        focusOrNull.set(pObserver);
         observers.add(pObserver);
+        try {
+            pPostAddAction.run();
+        } finally {
+            focusOrNull.set(null);
+        }
     }
 
     public void addHook(final KeyDeliveryHook pHook) {
