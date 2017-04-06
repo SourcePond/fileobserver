@@ -131,4 +131,8 @@ public class ObserverDispatcher {
                 emptyList()
         );
     }
+
+    public boolean hasObservers() {
+        return !observers.isEmpty();
+    }
 }

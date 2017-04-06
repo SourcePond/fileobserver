@@ -148,4 +148,13 @@ public class ObserverDispatcherTest {
         order.verify(hook, timeout(1000)).afterDiscard(fileKey);
         order.verifyNoMoreInteractions();
     }
+
+    @Test
+    public void hasObservers() {
+        assertTrue(dispatcher.hasObservers());
+        dispatcher.removeObserver(observer);
+        assertFalse(dispatcher.hasObservers());
+        dispatcher.addObserver(observer);
+        assertTrue(dispatcher.hasObservers());
+    }
 }
