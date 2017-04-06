@@ -120,12 +120,13 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      *
      */
     @Test
-    public void formerRootInformIfChangedChecksumsDifferent() throws IOException {
+    public void formerRootInformIfChangedChecksumsDifferent() throws Exception {
         subdir_1.addWatchedDirectory(watchedSubDir1);
         setupChecksumAnswer(testfile_11_xml_resource, checksum2);
         subdir_1.informIfChanged(testfile_11_xml_path);
-        verify(observer).modified(toKey(root_dir_path, testfile_11_xml_path), eq(testfile_11_xml_path));
-        verify(observer).modified(toKey(subdir_1_path, testfile_11_xml_path), eq(testfile_11_xml_path));
+        verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_11_xml_path), eq(testfile_11_xml_path));
+        verify(observer, timeout(500)).modified(toKey(subdir_1_path, testfile_11_xml_path), eq(testfile_11_xml_path));
+        sleep(500);
         verifyNoMoreInteractions(observer);
     }
 
