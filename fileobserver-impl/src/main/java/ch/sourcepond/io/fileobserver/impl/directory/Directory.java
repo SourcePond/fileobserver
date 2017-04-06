@@ -51,47 +51,6 @@ public abstract class Directory {
     }
 
     /**
-     * Iterates over a new collection of {@link FileKey} objects based on the file specified.
-     * Creates then an asynchronous task for each {@link FileKey}/file combination. This tasks will
-     * be executed sometime in the future. Such a task will call {@link FileObserver#modified(FileKey, Path)}
-     * with the {@link FileKey}/file combination which has been associated with it.
-     */
-    private void forceModified(final Collection<FileKey> pParentKeys,
-                               final Collection<FileKey> pKeys,
-                               final FileObserver pObserver,
-                               final Path pFile) {
-        for (final FileKey key : pKeys) {
-            getFactory().executeObserverTask(() -> {
-                try {
-                    informSupplement(pObserver, key, pParentKeys);
-                    pObserver.modified(key, pFile);
-                } catch (final IOException e) {
-                    LOG.warn(e.getMessage(), e);
-                }
-            });
-        }
-    }
-
-    private void informSupplement(final FileObserver pObserver, final FileKey pKey, final Collection<FileKey> pParentKeys) {
-        if (!pParentKeys.isEmpty()) {
-            for (final FileKey parentKey : pParentKeys) {
-                /*
-                 * Suppose:
-                 * Parent /A [dirKey:K2] -> Has been added as new root
-                 *    Child /A/B [dirKey:K2] -> Derived from new root = nothing to supplement
-                 *               [dirKey:K1] -> Was there before new root had been added = A/B supplements B
-                 *
-                 * When iterating over parent keys ignore those which are derived from new parent.
-                 *
-                 */
-                if (!pKey.directoryKey().equals(parentKey.directoryKey())) {
-                    pObserver.supplement(pKey, parentKey);
-                }
-            }
-        }
-    }
-
-    /**
      * Iterates over all files contained by this directory and informs for each entry
      * the currently focused observer. Only direct children will be considered,
      * sub-directories and non-regular files will be ignored.
