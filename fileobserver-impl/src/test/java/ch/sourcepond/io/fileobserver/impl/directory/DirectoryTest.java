@@ -32,6 +32,7 @@ import java.util.concurrent.Executor;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.file.FileSystems.getDefault;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
@@ -77,6 +78,11 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     @After
     public void shutdownExecutor() {
         wrapper.close();
+    }
+
+    @Test
+    public void getDispatcher() {
+        assertSame(dispatcher, factory.getDispatcher());
     }
 
     @Test

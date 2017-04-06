@@ -110,6 +110,10 @@ public class DirectoryFactory {
         observerExecutor.execute(pTask);
     }
 
+    ObserverDispatcher getDispatcher() {
+        return dispatcher;
+    }
+
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
