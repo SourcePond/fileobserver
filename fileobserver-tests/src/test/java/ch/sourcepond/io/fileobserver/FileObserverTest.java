@@ -2,6 +2,7 @@ package ch.sourcepond.io.fileobserver;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import ch.sourcepond.testing.BundleContextClassLoaderRule;
 import org.junit.After;
@@ -10,6 +11,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
@@ -96,6 +98,8 @@ public class FileObserverTest {
     private final FileObserver observer = mock(FileObserver.class);
     private ServiceRegistration<WatchedDirectory> watchedDirectoryRegistration;
     private ServiceRegistration<FileObserver> fileObserverRegistration;
+    private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
+    private ServiceRegistration<KeyDeliveryHook> hookRegistration;
     private WatchedDirectory watchedDirectory;
 
     @Before
@@ -121,6 +125,9 @@ public class FileObserverTest {
         verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(C)), eq(C));
 
         reset(observer);
+
+        // Step 3: register key-hook
+        hookRegistration = context.registerService(KeyDeliveryHook.class, hook, null);
     }
 
     private void unregisterService(final ServiceRegistration<?> pRegistration) {
@@ -135,6 +142,7 @@ public class FileObserverTest {
     public void tearDown() throws InterruptedException {
         unregisterService(watchedDirectoryRegistration);
         unregisterService(fileObserverRegistration);
+        unregisterService(hookRegistration);
     }
 
     /**
@@ -243,7 +251,12 @@ public class FileObserverTest {
     public void observerShouldBeInformedAboutFileCreation() throws IOException {
         final Path newFile = E1.resolve("newFile.txt");
         writeArbitraryContent(newFile);
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(newFile)), eq(newFile));
+
+        final InOrder order = inOrder(hook, observer);
+        order.verify(hook, timeout(15000)).beforeModify(key(ROOT, R.relativize(newFile)));
+        order.verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(newFile)), eq(newFile));
+        order.verify(hook, timeout(15000)).afterModify(key(ROOT, R.relativize(newFile)));
+
         verifyNoMoreInteractions(observer);
     }
 }

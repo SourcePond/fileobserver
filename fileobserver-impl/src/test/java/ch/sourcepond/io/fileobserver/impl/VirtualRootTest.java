@@ -17,6 +17,7 @@ import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilder;
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
@@ -52,6 +53,7 @@ public class VirtualRootTest {
     private final BasicFileAttributes modifiedPathAttrs = mock(BasicFileAttributes.class);
     private final Path modifiedPath = mock(Path.class);
     private final FileObserver observer = mock(FileObserver.class);
+    private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final DedicatedFileSystem dedicatedFs = mock(DedicatedFileSystem.class);
     private final DedicatedFileSystemFactory dedicatedFsFactory = mock(DedicatedFileSystemFactory.class);
@@ -171,6 +173,18 @@ public class VirtualRootTest {
     @Test(expected = NullPointerException.class)
     public void addObserverIsNull() {
         virtualRoot.addObserver(null);
+    }
+
+    @Test
+    public void addHook() {
+        virtualRoot.addHook(hook);
+        verify(dispatcher).addHook(hook);
+    }
+
+    @Test
+    public void removeHook() {
+        virtualRoot.removeHook(hook);
+        verify(dispatcher).removeHook(hook);
     }
 
     @Test

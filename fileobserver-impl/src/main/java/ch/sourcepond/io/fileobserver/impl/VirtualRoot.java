@@ -160,7 +160,7 @@ public class VirtualRoot implements RelocationObserver {
     }
 
     public void removeHook(final KeyDeliveryHook pHook) {
-        dispatcher.addHook(pHook);
+        dispatcher.removeHook(pHook);
     }
 
     // This method must be synchronized because all sub-directories need to be
