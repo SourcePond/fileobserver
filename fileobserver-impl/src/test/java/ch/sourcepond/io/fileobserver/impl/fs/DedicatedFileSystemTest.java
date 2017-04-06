@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
@@ -28,11 +27,9 @@ import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -45,8 +42,6 @@ public class DedicatedFileSystemTest {
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
-    private final FileObserver observer = mock(FileObserver.class);
-    private final Collection<FileObserver> observers = asList(observer);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final WatchedDirectory watchedDirectory1 = mock(WatchedDirectory.class);
     private final WatchedDirectory watchedDirectory2 = mock(WatchedDirectory.class);
@@ -61,8 +56,6 @@ public class DedicatedFileSystemTest {
 
     @Before
     public void setup() throws IOException {
-        when(dispatcher.getObservers()).thenReturn(observers);
-
         // Setup watched-rootDirPath1
         when(watchedDirectory1.getKey()).thenReturn(DIRECTORY_KEY_1);
         when(watchedDirectory1.getDirectory()).thenReturn(rootDirPath1);

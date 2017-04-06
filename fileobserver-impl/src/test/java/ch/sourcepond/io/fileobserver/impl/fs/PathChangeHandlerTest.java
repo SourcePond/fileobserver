@@ -48,7 +48,6 @@ public class PathChangeHandlerTest {
     @Before
     public void setup() {
         when(path.getParent()).thenReturn(parent);
-        when(virtualRoot.getObservers()).thenReturn(observers);
     }
 
     @Test

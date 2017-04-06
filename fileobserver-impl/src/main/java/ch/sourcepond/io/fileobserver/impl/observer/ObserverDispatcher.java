@@ -164,9 +164,4 @@ public class ObserverDispatcher {
     public boolean hasObservers() {
         return !observers.isEmpty();
     }
-
-    @Deprecated
-    public Collection<FileObserver> getObservers() {
-        return observers;
-    }
 }
