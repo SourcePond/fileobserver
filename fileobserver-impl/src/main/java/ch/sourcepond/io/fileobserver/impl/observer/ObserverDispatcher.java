@@ -50,19 +50,19 @@ public class ObserverDispatcher {
         observerExecutor = pObserverExecutor;
     }
 
-    void addObserver(final FileObserver pObserver) {
+    public void addObserver(final FileObserver pObserver) {
         observers.add(pObserver);
     }
 
-    void addHook(final KeyDeliveryHook pHook) {
+    public void addHook(final KeyDeliveryHook pHook) {
         hooks.add(pHook);
     }
 
-    void removeObserver(final FileObserver pObserver) {
+    public void removeObserver(final FileObserver pObserver) {
         observers.remove(pObserver);
     }
 
-    void removeHook(final KeyDeliveryHook pHook) {
+    public void removeHook(final KeyDeliveryHook pHook) {
         hooks.remove(pHook);
     }
 
