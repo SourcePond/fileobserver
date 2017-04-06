@@ -14,8 +14,8 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.diff.DiffObserver;
-import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.DiffObserver;
+import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;

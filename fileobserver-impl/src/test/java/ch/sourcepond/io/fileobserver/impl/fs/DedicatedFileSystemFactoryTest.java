@@ -3,7 +3,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
-import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import org.junit.Before;
 import org.junit.Test;

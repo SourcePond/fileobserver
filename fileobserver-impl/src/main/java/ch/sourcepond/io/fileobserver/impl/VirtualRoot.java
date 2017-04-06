@@ -16,7 +16,7 @@ package ch.sourcepond.io.fileobserver.impl;
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
@@ -98,7 +98,7 @@ public class VirtualRoot implements RelocationObserver {
 
     @Reference
     public void initExecutors(final SmartSwitchBuilderFactory pFactory) {
-        final Executor observerExecutor = pFactory.newBuilder(ExecutorService.class).
+        final ExecutorService observerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);

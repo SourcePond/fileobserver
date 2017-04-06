@@ -1,7 +1,7 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;

@@ -15,7 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
-import ch.sourcepond.io.fileobserver.impl.diff.DiffObserverFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 
@@ -80,7 +80,7 @@ public class DedicatedFileSystemFactory {
         return fs;
     }
 
-    public void setObserverExecutor(final Executor pExecutor) {
+    public void setObserverExecutor(final ExecutorService pExecutor) {
         diffObserverFactory.setObserverExecutor(pExecutor);
         directoryFactory.setObserverExecutor(pExecutor);
     }
