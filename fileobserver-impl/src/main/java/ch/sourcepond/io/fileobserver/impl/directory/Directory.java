@@ -199,7 +199,7 @@ public abstract class Directory {
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
      * @return {@code true} if the directory-key specified was removed, {@code false} otherwise.
      */
-    abstract boolean removeWatchedDirectory(WatchedDirectory pDirectoryKey);
+    abstract boolean remove(WatchedDirectory pDirectoryKey);
 
     /**
      * Removes the watched-directory specified from this directory instance and informs
@@ -216,7 +216,7 @@ public abstract class Directory {
         final Path relativePath = relativizeAgainstRoot(pWatchedDirectory, getPath());
 
         // Now, the key can be safely removed
-        if (removeWatchedDirectory(pWatchedDirectory) && !pObservers.isEmpty()) {
+        if (remove(pWatchedDirectory) && !pObservers.isEmpty()) {
             final FileKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
             pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
         }

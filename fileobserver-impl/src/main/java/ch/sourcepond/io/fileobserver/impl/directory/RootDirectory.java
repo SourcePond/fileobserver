@@ -72,7 +72,7 @@ public class RootDirectory extends Directory {
      * @return {@code true} if this directory does not contain directory-keys anymore, {@code false} otherwise
      */
     @Override
-    public boolean removeWatchedDirectory(final WatchedDirectory pDirectoryKey) {
+    public boolean remove(final WatchedDirectory pDirectoryKey) {
         return directoryKeys.remove(pDirectoryKey);
     }
 

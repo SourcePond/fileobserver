@@ -76,7 +76,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     @Test
     public void rootDirInformIfChangedChecksumsDifferentButNoKeyRegistered() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum2);
-        root_dir.removeWatchedDirectory(watchedRootDir);
+        root_dir.remove(watchedRootDir);
         root_dir.informIfChanged(observers, testfile_txt_path);
         verifyZeroInteractions(observer);
     }

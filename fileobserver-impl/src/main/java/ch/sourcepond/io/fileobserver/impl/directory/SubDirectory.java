@@ -68,7 +68,7 @@ public class SubDirectory extends Directory {
     }
 
     @Override
-    public boolean removeWatchedDirectory(final WatchedDirectory pDirectoryKey) {
+    public boolean remove(final WatchedDirectory pDirectoryKey) {
         boolean rc = false;
         final Collection<WatchedDirectory> keys = watchedDirectoriesOrNull;
         if (keys != null) {

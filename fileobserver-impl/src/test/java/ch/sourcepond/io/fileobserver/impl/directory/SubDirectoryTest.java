@@ -40,7 +40,7 @@ public class SubDirectoryTest extends DirectoryTest {
         assertFalse(subdir.hasKeys());
         subdir.addWatchedDirectory(watchedSubDir1);
         assertTrue(subdir.hasKeys());
-        subdir.removeWatchedDirectory(watchedSubDir1);
+        subdir.remove(watchedSubDir1);
         assertFalse(subdir.hasKeys());
     }
 

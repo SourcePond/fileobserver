@@ -51,7 +51,7 @@ public class RootDirectoryTest extends DirectoryTest {
         assertFalse(root.hasKeys());
         root.addWatchedDirectory(watchedRootDir);
         assertTrue(root.hasKeys());
-        root.removeWatchedDirectory(watchedRootDir);
+        root.remove(watchedRootDir);
         assertFalse(root.hasKeys());
     }
 
