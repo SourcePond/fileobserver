@@ -64,15 +64,16 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
     }
 
     @Test
-    public void forceInformModifiedAfterRebase() throws IOException {
-        existing_root_11.informIfChanged(new_root, dispatcher.getObservers(), testfile_111_txt_path);
-        existing_root_12.informIfChanged(new_root, dispatcher.getObservers(), testfile_121_txt_path);
-        verify(observer).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path), eq(testfile_111_txt_path));
-        verify(observer).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path), eq(testfile_121_txt_path));
-        verify(observer).modified(toKey(SUB_DIR_KEY1, subdir_11_path, testfile_111_txt_path), eq(testfile_111_txt_path));
-        verify(observer).modified(toKey(SUB_DIR_KEY2, subdir_12_path, testfile_121_txt_path), eq(testfile_121_txt_path));
-        verify(observer).supplement(toKey(SUB_DIR_KEY1, subdir_11_path, testfile_111_txt_path), toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path));
-        verify(observer).supplement(toKey(SUB_DIR_KEY2, subdir_12_path, testfile_121_txt_path), toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path));
+    public void forceInformModifiedAfterRebase() throws Exception {
+        existing_root_11.informIfChanged(new_root, testfile_111_txt_path);
+        existing_root_12.informIfChanged(new_root, testfile_121_txt_path);
+        verify(observer, timeout(500)).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path), eq(testfile_111_txt_path));
+        verify(observer, timeout(500)).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path), eq(testfile_121_txt_path));
+        verify(observer, timeout(500)).modified(toKey(SUB_DIR_KEY1, subdir_11_path, testfile_111_txt_path), eq(testfile_111_txt_path));
+        verify(observer, timeout(500)).modified(toKey(SUB_DIR_KEY2, subdir_12_path, testfile_121_txt_path), eq(testfile_121_txt_path));
+        verify(observer, timeout(500)).supplement(toKey(SUB_DIR_KEY1, subdir_11_path, testfile_111_txt_path), toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path));
+        verify(observer, timeout(500)).supplement(toKey(SUB_DIR_KEY2, subdir_12_path, testfile_121_txt_path), toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path));
+        sleep(500);
         verifyNoMoreInteractions(observer);
     }
 
@@ -82,8 +83,8 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
         existing_root_12.removeWatchedDirectory(watchedSubDir2);
         verify(observer, timeout(500)).discard(toKey(SUB_DIR_KEY1, subdir_11_path, subdir_11_path));
         verify(observer, timeout(500)).discard(toKey(SUB_DIR_KEY2, subdir_12_path, subdir_12_path));
-        existing_root_11.informIfChanged(new_root, dispatcher.getObservers(), testfile_111_txt_path);
-        existing_root_12.informIfChanged(new_root, dispatcher.getObservers(), testfile_121_txt_path);
+        existing_root_11.informIfChanged(new_root, testfile_111_txt_path);
+        existing_root_12.informIfChanged(new_root, testfile_121_txt_path);
         final InOrder order = inOrder(observer);
         order.verify(observer, timeout(500)).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path), eq(testfile_111_txt_path));
         order.verify(observer, timeout(500)).modified(toKey(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path), eq(testfile_121_txt_path));

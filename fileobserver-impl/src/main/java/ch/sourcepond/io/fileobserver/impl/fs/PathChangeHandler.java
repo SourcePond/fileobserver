@@ -46,6 +46,7 @@ class PathChangeHandler {
         dirs = pDirs;
     }
 
+    @Deprecated
     private Collection<FileObserver> getObservers() {
         return virtualRoot.getObservers();
     }
@@ -68,7 +69,7 @@ class PathChangeHandler {
         } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
-            dir.informIfChanged(getObservers(), pPath);
+            dir.informIfChanged(pPath);
         }
     }
 

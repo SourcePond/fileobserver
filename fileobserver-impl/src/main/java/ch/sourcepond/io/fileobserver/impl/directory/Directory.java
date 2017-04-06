@@ -292,11 +292,11 @@ public abstract class Directory {
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
-     * @param pObservers Observers to be informed, must not be {@code null}
      * @param pFile      File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final Directory pNewRootOrNull, final Collection<FileObserver> pObservers, final Path pFile) {
-        if (!pObservers.isEmpty()) {
+    public void informIfChanged(final Directory pNewRootOrNull, final Path pFile) {
+        final ObserverDispatcher dispatcher = getFactory().getDispatcher();
+        if (dispatcher.hasObservers()) {
             try {
                 getResource(pFile).update(getTimeout(),
                         update -> {
@@ -307,7 +307,7 @@ public abstract class Directory {
                                         emptyList() : pNewRootOrNull.createKeys(pFile);
 
                                 final Collection<FileKey> keys = createKeys(pFile);
-                                pObservers.forEach(o -> forceModified(supplementKeys, keys, o, pFile));
+                                createKeys(pFile).forEach(k -> dispatcher.modified(k, pFile, supplementKeys));
                             }
                         });
             } catch (final IOException e) {
@@ -321,11 +321,10 @@ public abstract class Directory {
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
-     * @param pObservers Observers to be informed, must not be {@code null}
      * @param pFile      File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final Collection<FileObserver> pObservers, final Path pFile) {
-        informIfChanged(null, pObservers, pFile);
+    public void informIfChanged(final Path pFile) {
+        informIfChanged(null, pFile);
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);

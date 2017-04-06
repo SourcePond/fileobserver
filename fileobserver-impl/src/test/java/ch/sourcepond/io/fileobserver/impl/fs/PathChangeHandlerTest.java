@@ -75,7 +75,7 @@ public class PathChangeHandlerTest {
     public void fileModifed() {
         dirs.put(parent, directory);
         handler.pathModified(attrs, path);
-        verify(directory).informIfChanged(observers, path);
+        verify(directory).informIfChanged(path);
     }
 
     @Test(expected = NullPointerException.class)

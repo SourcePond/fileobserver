@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
@@ -167,7 +168,7 @@ class DirectoryRegistrationWalker {
             // This is most certainly the case, but, there is an exception: because we already
             // registered the parent directory of the file with the watch-service there's a small
             // chance that the file had already been modified before we got here.
-            dirs.get(file.getParent()).informIfChanged(newRootOrNull, observers, file);
+            dirs.get(file.getParent()).informIfChanged(newRootOrNull, file);
             return CONTINUE;
         }
 
