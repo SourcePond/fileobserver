@@ -112,6 +112,10 @@ public class ObserverDispatcher {
         }
     }
 
+    public void modified(final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
+        pKeys.forEach(key -> modified(key, pFile, pParentKeys));
+    }
+
     public void modified(final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
         submitTask(
                 pKey,

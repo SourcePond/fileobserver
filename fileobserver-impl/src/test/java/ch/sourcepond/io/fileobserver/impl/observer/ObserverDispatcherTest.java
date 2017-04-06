@@ -80,6 +80,12 @@ public class ObserverDispatcherTest {
     }
 
     @Test
+    public void modifiedWithKeyCollection() throws IOException {
+        dispatcher.modified(asList(fileKey), file, parentKeys);
+        verifyHookObserverFlow();
+    }
+
+    @Test
     public void modified() throws IOException {
         dispatcher.modified(fileKey, file, parentKeys);
         verifyHookObserverFlow();
