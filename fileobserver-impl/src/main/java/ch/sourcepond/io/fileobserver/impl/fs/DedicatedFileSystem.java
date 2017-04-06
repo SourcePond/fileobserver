@@ -14,10 +14,9 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.observer.DiffObserver;
-import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -29,7 +28,6 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -37,7 +35,6 @@ import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.nio.file.Files.readAttributes;
 import static java.nio.file.StandardWatchEventKinds.*;
-import static java.util.Arrays.asList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -51,20 +48,20 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
-    private final DiffObserverFactory diffObserverFactory;
+    private final ObserverDispatcher dispatcher;
     private final PathChangeHandler pathChangeHandler;
 
     DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
-                        final DiffObserverFactory pDiffObserverFactory,
+                        final ObserverDispatcher pDispatcher,
                         final PathChangeHandler pPathChangeHandler,
                         final ConcurrentMap<Path, Directory> pDirs) {
         pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
-        diffObserverFactory = pDiffObserverFactory;
+        dispatcher = pDispatcher;
         dirs = pDirs;
         thread = new Thread(this, format("fileobserver %s", this));
     }
@@ -116,19 +113,17 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * This method is <em>not</em> thread-safe and must be synchronized externally.
      *
      * @param pWatchedDirectory
-     * @param pObservers
      */
     public void unregisterRootDirectory(
             final Path pToBeUnregistered,
-            final WatchedDirectory pWatchedDirectory,
-            final Collection<FileObserver> pObservers) {
+            final WatchedDirectory pWatchedDirectory) {
         // It's already checked that the directory-key and the directory are not null
         final Directory dir = dirs.get(pToBeUnregistered);
         if (dir == null) {
             LOG.warn(format("Directory %s is unknown; nothing unregistered", pWatchedDirectory.getDirectory()));
         } else {
             // Remove the directory-key of the watched directory from the key list
-            dir.removeWatchedDirectory(pWatchedDirectory, pObservers);
+            dir.removeWatchedDirectory(pWatchedDirectory);
 
             // If all watched-directories which referenced the directory have been de-registered,
             // it's time to clean-up.
@@ -143,18 +138,17 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     }
 
     public void destinationChanged(final WatchedDirectory pWatchedDirectory,
-                                   final Path pPrevious,
-                                   final Collection<FileObserver> pObservers) throws IOException {
+                                   final Path pPrevious) throws IOException {
         final Directory dir = dirs.get(pPrevious);
         if (dir == null) {
             LOG.warn("Destination change has no effect because no directory found for previous path {}");
         } else {
             // Unregister and register watched-directory. IMPORTANT: do not
             // inform observers at all, this will be handled later!
-            final DiffObserver diff = diffObserverFactory.createObserver(this, pObservers);
-            unregisterRootDirectory(pPrevious, pWatchedDirectory, asList(diff));
-            registerRootDirectory(pWatchedDirectory);
-            diff.finalizeRelocation();
+            try (final Closeable handler = dispatcher.openDiffHandler(this)) {
+                unregisterRootDirectory(pPrevious, pWatchedDirectory);
+                registerRootDirectory(pWatchedDirectory);
+            }
 
             LOG.info("Destination changed from {} to {}", pPrevious, pWatchedDirectory.getDirectory());
         }

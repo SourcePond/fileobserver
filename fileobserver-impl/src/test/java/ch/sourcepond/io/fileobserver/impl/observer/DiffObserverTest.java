@@ -32,14 +32,13 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collection;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+import static java.lang.Thread.sleep;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.delete;
 import static java.nio.file.Files.walkFileTree;
-import static java.util.Arrays.asList;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
 
@@ -52,9 +51,9 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Config config = mock(Config.class);
     private final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
     private final DedicatedFileSystem fs = mock(DedicatedFileSystem.class);
-    private final Executor observerExecutor = directExecutor();
+    private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
+    private final ExecutorService observerExecutor = newSingleThreadExecutor();
     private final FileObserver observer = mock(FileObserver.class);
-    private final Collection<FileObserver> observers = asList(observer);
     private final Directory root_dir = mock(Directory.class);
     private final Directory subdir_1 = mock(Directory.class);
     private final Directory subdir_11 = mock(Directory.class);
@@ -69,7 +68,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final FileKey supplementKey3 = mock(FileKey.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
-    private final DiffObserverFactory factory = new DiffObserverFactory();
+    private final ObserverDispatcher dispatcher = new ObserverDispatcher();
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {
@@ -132,14 +131,11 @@ public class DiffObserverTest extends CopyResourcesTest {
         when(subdir_211.getResource(notNull())).thenReturn(resource);
         when(subdir_22.getResource(notNull())).thenReturn(resource);
 
-        factory.setObserverExecutor(observerExecutor);
-        factory.setConfig(config);
-        diff = factory.createObserver(fs, observers);
-    }
-
-    @Test
-    public void verifyDefaultFactoryConstructor() {
-        new DiffObserverFactory();
+        dispatcher.setDispatcherExecutor(dispatcherExecutor);
+        dispatcher.setObserverExecutor(observerExecutor);
+        dispatcher.setConfig(config);
+        dispatcher.addObserver(observer);
+        diff = (DiffObserver) dispatcher.openDiffHandler(fs);
     }
 
     @Test
@@ -148,7 +144,9 @@ public class DiffObserverTest extends CopyResourcesTest {
         informDiscard(root_dir_path);
         informModified(root_dir_path);
 
-        diff.finalizeRelocation();
+        diff.close();
+        sleep(500);
+
         verify(observer).modified(key(root_dir_path, testfile_1111_txt_path), testfile_1111_txt_path);
         verify(observer).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
         verify(observer).modified(key(root_dir_path, testfile_121_txt_path), testfile_121_txt_path);
@@ -169,7 +167,9 @@ public class DiffObserverTest extends CopyResourcesTest {
         deleteDirectory(subdir_2_path);
         informModified(root_dir_path);
 
-        diff.finalizeRelocation();
+        diff.close();
+        sleep(500);
+
         verify(observer).discard(key(root_dir_path, testfile_1111_txt_path));
         verify(observer).discard(key(root_dir_path, testfile_111_txt_path));
         verify(observer).discard(key(root_dir_path, testfile_2111_txt_path));
@@ -195,7 +195,9 @@ public class DiffObserverTest extends CopyResourcesTest {
 
         informModified(root_dir_path);
 
-        diff.finalizeRelocation();
+        diff.close();
+        sleep(500);
+
         verify(observer).discard(key(root_dir_path, testfile_1111_txt_path));
         verify(observer).discard(key(root_dir_path, testfile_121_txt_path));
         verify(observer).discard(key(root_dir_path, testfile_221_txt_path));
@@ -235,7 +237,9 @@ public class DiffObserverTest extends CopyResourcesTest {
         informDiscard(root_dir_path);
         informModified(root_dir_path);
 
-        diff.finalizeRelocation();
+        diff.close();
+        sleep(500);
+
         verify(observer).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
         verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
         verify(observer).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
@@ -255,13 +259,14 @@ public class DiffObserverTest extends CopyResourcesTest {
         diff.supplement(key, supplementKey3);
 
         informModified(subdir_111_path);
-        diff.finalizeRelocation();
+        diff.close();
+        sleep(500);
 
         final InOrder order = inOrder(observer);
         order.verify(observer).supplement(key, supplementKey1);
         order.verify(observer).supplement(key, supplementKey2);
         order.verify(observer).supplement(key, supplementKey3);
-        order.verify(observer).modified(key,testfile_1111_txt_path);
+        order.verify(observer).modified(key, testfile_1111_txt_path);
         verifyNoMoreInteractions(observer);
     }
 
@@ -282,7 +287,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         informModified(root_dir_path);
 
         // This should not cause an exception
-        diff.finalizeRelocation();
+        diff.close();
         verifyNoMoreInteractions(observer);
     }
 
@@ -294,7 +299,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         informModified(root_dir_path);
 
         // This should not cause an exception
-        diff.finalizeRelocation();
+        diff.close();
     }
 
     @Test
@@ -305,6 +310,6 @@ public class DiffObserverTest extends CopyResourcesTest {
         informModified(root_dir_path);
 
         // This should not cause an exception
-        diff.finalizeRelocation();
+        diff.close();
     }
 }

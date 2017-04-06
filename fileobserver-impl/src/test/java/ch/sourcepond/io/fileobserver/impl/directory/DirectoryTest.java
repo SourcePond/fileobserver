@@ -26,12 +26,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.file.FileSystems.getDefault;
-import static java.util.Arrays.asList;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -50,16 +50,16 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final WatchedDirectory watchedSubDir2 = mock(WatchedDirectory.class);
     final Config config =  mock(Config.class);
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
+    private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
     final Executor directoryWalkerExecutor = directExecutor();
-    final Executor observerExecutor = directExecutor();
+    final ExecutorService observerExecutor = newSingleThreadExecutor();
     final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
-    final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
+    final ObserverDispatcher dispatcher = new ObserverDispatcher();
     final DirectoryFactory factory = new DirectoryFactory(
             keyFactory, dispatcher);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
     final FileObserver observer = mock(FileObserver.class);
-    final Collection<FileObserver> observers = asList(observer);
     WatchServiceWrapper wrapper;
 
     @Before
@@ -68,6 +68,9 @@ public abstract class DirectoryTest extends CopyResourcesTest {
         when(watchedSubDir1.getKey()).thenReturn(SUB_DIR_KEY1);
         when(watchedSubDir2.getKey()).thenReturn(SUB_DIR_KEY2);
         when(config.timeout()).thenReturn(TIMEOUT);
+        dispatcher.addObserver(observer);
+        dispatcher.setDispatcherExecutor(dispatcherExecutor);
+        dispatcher.setObserverExecutor(observerExecutor);
         wrapper = new WatchServiceWrapper(getDefault());
         factory.setConfig(config);
         factory.setObserverExecutor(observerExecutor);
@@ -78,6 +81,8 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     @After
     public void shutdownExecutor() {
         wrapper.close();
+        dispatcherExecutor.shutdown();
+        observerExecutor.shutdown();
     }
 
     @Test

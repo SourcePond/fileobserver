@@ -16,6 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -207,18 +208,20 @@ public abstract class Directory {
      * watched-directory is registered nothing happens.
      *
      * @param pWatchedDirectory Directory-key to be removed, must be not {@code null}
-     * @param pObservers    Observers to be informed, must not be {@code null}
      */
-    public void removeWatchedDirectory(final WatchedDirectory pWatchedDirectory, final Collection<FileObserver> pObservers) {
+    public void removeWatchedDirectory(final WatchedDirectory pWatchedDirectory) {
         // It is important to evaluate to relative path before the
         // has been removed otherwise the resulting key has not the
         // expected value!
         final Path relativePath = relativizeAgainstRoot(pWatchedDirectory, getPath());
 
         // Now, the key can be safely removed
-        if (remove(pWatchedDirectory) && !pObservers.isEmpty()) {
-            final FileKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
-            pObservers.forEach(o -> getFactory().executeObserverTask(() -> o.discard(key)));
+        if (remove(pWatchedDirectory)) {
+            final ObserverDispatcher dispatcher = getFactory().getDispatcher();
+            if (dispatcher.hasObservers()) {
+                final FileKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
+                dispatcher.discard(key);
+            }
         }
     }
 

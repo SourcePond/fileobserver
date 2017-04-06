@@ -16,9 +16,12 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.filekey.KeyDeliveryConsumer;
+import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import org.slf4j.Logger;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -37,10 +40,26 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class ObserverDispatcher {
     private static final Logger LOG = getLogger(ObserverDispatcher.class);
+    private final ThreadLocal<FileObserver> focusOrNull = new ThreadLocal<>();
     private final Set<KeyDeliveryHook> hooks = newKeySet();
     private final Set<FileObserver> observers = newKeySet();
     private Executor dispatcherExecutor;
     private ExecutorService observerExecutor;
+    private Config config;
+
+    public Closeable openDiffHandler(final DedicatedFileSystem pFs) {
+        final DiffObserver observer = new DiffObserver(pFs, this, config);
+        focusOrNull.set(observer);
+        return observer;
+    }
+
+    void resetFocus() {
+        focusOrNull.set(null);
+    }
+
+    public void setConfig(final Config pConfig) {
+        config = pConfig;
+    }
 
     public void setDispatcherExecutor(final ExecutorService pDispatcherExecutor) {
         dispatcherExecutor = pDispatcherExecutor;
@@ -138,5 +157,10 @@ public class ObserverDispatcher {
 
     public boolean hasObservers() {
         return !observers.isEmpty();
+    }
+
+    @Deprecated
+    public Collection<FileObserver> getObservers() {
+        return observers;
     }
 }

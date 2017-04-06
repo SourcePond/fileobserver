@@ -3,8 +3,8 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
-import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,8 +29,8 @@ public class DedicatedFileSystemFactoryTest {
     private final ExecutorService observerExecutor = mock(ExecutorService.class);
     private final ExecutorService directoryWalkerExecutor = mock(ExecutorService.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
-    private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
-    private final DedicatedFileSystemFactory factory = new DedicatedFileSystemFactory(directoryFactory, diffObserverFactory, directoryWalkerExecutor);
+    private final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
+    private final DedicatedFileSystemFactory factory = new DedicatedFileSystemFactory(directoryFactory, dispatcher, directoryWalkerExecutor);
 
     @Before
     public void setup() throws IOException {
@@ -53,20 +53,18 @@ public class DedicatedFileSystemFactoryTest {
     @Test
     public void setObserverExecutor() {
         factory.setObserverExecutor(observerExecutor);
-        verify(diffObserverFactory).setObserverExecutor(observerExecutor);
         verify(directoryFactory).setObserverExecutor(observerExecutor);
     }
 
     @Test
     public void setConfig() {
         factory.setConfig(config);
-        verify(diffObserverFactory).setConfig(config);
         verify(directoryFactory).setConfig(config);
     }
 
     @Test
     public void verifyActivatorConstructor() {
-        new DedicatedFileSystemFactory(directoryFactory, diffObserverFactory);
+        new DedicatedFileSystemFactory(directoryFactory, dispatcher);
     }
 
     @Test

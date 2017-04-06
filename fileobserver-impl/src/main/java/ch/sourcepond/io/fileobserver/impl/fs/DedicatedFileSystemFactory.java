@@ -15,9 +15,9 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
-import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -32,23 +32,23 @@ import java.util.concurrent.ExecutorService;
  */
 public class DedicatedFileSystemFactory {
     private final DirectoryFactory directoryFactory;
-    private final DiffObserverFactory diffObserverFactory;
+    private final ObserverDispatcher dispatcher;
 
     // Injected by SCR
     private Executor directoryWalkerExecutor;
 
     // Constructor for BundleActivator
-    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final DiffObserverFactory pDiffObserverFactory) {
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ObserverDispatcher pDispatcher) {
         directoryFactory = pDirectoryFactory;
-        diffObserverFactory = pDiffObserverFactory;
+        dispatcher = pDispatcher;
     }
 
     // Constructor for testing
     public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
-                                      final DiffObserverFactory pDiffObserverFactory,
+                                      final ObserverDispatcher pDispatcher,
                                       final ExecutorService pDirectoryWalkerExecutor) {
         directoryFactory = pDirectoryFactory;
-        diffObserverFactory = pDiffObserverFactory;
+        dispatcher = pDispatcher;
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
@@ -73,7 +73,7 @@ public class DedicatedFileSystemFactory {
                 directoryFactory,
                 wrapper,
                 new DirectoryRebase(directoryFactory, wrapper, dirs),
-                diffObserverFactory,
+                dispatcher,
                 new PathChangeHandler(pVirtualRoot, walker, dirs),
                 dirs);
         fs.start();
@@ -81,12 +81,10 @@ public class DedicatedFileSystemFactory {
     }
 
     public void setObserverExecutor(final ExecutorService pExecutor) {
-        diffObserverFactory.setObserverExecutor(pExecutor);
         directoryFactory.setObserverExecutor(pExecutor);
     }
 
     public void setConfig(final Config pConfig) {
-        diffObserverFactory.setConfig(pConfig);
         directoryFactory.setConfig(pConfig);
     }
 }

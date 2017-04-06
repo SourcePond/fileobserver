@@ -16,7 +16,6 @@ package ch.sourcepond.io.fileobserver.impl;
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
@@ -37,13 +36,11 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.*;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static org.osgi.service.component.annotations.ReferenceCardinality.MULTIPLE;
 import static org.osgi.service.component.annotations.ReferencePolicy.DYNAMIC;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -58,26 +55,28 @@ public class VirtualRoot implements RelocationObserver {
     private static final String KEY_IS_NULL = "Key is null";
     private static final String DIRECTORY_IS_NULL = "Directory is null";
     private static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
-    private final ObserverDispatcher dispatcher = new ObserverDispatcher();
+    private final ObserverDispatcher dispatcher;
     private final InitSwitch<WatchedDirectory> rootInitSwitch = new InitSwitch<>(this::doAddRoot);
     private final InitSwitch<FileObserver> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
-    private final Set<FileObserver> observers = newKeySet();
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
 
 
     // Constructor for BundleActivator
     public VirtualRoot() {
+        dispatcher = new ObserverDispatcher();
         final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory, dispatcher),
-                new DiffObserverFactory());
+                dispatcher);
     }
 
     // Constructor for testing
-    public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory) {
+    public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory,
+                       final ObserverDispatcher pDispatcher) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
+        dispatcher = pDispatcher;
     }
 
     @Activate
@@ -91,6 +90,7 @@ public class VirtualRoot implements RelocationObserver {
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
+        dispatcher.setConfig(pConfig);
     }
 
     @Reference
@@ -100,11 +100,18 @@ public class VirtualRoot implements RelocationObserver {
 
     @Reference
     public void initExecutors(final SmartSwitchBuilderFactory pFactory) {
+        final ExecutorService dispatcherExecutor = pFactory.newBuilder(ExecutorService.class).
+                setFilter("(sourcepond.io.fileobserver.dispatcherexecutor=*)").
+                setShutdownHook(ExecutorService::shutdown).
+                build(Executors::newCachedThreadPool);
+        dispatcher.setDispatcherExecutor(dispatcherExecutor);
+
         final ExecutorService observerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
         dedicatedFileSystemFactory.setObserverExecutor(observerExecutor);
+        dispatcher.setObserverExecutor(observerExecutor);
         final Executor directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
@@ -113,7 +120,7 @@ public class VirtualRoot implements RelocationObserver {
     }
 
     private void doAddObserver(final FileObserver pObserver) {
-        observers.add(pObserver);
+        dispatcher.addObserver(pObserver);
         children.values().forEach(f -> f.forceInform(pObserver));
     }
 
@@ -137,7 +144,7 @@ public class VirtualRoot implements RelocationObserver {
      */
     public void removeObserver(final FileObserver pObserver) {
         requireNonNull(pObserver, "Observer is null");
-        observers.remove(pObserver);
+        dispatcher.removeObserver(pObserver);
     }
 
     private DedicatedFileSystem newDedicatedFileSystem(final FileSystem pFs) {
@@ -206,7 +213,7 @@ public class VirtualRoot implements RelocationObserver {
         if (fs == null) {
             LOG.warn(format("No dedicated file system registered! Path: %s", directory));
         } else {
-            fs.unregisterRootDirectory(pWatchedDirectory.getDirectory(), pWatchedDirectory, observers);
+            fs.unregisterRootDirectory(pWatchedDirectory.getDirectory(), pWatchedDirectory);
 
             // IMPORTANT: remove watched-directory with key specified.
             watchtedDirectories.remove(key);
@@ -230,7 +237,7 @@ public class VirtualRoot implements RelocationObserver {
                 LOG.info("Nothing changed; skipped destination change for {}", pPrevious);
             } else {
                 getDedicatedFileSystem(directory).destinationChanged(
-                        pWatchedDirectory, pPrevious, observers);
+                        pWatchedDirectory, pPrevious);
             }
         } else {
             LOG.warn("Directory with key {} was not mapped; nothing changed", directory);
@@ -269,7 +276,8 @@ public class VirtualRoot implements RelocationObserver {
         children.values().remove(pDedicatedFileSystem);
     }
 
+    @Deprecated
     public Collection<FileObserver> getObservers() {
-        return observers;
+        return dispatcher.getObservers();
     }
 }

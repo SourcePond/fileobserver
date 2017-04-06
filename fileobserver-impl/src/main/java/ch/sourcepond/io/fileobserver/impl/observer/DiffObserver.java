@@ -22,61 +22,38 @@ import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import org.slf4j.Logger;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.Executor;
 
+import static java.util.Collections.emptyList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  *
  */
-public class DiffObserver implements FileObserver {
+class DiffObserver implements FileObserver, Closeable {
     private static final Logger LOG = getLogger(DiffObserver.class);
     private final Map<FileKey, Path> modifiedKeys = new HashMap<>();
     private final Set<FileKey> discardedKeys = new HashSet<>();
     private final Map<FileKey, Collection<FileKey>> supplementKeys = new HashMap<>();
     private final DedicatedFileSystem fs;
-    private final Executor observerExecutor;
-    private final Collection<FileObserver> delegates;
+    private final ObserverDispatcher dispatcher;
     private final Config config;
 
     DiffObserver(final DedicatedFileSystem pFs,
-                 final Executor pObserverExecutor,
-                 final Collection<FileObserver> pDelegates,
+                 final ObserverDispatcher pDispatcher,
                  final Config pConfig) {
         fs = pFs;
-        observerExecutor = pObserverExecutor;
-        delegates = pDelegates;
+        dispatcher = pDispatcher;
         config = pConfig;
-    }
-
-    private void informDiscard(final FileKey pKey) {
-        for (final FileObserver delegate : delegates) {
-            observerExecutor.execute(() -> delegate.discard(pKey));
-        }
-    }
-
-    private void informDelegate(final FileObserver pDelegate, final FileKey pKey, final Path pFile) {
-        try {
-            final Collection<FileKey> supplementKeysOrNull = supplementKeys.get(pKey);
-            if (supplementKeysOrNull != null) {
-                for (final FileKey supplementKey : supplementKeysOrNull) {
-                    pDelegate.supplement(pKey, supplementKey);
-                }
-            }
-            pDelegate.modified(pKey, pFile);
-        } catch (final IOException e) {
-            LOG.warn(e.getMessage(), e);
-        }
     }
 
     private void informModified(final Update pUpdate, final FileKey pKey, final Path pFile) {
         if (pUpdate.hasChanged()) {
-            for (final FileObserver delegate : delegates) {
-                observerExecutor.execute(() -> informDelegate(delegate, pKey, pFile));
-            }
+            final Collection<FileKey> supplementKeysOrNull = supplementKeys.computeIfAbsent(pKey, k -> emptyList());
+            dispatcher.modified(pKey, pFile, supplementKeysOrNull);
         }
     }
 
@@ -100,10 +77,15 @@ public class DiffObserver implements FileObserver {
         }
     }
 
-    public void finalizeRelocation() throws IOException {
-        modifiedKeys.forEach(this::updateResource);
-        discardedKeys.removeAll(modifiedKeys.keySet());
-        discardedKeys.forEach(this::informDiscard);
+    @Override
+    public void close() throws IOException {
+        try {
+            modifiedKeys.forEach(this::updateResource);
+            discardedKeys.removeAll(modifiedKeys.keySet());
+            discardedKeys.forEach(dispatcher::discard);
+        } finally {
+            dispatcher.resetFocus();
+        }
     }
 
     @Override

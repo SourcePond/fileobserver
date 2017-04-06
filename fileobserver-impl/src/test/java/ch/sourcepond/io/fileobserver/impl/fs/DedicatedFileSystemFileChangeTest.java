@@ -1,9 +1,9 @@
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -34,7 +34,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
-    private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
+    private final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private DedicatedFileSystem child;
     private volatile Throwable threadKiller;
@@ -49,7 +49,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         wrapper = new WatchServiceWrapper(fs);
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, diffObserverFactory, pathChangeHandler, new ConcurrentHashMap<>());
+        child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, dispatcher, pathChangeHandler, new ConcurrentHashMap<>());
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);

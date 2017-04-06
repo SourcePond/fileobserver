@@ -14,16 +14,16 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.observer.DiffObserver;
-import ch.sourcepond.io.fileobserver.impl.observer.DiffObserverFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -45,7 +44,7 @@ public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
-    private final DiffObserverFactory diffObserverFactory = mock(DiffObserverFactory.class);
+    private final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -62,6 +61,8 @@ public class DedicatedFileSystemTest {
 
     @Before
     public void setup() throws IOException {
+        when(dispatcher.getObservers()).thenReturn(observers);
+
         // Setup watched-rootDirPath1
         when(watchedDirectory1.getKey()).thenReturn(DIRECTORY_KEY_1);
         when(watchedDirectory1.getDirectory()).thenReturn(rootDirPath1);
@@ -83,7 +84,7 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, diffObserverFactory, pathChangeHandler, dirs);
+        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, dispatcher, pathChangeHandler, dirs);
     }
 
     @Test
@@ -127,7 +128,7 @@ public class DedicatedFileSystemTest {
     public void insureDirectoryDirectoryCannotBeNullDuringUnregistration() throws IOException {
         final WatchedDirectory invalid = mock(WatchedDirectory.class);
         when(invalid.getKey()).thenReturn(DIRECTORY_KEY_1);
-        fs.unregisterRootDirectory(null, mock(WatchedDirectory.class), observers);
+        fs.unregisterRootDirectory(null, mock(WatchedDirectory.class));
     }
 
     @Test
@@ -138,7 +139,7 @@ public class DedicatedFileSystemTest {
         when(unknown.getDirectory()).thenReturn(path);
 
         // Should not cause an exception
-        fs.unregisterRootDirectory(path, unknown, observers);
+        fs.unregisterRootDirectory(path, unknown);
     }
 
     @Test
@@ -146,10 +147,10 @@ public class DedicatedFileSystemTest {
         when(rootDir1.hasKeys()).thenReturn(true);
         fs.registerRootDirectory(watchedDirectory1);
         verify(rootDir1).addWatchedDirectory(watchedDirectory1);
-        fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1, observers);
+        fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1);
 
         final InOrder order = inOrder(rootDir1, rebase);
-        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1, observers);
+        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1);
         order.verify(rootDir1).hasKeys();
         order.verifyNoMoreInteractions();
     }
@@ -158,10 +159,10 @@ public class DedicatedFileSystemTest {
     public void unregisterRootDirectoryAllKeysRemoved() throws IOException {
         fs.registerRootDirectory(watchedDirectory1);
         verify(rootDir1).addWatchedDirectory(watchedDirectory1);
-        fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1, observers);
+        fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1);
 
         final InOrder order = inOrder(rootDir1, rebase);
-        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1, observers);
+        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1);
         order.verify(rootDir1).hasKeys();
         order.verify(rebase).cancelAndRebaseDiscardedDirectory(rootDir1);
         order.verifyNoMoreInteractions();
@@ -190,20 +191,20 @@ public class DedicatedFileSystemTest {
         final Path previous = mock(Path.class);
 
         // This should not cause an exception
-        fs.destinationChanged(watchedDirectory1, previous, observers);
+        fs.destinationChanged(watchedDirectory1, previous);
     }
 
     @Test
     public void destinationChanged() throws IOException {
-        final DiffObserver diff = mock(DiffObserver.class);
-        when(diffObserverFactory.createObserver(fs, observers)).thenReturn(diff);
+        final Closeable diff = mock(Closeable.class);
+        when(dispatcher.openDiffHandler(fs)).thenReturn(diff);
 
         fs.registerRootDirectory(watchedDirectory1);
-        fs.destinationChanged(watchedDirectory1, rootDirPath1, observers);
+        fs.destinationChanged(watchedDirectory1, rootDirPath1);
 
         final InOrder order = inOrder(rootDir1, pathChangeHandler, diff);
-        order.verify(rootDir1).removeWatchedDirectory(same(watchedDirectory1), argThat(inv -> inv.size() == 1 && inv.contains(diff)));
+        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1);
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
-        order.verify(diff).finalizeRelocation();
+        order.verify(diff).close();
     }
 }
