@@ -55,7 +55,7 @@ public class PathChangeHandlerTest {
     public void rootAdded() {
         final Directory dir = mock(Directory.class);
         handler.rootAdded(dir);
-        verify(walker).rootAdded(dir, observers);
+        verify(walker).rootAdded(dir);
     }
 
     @Test
@@ -68,7 +68,7 @@ public class PathChangeHandlerTest {
     public void directoryModified() {
         when(attrs.isDirectory()).thenReturn(true);
         handler.pathModified(attrs, path);
-        verify(walker).directoryCreated(path, observers);
+        verify(walker).directoryCreated(path);
     }
 
     @Test

@@ -118,7 +118,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
      */
     @Test
     public void directoryCreated() throws IOException {
-        walker.directoryCreated(root_dir_path, observers);
+        walker.directoryCreated(root_dir_path);
         verifyDirectoryWalk(null);
     }
 
@@ -126,7 +126,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     public void rootRebased() throws IOException {
         final Directory newRoot = mock(Directory.class);
         when(newRoot.getPath()).thenReturn(root_dir_path);
-        walker.rootAdded(newRoot, observers);
+        walker.rootAdded(newRoot);
         verifyDirectoryWalk(newRoot);
     }
 
@@ -140,7 +140,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
                 dirs);
         final IOException expected = new IOException(ANY_MESSAGE);
         doThrow(expected).when(wrapper).register(subdir_11_path);
-        walker.directoryCreated(root_dir_path, observers);
+        walker.directoryCreated(root_dir_path);
         verify(logger, timeout(200)).warn(eq(ANY_MESSAGE), argThat((Throwable th) -> {
             Throwable cause = th.getCause();
             return (cause instanceof UncheckedIOException) && expected == cause.getCause();
@@ -157,7 +157,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
                 dirs);
         final RuntimeException expected = new RuntimeException(ANY_MESSAGE);
         doThrow(expected).when(wrapper).register(subdir_11_path);
-        walker.directoryCreated(root_dir_path, observers);
+        walker.directoryCreated(root_dir_path);
         verify(logger, timeout(200)).error(ANY_MESSAGE, expected);
     }
 }

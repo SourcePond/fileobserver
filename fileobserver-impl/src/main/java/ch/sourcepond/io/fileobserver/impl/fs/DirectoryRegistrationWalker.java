@@ -25,7 +25,6 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
@@ -96,11 +95,9 @@ class DirectoryRegistrationWalker {
      * specified.
      *
      * @param pDirectory Newly created directory, must not be {@code null}
-     * @param pObservers Observers to be informed about detected files, must not be {@code null}
      */
-    void directoryCreated(final Path pDirectory,
-                          final Collection<FileObserver> pObservers) {
-        directoryCreated(null, pDirectory, pObservers);
+    void directoryCreated(final Path pDirectory) {
+        directoryCreated(null, pDirectory);
     }
 
     /**
@@ -109,11 +106,9 @@ class DirectoryRegistrationWalker {
      * specified.
      *
      * @param pNewRoot   Newly created directory, must not be {@code null}
-     * @param pObservers Observers to be informed about detected files, must not be {@code null}
      */
-    void rootAdded(final Directory pNewRoot,
-                   final Collection<FileObserver> pObservers) {
-        directoryCreated(pNewRoot, pNewRoot.getPath(), pObservers);
+    void rootAdded(final Directory pNewRoot) {
+        directoryCreated(pNewRoot, pNewRoot.getPath());
     }
 
     /**
@@ -123,16 +118,14 @@ class DirectoryRegistrationWalker {
      *
      * @param pNewRootOrNull New root-directory which causes a rebase, or, {@code null}
      * @param pDirectory     Newly created directory, must not be {@code null}
-     * @param pObservers     Observers to be informed about detected files, must not be {@code null}
      */
     private void directoryCreated(final Directory pNewRootOrNull,
-                                  final Path pDirectory,
-                                  final Collection<FileObserver> pObservers) {
+                                  final Path pDirectory) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered FileObservers
         directoryWalkerExecutor.execute(() -> {
             try {
-                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pNewRootOrNull, pObservers));
+                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pNewRootOrNull));
             } catch (final IOException e) {
                 logger.warn(e.getMessage(), e);
             } catch (final RuntimeException e) {
@@ -149,17 +142,12 @@ class DirectoryRegistrationWalker {
      */
     private class DirectoryInitializerFileVisitor extends SimpleFileVisitor<Path> {
         private final Directory newRootOrNull;
-        private final Collection<FileObserver> observers;
 
         /**
          * Creates a new instance of this class.
-         *
-         * @param pObservers Observers to be informed about detected files, must not be {@code null}
          */
-        public DirectoryInitializerFileVisitor(final Directory pNewRootOrNull,
-                                               final Collection<FileObserver> pObservers) {
+        public DirectoryInitializerFileVisitor(final Directory pNewRootOrNull) {
             newRootOrNull = pNewRootOrNull;
-            observers = pObservers;
         }
 
         @Override

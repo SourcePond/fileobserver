@@ -13,14 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -46,13 +44,8 @@ class PathChangeHandler {
         dirs = pDirs;
     }
 
-    @Deprecated
-    private Collection<FileObserver> getObservers() {
-        return virtualRoot.getObservers();
-    }
-
     void rootAdded(final Directory pNewRoot) {
-        walker.rootAdded(pNewRoot, getObservers());
+        walker.rootAdded(pNewRoot);
     }
 
     void removeFileSystem(final DedicatedFileSystem pDfs) {
@@ -65,7 +58,7 @@ class PathChangeHandler {
 
     void pathModified(final BasicFileAttributes pAttrs, final Path pPath) {
         if (pAttrs.isDirectory()) {
-            walker.directoryCreated(pPath, getObservers());
+            walker.directoryCreated(pPath);
         } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
