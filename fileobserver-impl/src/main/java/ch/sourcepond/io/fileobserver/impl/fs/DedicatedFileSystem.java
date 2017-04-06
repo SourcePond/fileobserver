@@ -75,7 +75,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * to the observer are regular files (not directories).
      */
     public void forceInform() {
-        dirs.values().forEach(d -> d.forceInform());
+        dirs.values().forEach(Directory::forceInform);
     }
 
     /**
