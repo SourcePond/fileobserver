@@ -73,11 +73,9 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * {@link PathChangeHandler#pathModified(BasicFileAttributes, Path)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
-     *
-     * @param pObserver Observer to be informed, must not be {@code null}.
      */
-    public void forceInform(final FileObserver pObserver) {
-        dirs.values().forEach(d -> d.forceInform(pObserver));
+    public void forceInform() {
+        dirs.values().forEach(d -> d.forceInform());
     }
 
     /**

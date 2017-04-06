@@ -91,9 +91,9 @@ public class DedicatedFileSystemTest {
     public void forceInform() {
         dirs.put(rootDirPath1, rootDir1);
         dirs.put(rootDirPath2, rootDir2);
-        fs.forceInform(observer);
-        verify(rootDir1).forceInform(observer);
-        verify(rootDir2).forceInform(observer);
+        fs.forceInform();
+        verify(rootDir1).forceInform();
+        verify(rootDir2).forceInform();
     }
 
     @Test(expected = NullPointerException.class)

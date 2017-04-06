@@ -92,15 +92,16 @@ public abstract class Directory {
     }
 
     /**
-     * Iterates over all files contained by this directory and calls for each entry
-     * {@link #forceModified(Collection, Collection, FileObserver, Path)}. Only direct children will be considered,
+     * Iterates over all files contained by this directory and informs for each entry
+     * the currently focused observer. Only direct children will be considered,
      * sub-directories and non-regular files will be ignored.
      *
-     * @param pObserver Observer to be informed, must not be {@code null}
      */
-    private void streamDirectoryAndForceInform(final FileObserver pObserver) {
+    private void streamDirectoryAndForceInform() {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
-            stream.forEach(p -> forceModified(emptyList(), createKeys(p), pObserver, p));
+            stream.forEach(p ->
+                    createKeys(p).forEach(k ->
+                            getFactory().getDispatcher().modified(k, p, emptyList())));
         } catch (final IOException e) {
             LOG.warn("Exception occurred while trying to inform single observers!", e);
         }
@@ -243,10 +244,9 @@ public abstract class Directory {
      * {@link FileObserver#modified(FileKey, Path)} method. Note: only direct children will be
      * considered, sub-directories and non-regular files will be ignored.
      *
-     * @param pObserver Observer to be informed, must not be {@code null}.
      */
-    public void forceInform(final FileObserver pObserver) {
-        getFactory().executeDirectoryWalkerTask(() -> streamDirectoryAndForceInform(pObserver));
+    public void forceInform() {
+        getFactory().executeDirectoryWalkerTask(() -> streamDirectoryAndForceInform());
     }
 
     /**
