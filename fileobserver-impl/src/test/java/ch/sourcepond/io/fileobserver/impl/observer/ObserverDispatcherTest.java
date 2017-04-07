@@ -78,10 +78,10 @@ public class ObserverDispatcherTest {
 
     private void verifyHookObserverFlow() throws IOException {
         final InOrder order = inOrder(hook, observer);
-        order.verify(hook, timeout(1000)).beforeModify(fileKey);
+        order.verify(hook, timeout(1000)).beforeModify(fileKey, file);
         order.verify(observer, timeout(1000)).supplement(fileKey, parentKey);
         order.verify(observer, timeout(1000)).modified(fileKey, file);
-        order.verify(hook, timeout(1000)).afterModify(fileKey);
+        order.verify(hook, timeout(1000)).afterModify(fileKey, file);
         order.verifyNoMoreInteractions();
     }
 
@@ -109,7 +109,7 @@ public class ObserverDispatcherTest {
 
     @Test
     public void modifiedBeforeModifiedFailed() throws IOException {
-        doThrow(RuntimeException.class).when(hook).beforeModify(fileKey);
+        doThrow(RuntimeException.class).when(hook).beforeModify(fileKey, file);
         dispatcher.modified(fileKey, file, parentKeys);
         verifyHookObserverFlow();
     }
@@ -126,8 +126,8 @@ public class ObserverDispatcherTest {
         doAnswer(inv -> {
             sleep(1000);
             return null;
-        }).when(hook).beforeModify(fileKey);
-        doThrow(RuntimeException.class).when(hook).beforeModify(fileKey);
+        }).when(hook).beforeModify(fileKey, file);
+        doThrow(RuntimeException.class).when(hook).beforeModify(fileKey, file);
         sleep(200);
         dispatcher.modified(fileKey, file, parentKeys);
         assertTrue(dispatcherExecutor.shutdownNow().isEmpty());

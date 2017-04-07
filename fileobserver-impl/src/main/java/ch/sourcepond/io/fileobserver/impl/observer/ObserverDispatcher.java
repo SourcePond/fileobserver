@@ -142,8 +142,8 @@ public class ObserverDispatcher {
         submitTask(
                 pKey,
                 observer -> fireModification(observer, pKey, pFile, pParentKeys),
-                (hook, key) -> hook.beforeModify(key),
-                (hook, key) -> hook.afterModify(key)
+                (hook, key) -> hook.beforeModify(key, pFile),
+                (hook, key) -> hook.afterModify(key, pFile)
         );
     }
 

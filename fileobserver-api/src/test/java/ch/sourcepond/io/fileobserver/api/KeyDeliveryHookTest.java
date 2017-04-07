@@ -15,6 +15,8 @@ package ch.sourcepond.io.fileobserver.api;
 
 import org.junit.Test;
 
+import java.nio.file.Path;
+
 import static org.mockito.Mockito.*;
 
 /**
@@ -22,6 +24,7 @@ import static org.mockito.Mockito.*;
  */
 public class KeyDeliveryHookTest {
     private final FileKey key = mock(FileKey.class);
+    private final Path file = mock(Path.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
 
     @Test
@@ -33,8 +36,8 @@ public class KeyDeliveryHookTest {
 
     @Test
     public void beforeModify() {
-        doCallRealMethod().when(hook).beforeModify(key);
-        hook.beforeModify(key);
+        doCallRealMethod().when(hook).beforeModify(key, file);
+        hook.beforeModify(key, file);
         verify(hook).before(key);
     }
 
@@ -47,8 +50,8 @@ public class KeyDeliveryHookTest {
 
     @Test
     public void afterModify() {
-        doCallRealMethod().when(hook).afterModify(key);
-        hook.afterModify(key);
+        doCallRealMethod().when(hook).afterModify(key, file);
+        hook.afterModify(key, file);
         verify(hook).after(key);
     }
 

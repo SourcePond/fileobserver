@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.api;
 
+import java.nio.file.Path;
+
 /**
  *
  */
@@ -26,7 +28,7 @@ public interface KeyDeliveryHook {
         // noop by default
     }
 
-    default void beforeModify(final FileKey pKey) {
+    default void beforeModify(final FileKey pKey, Path pFile) {
         before(pKey);
     }
 
@@ -34,7 +36,7 @@ public interface KeyDeliveryHook {
         before(pKey);
     }
 
-    default void afterModify(final FileKey pKey) {
+    default void afterModify(final FileKey pKey, Path pFile) {
         after(pKey);
     }
 
