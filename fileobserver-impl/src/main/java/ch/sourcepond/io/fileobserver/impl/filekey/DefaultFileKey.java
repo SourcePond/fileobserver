@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Objects;
 
+import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -34,6 +35,22 @@ final class DefaultFileKey implements FileKey {
         directoryKey = pDirectoryKey;
         relativePath = pRelativePath;
     }
+
+    @Override
+    public boolean match(final String... pNames) {
+        boolean matches = true;
+        final Path relativePath = relativePath();
+        final int count = min(relativePath.getNameCount(), pNames.length);
+
+        for (int i = 0 ; i < count ; i++) {
+            if (!relativePath.getName(i).toString().equals(pNames[i])) {
+                matches = false;
+                break;
+            }
+        }
+        return matches;
+    }
+
 
     @Override
     public Object directoryKey() {

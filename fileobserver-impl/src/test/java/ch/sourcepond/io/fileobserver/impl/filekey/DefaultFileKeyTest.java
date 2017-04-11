@@ -1,3 +1,16 @@
+/*Copyright (C) 2017 Roland Hauser, <sourcepond@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.filekey;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
@@ -11,12 +24,12 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Created by rolandhauser on 13.02.17.
+ *
  */
 public class DefaultFileKeyTest {
     private static final String DIRECTORY_KEY_1 = "directoryKey1";
     private static final String DIRECTORY_KEY_2 = "directoryKey2";
-    private final Path path = mock(Path.class);
+    private final Path path = mock(Path.class, withSettings().name("root"));
     private Path otherPath = mock(Path.class);
     private final FileKey key1 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
     private final FileKey key2 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
@@ -33,6 +46,24 @@ public class DefaultFileKeyTest {
         assertSame(path, key1.relativePath());
     }
 
+    @Test
+    public void verifyMatch() {
+        final Path p1 = mock(Path.class, withSettings().name("A"));
+        final Path p2 = mock(Path.class, withSettings().name("B"));
+        final Path p3 = mock(Path.class, withSettings().name("C"));
+        when(path.getNameCount()).thenReturn(4);
+        when(path.getName(0)).thenReturn(path);
+        when(path.getName(1)).thenReturn(p1);
+        when(path.getName(2)).thenReturn(p2);
+        when(path.getName(3)).thenReturn(p3);
+
+        assertTrue(key1.match("root", "A"));
+        assertTrue(key1.match("root", "A", "B"));
+        assertTrue(key1.match("root", "A", "B", "C"));
+        assertFalse(key1.match("root", "B"));
+        assertFalse(key1.match("root", "A", "C"));
+        assertFalse(key1.match("root", "A", null, "C"));
+    }
 
     @Test
     public void isParentKey() {
