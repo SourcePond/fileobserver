@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  *
  */
 public class DirectoryRebaseTest extends CopyResourcesTest {
-    private static final String DIRECTORY_KEY = "directoryKey";
+    private static final String DIRECTORY_KEY = "getDirectoryKey";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();

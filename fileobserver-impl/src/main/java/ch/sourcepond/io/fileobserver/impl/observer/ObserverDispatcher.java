@@ -105,7 +105,7 @@ public class ObserverDispatcher {
                  * When iterating over parent keys ignore those which are derived from new parent.
                  *
                  */
-                if (!pKey.directoryKey().equals(parentKey.directoryKey())) {
+                if (!pKey.getDirectoryKey().equals(parentKey.getDirectoryKey())) {
                     pObserver.supplement(pKey, parentKey);
                 }
             }

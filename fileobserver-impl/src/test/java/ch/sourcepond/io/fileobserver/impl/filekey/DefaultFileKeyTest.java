@@ -38,12 +38,12 @@ public class DefaultFileKeyTest {
 
     @Test
     public void key() {
-        assertSame(DIRECTORY_KEY_1, key1.directoryKey());
+        assertSame(DIRECTORY_KEY_1, key1.getDirectoryKey());
     }
 
     @Test
     public void relativePath() {
-        assertSame(path, key1.relativePath());
+        assertSame(path, key1.getRelativePath());
     }
 
     @Test

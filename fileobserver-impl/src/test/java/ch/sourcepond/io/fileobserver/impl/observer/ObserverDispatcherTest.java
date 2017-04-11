@@ -51,8 +51,8 @@ public class ObserverDispatcherTest {
 
     @Before
     public void setup() {
-        when(parentKey.directoryKey()).thenReturn(PARENT_DIR_KEY);
-        when(fileKey.directoryKey()).thenReturn(DIR_KEY);
+        when(parentKey.getDirectoryKey()).thenReturn(PARENT_DIR_KEY);
+        when(fileKey.getDirectoryKey()).thenReturn(DIR_KEY);
         dispatcher.setDispatcherExecutor(dispatcherExecutor);
         dispatcher.setObserverExecutor(observerExecutor);
         dispatcher.addObserver(observer, postAddAction);

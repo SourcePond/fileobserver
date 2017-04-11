@@ -39,7 +39,7 @@ final class DefaultFileKey implements FileKey {
     @Override
     public boolean match(final String... pNames) {
         boolean matches = true;
-        final Path relativePath = relativePath();
+        final Path relativePath = getRelativePath();
         final int count = min(relativePath.getNameCount(), pNames.length);
 
         for (int i = 0 ; i < count ; i++) {
@@ -53,12 +53,12 @@ final class DefaultFileKey implements FileKey {
 
 
     @Override
-    public Object directoryKey() {
+    public Object getDirectoryKey() {
         return directoryKey;
     }
 
     @Override
-    public Path relativePath() {
+    public Path getRelativePath() {
         return relativePath;
     }
 
@@ -78,13 +78,13 @@ final class DefaultFileKey implements FileKey {
     @Override
     public boolean isParentKeyOf(final FileKey pOther) {
         requireNonNull(pOther, "Other key is null");
-        return directoryKey().equals(pOther.directoryKey()) && pOther.relativePath().startsWith(relativePath());
+        return getDirectoryKey().equals(pOther.getDirectoryKey()) && pOther.getRelativePath().startsWith(getRelativePath());
     }
 
     @Override
     public boolean isSubKeyOf(final FileKey pOther) {
         requireNonNull(pOther, "Other key is null");
-        return directoryKey().equals(pOther.directoryKey()) && relativePath().startsWith(pOther.relativePath());
+        return getDirectoryKey().equals(pOther.getDirectoryKey()) && getRelativePath().startsWith(pOther.getRelativePath());
     }
 
     @Override

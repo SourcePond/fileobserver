@@ -89,7 +89,7 @@ public class FileObserverTest {
         return argThat(new ArgumentMatcher<FileKey>() {
             @Override
             public boolean matches(final FileKey fileKey) {
-                return pKey.equals(fileKey.directoryKey()) && fileKey.relativePath().equals(pRelativePath);
+                return pKey.equals(fileKey.getDirectoryKey()) && fileKey.getRelativePath().equals(pRelativePath);
             }
 
             @Override

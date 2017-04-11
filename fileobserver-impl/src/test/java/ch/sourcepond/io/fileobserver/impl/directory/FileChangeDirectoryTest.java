@@ -47,7 +47,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     }
 
     private FileKey toKey(final Path pBasePath, final Path pPath) {
-        return argThat(k -> pBasePath.relativize(pPath).equals(k.relativePath()));
+        return argThat(k -> pBasePath.relativize(pPath).equals(k.getRelativePath()));
     }
 
     /**

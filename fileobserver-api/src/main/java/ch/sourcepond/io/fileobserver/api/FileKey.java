@@ -17,8 +17,8 @@ import java.nio.file.Path;
 import java.util.Collection;
 
 /**
- * A file key combines a watched root directory (see {@link #directoryKey()}) and relative path within
- * that directory (see {@link #relativePath()}) to a unique identifier. Use a file key to associate a resource
+ * A file key combines a watched root directory (see {@link #getDirectoryKey()}) and relative path within
+ * that directory (see {@link #getRelativePath()}) to a unique identifier. Use a file key to associate a resource
  * to a specific file.
  * <p>
  * The reason why not only the relative path is used as unique file key is simple: the fileobserver implementation
@@ -34,7 +34,7 @@ public interface FileKey {
 
     /**
      * Compares the path elements specified with the relative path returned
-     * by {@link #relativePath()} starting with the nearest element. If
+     * by {@link #getRelativePath()} starting with the nearest element. If
      * all tokens specified match with the relative path, {@code true} is being
      * returned. This is also true if the relative path has more elements than
      * specified as arguments and all tokens match. If a specified element does
@@ -50,7 +50,7 @@ public interface FileKey {
      *
      * @return Directory-key, never {@code null}
      */
-    Object directoryKey();
+    Object getDirectoryKey();
 
     /**
      * Returns the relative path (relative to the watched directory) of the file on which this key points to.
@@ -59,15 +59,15 @@ public interface FileKey {
      *
      * @return Relative path, never {@code null}
      */
-    Path relativePath();
+    Path getRelativePath();
 
     /**
      * Checks whether this key is a parent-key of the key specified. A key is a parent-key when:
      * <ul>
      * <li>The directory-key of {@code pOther} is equal to the directory-key of
-     * this key (see {@link #directoryKey()})</li>
+     * this key (see {@link #getDirectoryKey()})</li>
      * <li>The relative path of {@code pOther} starts
-     * with the relative path of this key (see {@link #relativePath()})</li></ul>
+     * with the relative path of this key (see {@link #getRelativePath()})</li></ul>
      *
      * @param pOther Other key to check whether it is a sub-key of this, must not be {@code null}
      * @return {@code true} if this key is a parent-key of the key specified, {@code false} otherwise.
@@ -78,9 +78,9 @@ public interface FileKey {
      * Checks whether this key is a sub-key of the key specified. A key is a sub-key when:
      * <ul>
      * <li>The directory-key of {@code pOther} is equal to the directory-key of
-     * this key (see {@link #directoryKey()})</li>
+     * this key (see {@link #getDirectoryKey()})</li>
      * <li>The relative path of this key starts
-     * with the relative path of {@code pOther} (see {@link #relativePath()})</li></ul>
+     * with the relative path of {@code pOther} (see {@link #getRelativePath()})</li></ul>
      *
      * @param pOther Other key to check whether it is a parent-key of this, must not be {@code null}
      * @return {@code true} if this key is a sub-key of the key specified, {@code false} otherwise.

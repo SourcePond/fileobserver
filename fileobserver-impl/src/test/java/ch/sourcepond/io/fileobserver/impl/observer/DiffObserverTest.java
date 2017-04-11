@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
  */
 public class DiffObserverTest extends CopyResourcesTest {
     private static final long TIMEOUT = 2000;
-    private static final Object DIRECTORY_KEY = "directoryKey";
+    private static final Object DIRECTORY_KEY = "getDirectoryKey";
     private final Config config = mock(Config.class);
     private final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
     private final DedicatedFileSystem fs = mock(DedicatedFileSystem.class);

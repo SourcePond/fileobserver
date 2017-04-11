@@ -60,7 +60,7 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
     }
 
     private FileKey toKey(final Object pDirectoryKey, final Path pBasePath, final Path pPath) {
-        return argThat(k -> pDirectoryKey.equals(k.directoryKey()) && pBasePath.relativize(pPath).equals(k.relativePath()));
+        return argThat(k -> pDirectoryKey.equals(k.getDirectoryKey()) && pBasePath.relativize(pPath).equals(k.getRelativePath()));
     }
 
     @Test
