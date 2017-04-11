@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.*;
 
+import static ch.sourcepond.io.fileobserver.api.PathElement.eq;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -57,12 +58,11 @@ public class DefaultFileKeyTest {
         when(path.getName(2)).thenReturn(p2);
         when(path.getName(3)).thenReturn(p3);
 
-        assertTrue(key1.match("root", "A"));
-        assertTrue(key1.match("root", "A", "B"));
-        assertTrue(key1.match("root", "A", "B", "C"));
-        assertFalse(key1.match("root", "B"));
-        assertFalse(key1.match("root", "A", "C"));
-        assertFalse(key1.match("root", "A", null, "C"));
+        assertTrue(key1.match(eq("root"), eq("A")));
+        assertTrue(key1.match(eq("root"), eq("A"), eq("B")));
+        assertTrue(key1.match(eq("root"), eq("A"), eq("B"), eq("C")));
+        assertFalse(key1.match(eq("root"), eq("B")));
+        assertFalse(key1.match(eq("root"), eq("A"), eq("C")));
     }
 
     @Test

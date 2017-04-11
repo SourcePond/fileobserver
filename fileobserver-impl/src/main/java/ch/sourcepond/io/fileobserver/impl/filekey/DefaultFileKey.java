@@ -14,6 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.filekey;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.PathElement;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -37,13 +38,13 @@ final class DefaultFileKey implements FileKey {
     }
 
     @Override
-    public boolean match(final String... pNames) {
+    public boolean match(final PathElement... pElements) {
         boolean matches = true;
         final Path relativePath = getRelativePath();
-        final int count = min(relativePath.getNameCount(), pNames.length);
+        final int count = min(relativePath.getNameCount(), pElements.length);
 
         for (int i = 0 ; i < count ; i++) {
-            if (!relativePath.getName(i).toString().equals(pNames[i])) {
+            if (!pElements[i].matches(relativePath.getName(i))) {
                 matches = false;
                 break;
             }
