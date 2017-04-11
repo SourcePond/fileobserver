@@ -49,12 +49,25 @@ public interface FileKey {
     Path relativePath();
 
     /**
-     * Checks whether this key is sub-key of the key specified. A key is a sub-key when:
+     * Checks whether this key is a parent-key of the key specified. A key is a parent-key when:
      * <ul>
      * <li>The directory-key of {@code pOther} is equal to the directory-key of
      * this key (see {@link #directoryKey()})</li>
      * <li>The relative path of {@code pOther} starts
      * with the relative path of this key (see {@link #relativePath()})</li></ul>
+     *
+     * @param pOther Other key to check whether it is a sub-key of this, must not be {@code null}
+     * @return {@code true} if this key is a parent-key of the key specified, {@code false} otherwise.
+     */
+    boolean isParentKeyOf(FileKey pOther);
+
+    /**
+     * Checks whether this key is a sub-key of the key specified. A key is a sub-key when:
+     * <ul>
+     * <li>The directory-key of {@code pOther} is equal to the directory-key of
+     * this key (see {@link #directoryKey()})</li>
+     * <li>The relative path of this key starts
+     * with the relative path of {@code pOther} (see {@link #relativePath()})</li></ul>
      *
      * @param pOther Other key to check whether it is a parent-key of this, must not be {@code null}
      * @return {@code true} if this key is a sub-key of the key specified, {@code false} otherwise.

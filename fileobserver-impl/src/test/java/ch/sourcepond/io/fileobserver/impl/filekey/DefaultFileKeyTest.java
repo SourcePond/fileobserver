@@ -33,6 +33,17 @@ public class DefaultFileKeyTest {
         assertSame(path, key1.relativePath());
     }
 
+
+    @Test
+    public void isParentKey() {
+        when(path.startsWith(path)).thenReturn(true);
+        assertTrue(key1.isParentKeyOf(key2));
+        when(otherPath.startsWith(path)).thenReturn(true);
+        assertTrue(key1.isParentKeyOf(key3));
+        when(path.startsWith(otherPath)).thenReturn(true);
+        assertFalse(key1.isParentKeyOf(key4));
+    }
+
     @Test
     public void isSubKey() {
         when(path.startsWith(path)).thenReturn(true);

@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.Objects;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -58,7 +59,14 @@ final class DefaultFileKey implements FileKey {
     }
 
     @Override
+    public boolean isParentKeyOf(final FileKey pOther) {
+        requireNonNull(pOther, "Other key is null");
+        return directoryKey().equals(pOther.directoryKey()) && pOther.relativePath().startsWith(relativePath());
+    }
+
+    @Override
     public boolean isSubKeyOf(final FileKey pOther) {
+        requireNonNull(pOther, "Other key is null");
         return directoryKey().equals(pOther.directoryKey()) && relativePath().startsWith(pOther.relativePath());
     }
 
