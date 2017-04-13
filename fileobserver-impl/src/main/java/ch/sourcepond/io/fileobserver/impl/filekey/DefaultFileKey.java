@@ -14,14 +14,12 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.filekey;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
-import ch.sourcepond.io.fileobserver.api.PathElement;
 
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Objects;
 
-import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -36,22 +34,6 @@ final class DefaultFileKey implements FileKey {
         directoryKey = pDirectoryKey;
         relativePath = pRelativePath;
     }
-
-    @Override
-    public boolean match(final PathElement... pElements) {
-        boolean matches = true;
-        final Path relativePath = getRelativePath();
-        final int count = min(relativePath.getNameCount(), pElements.length);
-
-        for (int i = 0 ; i < count ; i++) {
-            if (!pElements[i].matches(relativePath.getName(i))) {
-                matches = false;
-                break;
-            }
-        }
-        return matches;
-    }
-
 
     @Override
     public Object getDirectoryKey() {

@@ -19,7 +19,6 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.*;
 
-import static ch.sourcepond.io.fileobserver.api.PathElement.eq;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -45,24 +44,6 @@ public class DefaultFileKeyTest {
     @Test
     public void relativePath() {
         assertSame(path, key1.getRelativePath());
-    }
-
-    @Test
-    public void verifyMatch() {
-        final Path p1 = mock(Path.class, withSettings().name("A"));
-        final Path p2 = mock(Path.class, withSettings().name("B"));
-        final Path p3 = mock(Path.class, withSettings().name("C"));
-        when(path.getNameCount()).thenReturn(4);
-        when(path.getName(0)).thenReturn(path);
-        when(path.getName(1)).thenReturn(p1);
-        when(path.getName(2)).thenReturn(p2);
-        when(path.getName(3)).thenReturn(p3);
-
-        assertTrue(key1.match(eq("root"), eq("A")));
-        assertTrue(key1.match(eq("root"), eq("A"), eq("B")));
-        assertTrue(key1.match(eq("root"), eq("A"), eq("B"), eq("C")));
-        assertFalse(key1.match(eq("root"), eq("B")));
-        assertFalse(key1.match(eq("root"), eq("A"), eq("C")));
     }
 
     @Test

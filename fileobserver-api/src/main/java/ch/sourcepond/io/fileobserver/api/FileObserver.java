@@ -24,6 +24,8 @@ import java.nio.file.Path;
  */
 public interface FileObserver {
 
+    void setup(DeliveryRestriction pSetup);
+
     /**
      * <p>
      * Indicates, that the file specified has been modified. Modified means,

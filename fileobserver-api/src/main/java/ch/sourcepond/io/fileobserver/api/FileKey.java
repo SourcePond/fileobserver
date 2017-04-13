@@ -33,20 +33,6 @@ import java.util.Collection;
 public interface FileKey {
 
     /**
-     * Tests whether the path elements specified match (see {@link PathElement#matches(Path)})
-     * the elements of the relative path returned by {@link #getRelativePath()}
-     * starting with the nearest element. If all elements specified match the elements of the
-     * relative path, {@code true} is being returned. This is also true if the relative path has more elements than
-     * specified as arguments and all tokens match. If a specified element does
-     * not match, {@code false} will be returned.
-     *
-     * @param pElements Elements to match
-     * @return {@code true} if this key match, {@code false} otherwise.
-     * @throws NullPointerException Thrown, if an element specified is null
-     */
-    boolean match(PathElement... pElements);
-
-    /**
      * The key which represents a watched root directory.
      *
      * @return Directory-key, never {@code null}
