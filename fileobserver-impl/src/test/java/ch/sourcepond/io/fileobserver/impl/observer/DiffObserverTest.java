@@ -146,17 +146,16 @@ public class DiffObserverTest extends CopyResourcesTest {
         informModified(root_dir_path);
 
         diff.close();
-        sleep(500);
 
-        verify(observer).modified(key(root_dir_path, testfile_1111_txt_path), testfile_1111_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_121_txt_path), testfile_121_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
-        verify(observer).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_211_txt_path), testfile_211_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_221_txt_path), testfile_221_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
-        verify(observer).modified(key(root_dir_path, testfile_txt_path), testfile_txt_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_1111_txt_path), testfile_1111_txt_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_121_txt_path), testfile_121_txt_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_211_txt_path), testfile_211_txt_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_221_txt_path), testfile_221_txt_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
+        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_txt_path), testfile_txt_path);
         verifyNoMoreInteractions(observer);
     }
 

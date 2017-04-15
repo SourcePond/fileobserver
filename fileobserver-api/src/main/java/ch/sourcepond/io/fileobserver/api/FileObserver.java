@@ -19,7 +19,7 @@ import java.nio.file.Path;
 /**
  * <p>Observer to receive notifications about changes on files
  * within a watched directory and its sub-directories.</p>
- *
+ * <p>
  * <p><em>Implementations of this interface must be thread-safe.</em></p>
  */
 public interface FileObserver {
@@ -30,19 +30,18 @@ public interface FileObserver {
      * <p>
      * Indicates, that the file specified has been modified. Modified means,
      * that the file has been created or updated. This method takes two parameters:
-     * <p>
+     *
      * <h3>Relative path</h3>
      * This path is relative to the watched directory. This path <em>cannot</em> be used to read any data.
      * The relative path always remains the same for a specific file, even when the underlying
      * watched directory (and therefore the absolute file) has been updated to point to another location.
      * Because this, use the relative path for any caching of objects created out of the file data.
-     * <p>
+     *
      * <h3>Readable Path</h3>
      * This is the (absolute) path which can be opened for reading. The readable path of a file can change in
      * case when the underlying watched directory (and therefore the absolute file) is updated to point to another
      * location. Because this, do <em>not</em> use the readable path for any caching, but, only for reading (or writing)
      * data.
-     * <p>
      * <p>
      * Following code snipped should give an idea how caching of an object created out of the readable path
      * should be implemented:
@@ -63,7 +62,7 @@ public interface FileObserver {
      * system, the delivered keys can <em>differ in case when a directory has been deleted recursively</em>. For instance, on
      * systems with a native {@link java.nio.file.WatchService} implementation you will probably get a {@link FileKey}
      * instance for every deleted path. On other systems which work with the default polling watch-service you
-     * likely only get the file key of the deleted base directory.
+     * likely only get the file key of the deleted base directory.</p>
      *
      * <p>If you work with cached objects and you want to avoid different behaviour on varying operating systems,
      * resource discarding can be safely implemented as follows:
@@ -73,7 +72,7 @@ public interface FileObserver {
      *      // Remove any key which is a sub-key of pKey.
      *      pKey.removeSubKeys(cache.keySet());
      * </pre>
-     *
+     * <p>
      * See {@link FileKey#removeSubKeys(java.util.Collection)} and {@link FileKey#findSubKeys(java.util.Collection)} for further information.
      *
      * @param pKey File-key of the discarded file or directory, never {@code null}
@@ -93,7 +92,7 @@ public interface FileObserver {
      * avoid this, an implementation class can implement this optional method to react properly on supplementing
      * keys.</p>
      *
-     * @param pKnownKey Key which has already been delivered to this observer, never {@code null}
+     * @param pKnownKey      Key which has already been delivered to this observer, never {@code null}
      * @param pAdditionalKey Key which never has been delivered until now to this observer, and, which supplements
      *                       the known key specified, never {@code null}
      */

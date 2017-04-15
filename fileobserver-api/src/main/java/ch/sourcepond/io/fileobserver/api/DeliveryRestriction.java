@@ -37,9 +37,6 @@ public interface DeliveryRestriction {
      * <p>Determines, which directory-keys should be accepted by the {@link FileObserver}. This means, that a path
      * modification or discard is only delivered to the observer, if the directory-key of the associated {@link FileKey}
      * is contained in the keys specified, see {@link FileKey#getDirectoryKey()}.</p>
-     * <p>
-     * Note: if a key is specified as accepted (this method) and ignored (see {@link #ignore(Object...)}) at the same
-     * time, then ignorance takes precedence, i.e. the key will not be accepted by the observer.</p>
      *
      * @param pDirectoryKeys Directory-keys to be accepted by the file-observer, must not be {@code null}
      * @throws NullPointerException Thrown, if a key is {@code null}
