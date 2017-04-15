@@ -73,43 +73,44 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
         }
     }
 
+    private static final Object ACCEPT_ALL = new Object();
     private static final int START_INDEX = 0;
     private static final String GLOB = "glob";
     private static final String REGEX = "regex";
     private final Set<Object> acceptedDirectoryKeys = newKeySet();
-    private final Set<Object> ignoredDirectoryKeys = newKeySet();
     private final Collection<PatternTemplate> patternTemplates = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<FileSystem, Collection<PathMatcherHolder>> matchers = new ConcurrentHashMap<>();
 
-    private void addTo(final Set<Object> pTarget, final Object[] pDirectoryKeys) {
+    @Override
+    public DeliveryRestriction accept(final Object... pDirectoryKeys) {
         for (final Object directoryKey : pDirectoryKeys) {
-            pTarget.add(requireNonNull(directoryKey, "Directory-key is null"));
+            acceptedDirectoryKeys.add(requireNonNull(directoryKey, "Directory-key is null"));
         }
+        return this;
     }
 
     @Override
-    public void accept(final Object... pDirectoryKeys) {
-        addTo(acceptedDirectoryKeys, pDirectoryKeys);
+    public DeliveryRestriction acceptAll() {
+        accept(ACCEPT_ALL);
+        return this;
     }
 
     @Override
-    public void ignore(final Object... pDirectoryKeys) {
-        addTo(ignoredDirectoryKeys, pDirectoryKeys);
-    }
-
-    @Override
-    public void addGlob(final String... pPatterns) {
+    public DeliveryRestriction addGlob(final String... pPatterns) {
         doAdd(START_INDEX, MAX_VALUE, GLOB, pPatterns);
+        return this;
     }
 
     @Override
-    public void addRegex(final String... pPatterns) {
+    public DeliveryRestriction addRegex(final String... pPatterns) {
         doAdd(START_INDEX, MAX_VALUE, REGEX, pPatterns);
+        return this;
     }
 
     @Override
-    public void add(final String pSyntax, final String... pPatterns) {
+    public DeliveryRestriction add(final String pSyntax, final String... pPatterns) {
         doAdd(START_INDEX, MAX_VALUE, pSyntax, pPatterns);
+        return this;
     }
 
     private void validateNotNegative(final String pMessageFormat, final int pIndex) {
@@ -134,19 +135,22 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
     }
 
     @Override
-    public void addGlob(final int pStartIndexInclusive, final int pEndIndexExlusive, final String... pPatterns) {
+    public DeliveryRestriction addGlob(final int pStartIndexInclusive, final int pEndIndexExlusive, final String... pPatterns) {
         add(pStartIndexInclusive, pEndIndexExlusive, GLOB, pPatterns);
+        return this;
     }
 
     @Override
-    public void addRegex(final int pStartIndexInclusive, final int pEndIndexExlusive, final String... pPatterns) {
+    public DeliveryRestriction addRegex(final int pStartIndexInclusive, final int pEndIndexExlusive, final String... pPatterns) {
         add(pStartIndexInclusive, pEndIndexExlusive, REGEX, pPatterns);
+        return this;
     }
 
     @Override
-    public void add(final int pStartIndexInclusive, final int pEndIndexExlusive, final String pSyntax, final String... pPatterns) {
+    public DeliveryRestriction add(final int pStartIndexInclusive, final int pEndIndexExlusive, final String pSyntax, final String... pPatterns) {
         validateIndexes(pStartIndexInclusive, pEndIndexExlusive);
         doAdd(pStartIndexInclusive, pEndIndexExlusive, pSyntax, pPatterns);
+        return this;
     }
 
     private void doAdd(final int pStartIndexInclusive, final int pEndIndexExlusive, final String pSyntax, final String... pPatterns) {
@@ -178,7 +182,7 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
     }
 
     private boolean match(final FileKey pFileKey, final PathMatcherHolder pHolder) {
-        boolean match = false;
+        boolean match;
         Path adjusted = pFileKey.getRelativePath();
 
         if (MAX_VALUE > pHolder.endIndexExclusive) {
@@ -211,17 +215,13 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
 
     boolean isAccepted(final FileKey pFileKey) {
         final Object directoryKey = pFileKey.getDirectoryKey();
-        boolean accept = !ignoredDirectoryKeys.contains(directoryKey);
-        if (accept) {
-            accept = acceptedDirectoryKeys.isEmpty();
-            if (!accept) {
-                accept = acceptedDirectoryKeys.contains(directoryKey);
-            }
+        boolean accept = acceptedDirectoryKeys.contains(ACCEPT_ALL) ||
+                acceptedDirectoryKeys.contains(directoryKey);
 
-            if (accept) {
-                accept = matches(pFileKey);
-            }
+        if (accept) {
+            accept = matches(pFileKey);
         }
+
         return accept;
     }
 }

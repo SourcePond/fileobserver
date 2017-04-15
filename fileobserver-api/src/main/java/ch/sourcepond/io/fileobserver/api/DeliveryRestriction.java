@@ -44,23 +44,19 @@ public interface DeliveryRestriction {
      * @param pDirectoryKeys Directory-keys to be accepted by the file-observer, must not be {@code null}
      * @throws NullPointerException Thrown, if a key is {@code null}
      */
-    void accept(Object... pDirectoryKeys);
+    DeliveryRestriction accept(Object... pDirectoryKeys);
 
-    /**
-     *
-     * @param pDirectoryKeys
-     */
-    void ignore(Object... pDirectoryKeys);
+    DeliveryRestriction acceptAll();
 
-    void addGlob(String... pPatterns);
+    DeliveryRestriction addGlob(String... pPatterns);
 
-    void addRegex(String... pPatterns);
+    DeliveryRestriction addRegex(String... pPatterns);
 
-    void add(String pSyntax, String... pPatterns);
+    DeliveryRestriction add(String pSyntax, String... pPatterns);
 
-    void addGlob(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
+    DeliveryRestriction addGlob(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
 
-    void addRegex(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
+    DeliveryRestriction addRegex(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
 
-    void add(int pStartIndexInclusive, int pEndIndexExlusive, String pSyntax, String... pPatterns);
+    DeliveryRestriction add(int pStartIndexInclusive, int pEndIndexExlusive, String pSyntax, String... pPatterns);
 }
