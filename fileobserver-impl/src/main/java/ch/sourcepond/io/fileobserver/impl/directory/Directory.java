@@ -175,11 +175,9 @@ public abstract class Directory {
         final Path relativePath = relativizeAgainstRoot(pWatchedDirectory, getPath());
 
         // Now, the key can be safely removed
-        if (remove(pWatchedDirectory)) {
-            if (pDispatcher.hasObservers()) {
-                final FileKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
-                pDispatcher.discard(key);
-            }
+        if (remove(pWatchedDirectory) && pDispatcher.hasObservers()) {
+            final FileKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
+            pDispatcher.discard(key);
         }
     }
 
@@ -226,7 +224,7 @@ public abstract class Directory {
         resources.remove(pFile);
 
         if (pDispatcher.hasObservers()) {
-            createKeys(pFile).forEach(k -> pDispatcher.discard(k));
+            createKeys(pFile).forEach(pDispatcher::discard);
         }
     }
 
@@ -279,7 +277,7 @@ public abstract class Directory {
      * @param pFile File which potentially has changed, must not be {@code null}
      */
     public void informIfChanged(final EventDispatcher pDispatcher, final Path pFile) {
-        informIfChanged(pDispatcher,null, pFile);
+        informIfChanged(pDispatcher, null, pFile);
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);

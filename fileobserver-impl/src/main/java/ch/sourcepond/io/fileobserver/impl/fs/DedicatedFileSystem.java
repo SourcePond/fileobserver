@@ -208,7 +208,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         LOG.info("Ready for receiving events");
     }
 
-    private boolean hasChanged(final Path pPath, final BasicFileAttributes pCurrentAttrs) throws IOException {
+    private boolean hasChanged(final Path pPath, final BasicFileAttributes pCurrentAttrs) {
         final FileTime current = pCurrentAttrs.lastModifiedTime();
         final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
         final boolean changed = !current.equals(cachedOrNull);

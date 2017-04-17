@@ -174,9 +174,9 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
     }
 
     private Collection<PathMatcherHolder> createMatchers(final FileSystem pFs) {
-        final List<PathMatcherHolder> matchers = new ArrayList<>(patternTemplates.size());
-        patternTemplates.forEach(patternTemplate -> matchers.add(createMatcher(pFs, patternTemplate)));
-        return matchers;
+        final List<PathMatcherHolder> matcherHolders = new ArrayList<>(patternTemplates.size());
+        patternTemplates.forEach(patternTemplate -> matcherHolders.add(createMatcher(pFs, patternTemplate)));
+        return matcherHolders;
     }
 
     private Collection<PathMatcherHolder> getMatcher(final FileSystem pFs) {
@@ -201,10 +201,10 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
     }
 
     private boolean matches(final FileKey pFileKey) {
-        final Collection<PathMatcherHolder> matchers = getMatcher(pFileKey.getRelativePath().getFileSystem());
-        boolean matches = matchers.isEmpty();
+        final Collection<PathMatcherHolder> matcherHolders = getMatcher(pFileKey.getRelativePath().getFileSystem());
+        boolean matches = matcherHolders.isEmpty();
         if (!matches) {
-            for (final PathMatcherHolder holder : matchers) {
+            for (final PathMatcherHolder holder : matcherHolders) {
                 matches = match(pFileKey, holder);
                 if (matches) {
                     break;
