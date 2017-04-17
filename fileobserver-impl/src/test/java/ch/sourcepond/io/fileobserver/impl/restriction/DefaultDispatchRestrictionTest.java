@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.observer;
+package ch.sourcepond.io.fileobserver.impl.restriction;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class DefaultDeliveryRestrictionTest extends CopyResourcesTest {
+public class DefaultDispatchRestrictionTest extends CopyResourcesTest {
     private static final Object ANY_ACCEPTED_DIRECTORY_KEY = new Object();
     private static final Object ANY_IGNORED_DIRECTORY_KEY = new Object();
     protected FileKey testfile_1111_txt_key = mock(FileKey.class);
@@ -40,7 +40,7 @@ public class DefaultDeliveryRestrictionTest extends CopyResourcesTest {
     protected FileKey testfile_221_txt_key = mock(FileKey.class);
     protected FileKey testfile_21_xml_key = mock(FileKey.class);
     protected FileKey testfile_txt_key = mock(FileKey.class);
-    private final DefaultDeliveryRestriction restriction = new DefaultDeliveryRestriction();
+    private final DefaultDispatchRestriction restriction = new DefaultDispatchRestrictionFactory().createRestriction();
 
     private void setupKey(final FileKey pKey, final Path pPath, final Object pDirectoryKey) {
         when(pKey.getDirectoryKey()).thenReturn(pDirectoryKey);

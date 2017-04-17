@@ -15,7 +15,7 @@ package ch.sourcepond.io.fileobserver.api;
 
 /**
  * A {@link FileObserver} is able to specify which file changes should be observed. To do the necessary setup,
- * an object implementing this interface is passed to the {@link FileObserver#setup(DeliveryRestriction)} method
+ * an object implementing this interface is passed to the {@link FileObserver#setup(DispatchRestriction)} method
  * of a file-observer when it is being registered. Note:
  * <ul>
  * <li>If {@link #accept(Object...)} has never been called during the observer setup, the observer will then accept
@@ -31,7 +31,7 @@ package ch.sourcepond.io.fileobserver.api;
  * It is optional to restrict the file-observer so that it receives certain events only.
  * If nothing is set up, it will receive everything.
  */
-public interface DeliveryRestriction {
+public interface DispatchRestriction {
 
     /**
      * <p>Determines, which directory-keys should be accepted by the {@link FileObserver}. This means, that a path
@@ -41,19 +41,19 @@ public interface DeliveryRestriction {
      * @param pDirectoryKeys Directory-keys to be accepted by the file-observer, must not be {@code null}
      * @throws NullPointerException Thrown, if a key is {@code null}
      */
-    DeliveryRestriction accept(Object... pDirectoryKeys);
+    DispatchRestriction accept(Object... pDirectoryKeys);
 
-    DeliveryRestriction acceptAll();
+    DispatchRestriction acceptAll();
 
-    DeliveryRestriction addGlob(String... pPatterns);
+    DispatchRestriction addGlob(String... pPatterns);
 
-    DeliveryRestriction addRegex(String... pPatterns);
+    DispatchRestriction addRegex(String... pPatterns);
 
-    DeliveryRestriction add(String pSyntax, String... pPatterns);
+    DispatchRestriction add(String pSyntax, String... pPatterns);
 
-    DeliveryRestriction addGlob(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
+    DispatchRestriction addGlob(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
 
-    DeliveryRestriction addRegex(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
+    DispatchRestriction addRegex(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
 
-    DeliveryRestriction add(int pStartIndexInclusive, int pEndIndexExlusive, String pSyntax, String... pPatterns);
+    DispatchRestriction add(int pStartIndexInclusive, int pEndIndexExlusive, String pSyntax, String... pPatterns);
 }

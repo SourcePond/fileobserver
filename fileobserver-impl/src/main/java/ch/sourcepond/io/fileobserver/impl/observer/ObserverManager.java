@@ -19,17 +19,22 @@ import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.filekey.KeyDeliveryConsumer;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
+import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
+import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
+import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -38,15 +43,28 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class ObserverManager {
     private static final Logger LOG = getLogger(ObserverManager.class);
+    private final DefaultDispatchRestrictionFactory restrictionFactory;
     private final Set<KeyDeliveryHook> hooks = newKeySet();
-    private final Set<FileObserver> observers = newKeySet();
-    private final EventDispatcher defaultDispatcher = new EventDispatcher(this, observers);
+    private final ConcurrentMap<FileObserver, DefaultDispatchRestriction> observers = new ConcurrentHashMap<>();
+    private final EventDispatcher defaultDispatcher = new EventDispatcher(this, observers.keySet());
     private volatile Executor dispatcherExecutor;
     private volatile ExecutorService observerExecutor;
     private volatile Config config;
 
+    // Constructor for activator
+    public ObserverManager() {
+        this(new DefaultDispatchRestrictionFactory());
+    }
+
+    // Constructor for testing
+    ObserverManager(final DefaultDispatchRestrictionFactory pRestrictionFactory) {
+        restrictionFactory = pRestrictionFactory;
+    }
+
     public EventDispatcher addObserver(final FileObserver pObserver) {
-        observers.add(pObserver);
+        final DefaultDispatchRestriction restriction = restrictionFactory.createRestriction();
+        pObserver.setup(restriction);
+        observers.put(pObserver, restriction);
         return new EventDispatcher(this, pObserver);
     }
 
@@ -59,7 +77,7 @@ public class ObserverManager {
     }
 
     Collection<FileObserver> getObservers() {
-        return observers;
+        return observers.keySet();
     }
 
     public void setConfig(final Config pConfig) {
@@ -113,16 +131,23 @@ public class ObserverManager {
         }
     }
 
+    private boolean isAccepted(final FileObserver pObserver, final FileKey pFileKey) {
+        final DefaultDispatchRestriction restriction = observers.get(pObserver);
+        return restriction != null && restriction.isAccepted(pFileKey);
+    }
+
     private void submitTask(final Collection<FileObserver> pObservers,
                             final FileKey pKey,
                             final Consumer<FileObserver> pFireEventConsumer,
                             final KeyDeliveryConsumer pBeforeConsumer,
                             final KeyDeliveryConsumer pAfterConsumer) {
-        if (!pObservers.isEmpty()) {
+        final Collection<FileObserver> acceptingObservers = pObservers.stream().filter(
+                o -> isAccepted(o, pKey)).collect(toList());
+        if (!acceptingObservers.isEmpty()) {
             dispatcherExecutor.execute(new DispatcherTask(
                     observerExecutor,
                     hooks,
-                    pObservers,
+                    acceptingObservers,
                     pKey,
                     pFireEventConsumer,
                     pBeforeConsumer,

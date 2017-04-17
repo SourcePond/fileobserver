@@ -15,7 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
-import ch.sourcepond.io.fileobserver.api.DeliveryRestriction;
+import ch.sourcepond.io.fileobserver.api.DispatchRestriction;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.Config;
@@ -52,7 +52,7 @@ class DiffObserver implements FileObserver, Closeable {
     }
 
     @Override
-    public void setup(final DeliveryRestriction pSetup) {
+    public void setup(final DispatchRestriction pSetup) {
         // noop
     }
 

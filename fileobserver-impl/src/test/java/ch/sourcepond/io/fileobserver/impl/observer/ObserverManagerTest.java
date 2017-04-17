@@ -16,6 +16,8 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
+import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
+import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +42,9 @@ public class ObserverManagerTest {
     private static final Object DIR_KEY = new Object();
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
-    private final ObserverManager manager = new ObserverManager();
+    private final DefaultDispatchRestrictionFactory restrictionFactory = mock(DefaultDispatchRestrictionFactory.class);
+    private final DefaultDispatchRestriction restriction = mock(DefaultDispatchRestriction.class);
+    private final ObserverManager manager = new ObserverManager(restrictionFactory);
     private final FileKey parentKey = mock(FileKey.class);
     private final Collection<FileKey> parentKeys = asList(parentKey);
     private final FileKey fileKey = mock(FileKey.class);
@@ -50,6 +54,8 @@ public class ObserverManagerTest {
 
     @Before
     public void setup() {
+        when(restrictionFactory.createRestriction()).thenReturn(restriction);
+        when(restriction.isAccepted(fileKey)).thenReturn(true);
         when(parentKey.getDirectoryKey()).thenReturn(PARENT_DIR_KEY);
         when(fileKey.getDirectoryKey()).thenReturn(DIR_KEY);
         manager.setDispatcherExecutor(dispatcherExecutor);
@@ -67,7 +73,8 @@ public class ObserverManagerTest {
     public void modifiedCurrentlyNoObserversAvailable() {
         manager.removeObserver(observer);
         manager.modified(manager.getObservers(), fileKey, file, parentKeys);
-        verifyZeroInteractions(observer);
+        verify(observer).setup(restriction);
+        verifyNoMoreInteractions(observer);
     }
 
     private void verifyHookObserverFlow() throws IOException {
@@ -89,6 +96,13 @@ public class ObserverManagerTest {
     public void modified() throws IOException {
         manager.modified(manager.getObservers(), fileKey, file, parentKeys);
         verifyHookObserverFlow();
+    }
+
+    @Test
+    public void modifiedNotAccepted() throws IOException {
+        when(restriction.isAccepted(fileKey)).thenReturn(false);
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        verifyZeroInteractions(hook);
     }
 
     @Test
@@ -125,7 +139,8 @@ public class ObserverManagerTest {
         sleep(200);
         manager.modified(manager.getObservers(), fileKey, file, parentKeys);
         assertTrue(dispatcherExecutor.shutdownNow().isEmpty());
-        verifyZeroInteractions(observer);
+        verify(observer).setup(restriction);
+        verifyNoMoreInteractions(observer);
     }
 
 
@@ -133,7 +148,8 @@ public class ObserverManagerTest {
     public void discardCurrentlyNoObserversAvailable() {
         manager.removeObserver(observer);
         manager.discard(manager.getObservers(), fileKey);
-        verifyZeroInteractions(observer);
+        verify(observer).setup(restriction);
+        verifyNoMoreInteractions(observer);
     }
 
     @Test

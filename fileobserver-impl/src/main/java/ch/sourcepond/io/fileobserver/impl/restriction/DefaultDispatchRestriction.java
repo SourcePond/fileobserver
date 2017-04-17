@@ -11,9 +11,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.observer;
+package ch.sourcepond.io.fileobserver.impl.restriction;
 
-import ch.sourcepond.io.fileobserver.api.DeliveryRestriction;
+import ch.sourcepond.io.fileobserver.api.DispatchRestriction;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 
 import java.nio.file.FileSystem;
@@ -35,7 +35,7 @@ import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 /**
  *
  */
-class DefaultDeliveryRestriction implements DeliveryRestriction {
+public class DefaultDispatchRestriction implements DispatchRestriction {
 
     private static class IndexHolder {
         protected final int startIndexInclusive;
@@ -81,8 +81,10 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
     private final Collection<PatternTemplate> patternTemplates = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<FileSystem, Collection<PathMatcherHolder>> matchers = new ConcurrentHashMap<>();
 
+    DefaultDispatchRestriction() {}
+
     @Override
-    public DeliveryRestriction accept(final Object... pDirectoryKeys) {
+    public DispatchRestriction accept(final Object... pDirectoryKeys) {
         for (final Object directoryKey : pDirectoryKeys) {
             acceptedDirectoryKeys.add(requireNonNull(directoryKey, "Directory-key is null"));
         }
@@ -90,25 +92,25 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
     }
 
     @Override
-    public DeliveryRestriction acceptAll() {
+    public DispatchRestriction acceptAll() {
         accept(ACCEPT_ALL);
         return this;
     }
 
     @Override
-    public DeliveryRestriction addGlob(final String... pPatterns) {
+    public DispatchRestriction addGlob(final String... pPatterns) {
         doAdd(START_INDEX, MAX_VALUE, GLOB, pPatterns);
         return this;
     }
 
     @Override
-    public DeliveryRestriction addRegex(final String... pPatterns) {
+    public DispatchRestriction addRegex(final String... pPatterns) {
         doAdd(START_INDEX, MAX_VALUE, REGEX, pPatterns);
         return this;
     }
 
     @Override
-    public DeliveryRestriction add(final String pSyntax, final String... pPatterns) {
+    public DispatchRestriction add(final String pSyntax, final String... pPatterns) {
         doAdd(START_INDEX, MAX_VALUE, pSyntax, pPatterns);
         return this;
     }
@@ -135,19 +137,19 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
     }
 
     @Override
-    public DeliveryRestriction addGlob(final int pStartIndexInclusive, final int pEndIndexExlusive, final String... pPatterns) {
+    public DispatchRestriction addGlob(final int pStartIndexInclusive, final int pEndIndexExlusive, final String... pPatterns) {
         add(pStartIndexInclusive, pEndIndexExlusive, GLOB, pPatterns);
         return this;
     }
 
     @Override
-    public DeliveryRestriction addRegex(final int pStartIndexInclusive, final int pEndIndexExlusive, final String... pPatterns) {
+    public DispatchRestriction addRegex(final int pStartIndexInclusive, final int pEndIndexExlusive, final String... pPatterns) {
         add(pStartIndexInclusive, pEndIndexExlusive, REGEX, pPatterns);
         return this;
     }
 
     @Override
-    public DeliveryRestriction add(final int pStartIndexInclusive, final int pEndIndexExlusive, final String pSyntax, final String... pPatterns) {
+    public DispatchRestriction add(final int pStartIndexInclusive, final int pEndIndexExlusive, final String pSyntax, final String... pPatterns) {
         validateIndexes(pStartIndexInclusive, pEndIndexExlusive);
         doAdd(pStartIndexInclusive, pEndIndexExlusive, pSyntax, pPatterns);
         return this;
@@ -199,11 +201,14 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
     }
 
     private boolean matches(final FileKey pFileKey) {
-        boolean matches = false;
-        for (final PathMatcherHolder holder : getMatcher(pFileKey.getRelativePath().getFileSystem())) {
-            matches = match(pFileKey, holder);
-            if (matches) {
-                break;
+        final Collection<PathMatcherHolder> matchers = getMatcher(pFileKey.getRelativePath().getFileSystem());
+        boolean matches = matchers.isEmpty();
+        if (!matches) {
+            for (final PathMatcherHolder holder : matchers) {
+                matches = match(pFileKey, holder);
+                if (matches) {
+                    break;
+                }
             }
         }
         return matches;
@@ -213,7 +218,7 @@ class DefaultDeliveryRestriction implements DeliveryRestriction {
         matchers.remove(pFs);
     }
 
-    boolean isAccepted(final FileKey pFileKey) {
+    public boolean isAccepted(final FileKey pFileKey) {
         final Object directoryKey = pFileKey.getDirectoryKey();
         boolean accept = acceptedDirectoryKeys.contains(ACCEPT_ALL) ||
                 acceptedDirectoryKeys.contains(directoryKey);
