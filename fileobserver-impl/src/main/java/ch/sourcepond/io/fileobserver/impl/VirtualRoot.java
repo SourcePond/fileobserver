@@ -199,7 +199,7 @@ public class VirtualRoot implements RelocationObserver {
      * @throws IOException Thrown, if the root directory could not be added.
      */
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
-    public void addRoot(final WatchedDirectory pWatchedDirectory) throws IOException {
+    public void addRoot(final WatchedDirectory pWatchedDirectory) {
         requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
         rootInitSwitch.add(pWatchedDirectory);
     }
