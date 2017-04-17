@@ -21,7 +21,6 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.impl.directory.SubDirectory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -50,9 +49,8 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final Config config = mock(Config.class);
-    private final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
     private final DirectoryFactory directoryFactory = new DirectoryFactory(
-            new DefaultFileKeyFactory(), dispatcher);
+            new DefaultFileKeyFactory());
     private WatchServiceWrapper wrapper;
     private Directory dir;
     private Directory dir_1;

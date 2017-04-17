@@ -17,7 +17,7 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,7 +42,7 @@ public class DedicatedFileSystemFactoryTest {
     private final ExecutorService observerExecutor = mock(ExecutorService.class);
     private final ExecutorService directoryWalkerExecutor = mock(ExecutorService.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
-    private final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
+    private final ObserverManager dispatcher = mock(ObserverManager.class);
     private final DedicatedFileSystemFactory factory = new DedicatedFileSystemFactory(directoryFactory, dispatcher, directoryWalkerExecutor);
 
     @Before

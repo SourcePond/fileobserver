@@ -17,6 +17,7 @@ import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -96,8 +97,8 @@ class DirectoryRegistrationWalker {
      *
      * @param pDirectory Newly created directory, must not be {@code null}
      */
-    void directoryCreated(final Path pDirectory) {
-        directoryCreated(null, pDirectory);
+    void directoryCreated(final EventDispatcher pDispatcher, final Path pDirectory) {
+        directoryCreated(pDispatcher,null, pDirectory);
     }
 
     /**
@@ -105,10 +106,10 @@ class DirectoryRegistrationWalker {
      * Additionally, it passes any detected file to {@link FileObserver#modified(FileKey, Path)} to the observers
      * specified.
      *
-     * @param pNewRoot   Newly created directory, must not be {@code null}
+     * @param pNewRoot Newly created directory, must not be {@code null}
      */
-    void rootAdded(final Directory pNewRoot) {
-        directoryCreated(pNewRoot, pNewRoot.getPath());
+    void rootAdded(final EventDispatcher pDispatcher, final Directory pNewRoot) {
+        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath());
     }
 
     /**
@@ -119,13 +120,14 @@ class DirectoryRegistrationWalker {
      * @param pNewRootOrNull New root-directory which causes a rebase, or, {@code null}
      * @param pDirectory     Newly created directory, must not be {@code null}
      */
-    private void directoryCreated(final Directory pNewRootOrNull,
+    private void directoryCreated(final EventDispatcher pDispatcher,
+                                  final Directory pNewRootOrNull,
                                   final Path pDirectory) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered FileObservers
         directoryWalkerExecutor.execute(() -> {
             try {
-                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pNewRootOrNull));
+                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pDispatcher, pNewRootOrNull));
             } catch (final IOException e) {
                 logger.warn(e.getMessage(), e);
             } catch (final RuntimeException e) {
@@ -141,12 +143,14 @@ class DirectoryRegistrationWalker {
      * detected, a new directory object will be created and registered with the enclosing instance.
      */
     private class DirectoryInitializerFileVisitor extends SimpleFileVisitor<Path> {
+        private final EventDispatcher session;
         private final Directory newRootOrNull;
 
         /**
          * Creates a new instance of this class.
          */
-        public DirectoryInitializerFileVisitor(final Directory pNewRootOrNull) {
+        public DirectoryInitializerFileVisitor(final EventDispatcher pDispatcher, final Directory pNewRootOrNull) {
+            session = pDispatcher;
             newRootOrNull = pNewRootOrNull;
         }
 
@@ -156,7 +160,7 @@ class DirectoryRegistrationWalker {
             // This is most certainly the case, but, there is an exception: because we already
             // registered the parent directory of the file with the watch-service there's a small
             // chance that the file had already been modified before we got here.
-            dirs.get(file.getParent()).informIfChanged(newRootOrNull, file);
+            dirs.get(file.getParent()).informIfChanged(session, newRootOrNull, file);
             return CONTINUE;
         }
 

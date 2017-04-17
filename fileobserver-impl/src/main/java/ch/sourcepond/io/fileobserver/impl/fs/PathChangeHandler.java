@@ -15,6 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -44,8 +45,8 @@ class PathChangeHandler {
         dirs = pDirs;
     }
 
-    void rootAdded(final Directory pNewRoot) {
-        walker.rootAdded(pNewRoot);
+    void rootAdded(final EventDispatcher pDispatcher, final Directory pNewRoot) {
+        walker.rootAdded(pDispatcher, pNewRoot);
     }
 
     void removeFileSystem(final DedicatedFileSystem pDfs) {
@@ -56,30 +57,30 @@ class PathChangeHandler {
         return dirs.get(pPath);
     }
 
-    void pathModified(final BasicFileAttributes pAttrs, final Path pPath) {
+    void pathModified(final EventDispatcher pDispatcher, final BasicFileAttributes pAttrs, final Path pPath) {
         if (pAttrs.isDirectory()) {
-            walker.directoryCreated(pPath);
+            walker.directoryCreated(pDispatcher, pPath);
         } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
-            dir.informIfChanged(pPath);
+            dir.informIfChanged(pDispatcher, pPath);
         }
     }
 
-    void pathDiscarded(final Path pPath) {
+    void pathDiscarded(final EventDispatcher pDispatcher, final Path pPath) {
         // The deleted path was a directory
-        if (!directoryDiscarded(pPath)) {
+        if (!directoryDiscarded(pDispatcher, pPath)) {
             final Directory parentDirectory = getDirectory(pPath.getParent());
             if (parentDirectory == null) {
                 LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
             } else {
                 // The deleted path was a file
-                parentDirectory.informDiscard(pPath);
+                parentDirectory.informDiscard(pDispatcher, pPath);
             }
         }
     }
 
-    private boolean directoryDiscarded(final Path pDirectory) {
+    private boolean directoryDiscarded(final EventDispatcher pDispatcher, final Path pDirectory) {
         final Directory dir = dirs.remove(pDirectory);
         final boolean wasDirectory = dir != null;
         if (wasDirectory) {
@@ -91,7 +92,7 @@ class PathChangeHandler {
                     it.remove();
                 }
             }
-            dir.informDiscard(pDirectory);
+            dir.informDiscard(pDispatcher, pDirectory);
         }
         return wasDirectory;
     }

@@ -17,13 +17,14 @@ import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.DiffEventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
@@ -42,7 +43,9 @@ public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
-    private final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
+    private final ObserverManager manager = mock(ObserverManager.class);
+    private final EventDispatcher dispatcher = mock(EventDispatcher.class);
+    private final EventDispatcher defaultDispatcher = mock(EventDispatcher.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final WatchedDirectory watchedDirectory1 = mock(WatchedDirectory.class);
     private final WatchedDirectory watchedDirectory2 = mock(WatchedDirectory.class);
@@ -58,6 +61,9 @@ public class DedicatedFileSystemTest {
 
     @Before
     public void setup() throws IOException {
+        when(manager.addObserver(observer)).thenReturn(dispatcher);
+        when(manager.getDefaultDispatcher()).thenReturn(defaultDispatcher);
+
         // Setup watched-rootDirPath1
         when(watchedDirectory1.getKey()).thenReturn(DIRECTORY_KEY_1);
         when(watchedDirectory1.getDirectory()).thenReturn(rootDirPath1);
@@ -79,16 +85,16 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, dispatcher, pathChangeHandler, dirs);
+        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs);
     }
 
     @Test
     public void forceInform() {
         dirs.put(rootDirPath1, rootDir1);
         dirs.put(rootDirPath2, rootDir2);
-        fs.forceInform(observer);
-        verify(rootDir1).forceInform(observer);
-        verify(rootDir2).forceInform(observer);
+        fs.forceInform(dispatcher);
+        verify(rootDir1).forceInform(dispatcher);
+        verify(rootDir2).forceInform(dispatcher);
     }
 
     @Test(expected = NullPointerException.class)
@@ -103,7 +109,7 @@ public class DedicatedFileSystemTest {
         fs.registerRootDirectory(watchedDirectory2);
 
         final InOrder order = inOrder(pathChangeHandler, rootDir1);
-        order.verify(pathChangeHandler).rootAdded(rootDir1);
+        order.verify(pathChangeHandler).rootAdded(defaultDispatcher, rootDir1);
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory2);
         order.verifyNoMoreInteractions();
     }
@@ -114,7 +120,7 @@ public class DedicatedFileSystemTest {
         assertSame(rootDir1, fs.getDirectory(rootDirPath1));
         final InOrder order = inOrder(rebase, pathChangeHandler, rootDir1);
         order.verify(rebase).rebaseExistingRootDirectories(rootDir1);
-        order.verify(pathChangeHandler).rootAdded(rootDir1);
+        order.verify(pathChangeHandler).rootAdded(defaultDispatcher, rootDir1);
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
         order.verifyNoMoreInteractions();
     }
@@ -145,7 +151,7 @@ public class DedicatedFileSystemTest {
         fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1);
 
         final InOrder order = inOrder(rootDir1, rebase);
-        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1);
+        order.verify(rootDir1).removeWatchedDirectory(defaultDispatcher, watchedDirectory1);
         order.verify(rootDir1).hasKeys();
         order.verifyNoMoreInteractions();
     }
@@ -157,7 +163,7 @@ public class DedicatedFileSystemTest {
         fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1);
 
         final InOrder order = inOrder(rootDir1, rebase);
-        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1);
+        order.verify(rootDir1).removeWatchedDirectory(defaultDispatcher, watchedDirectory1);
         order.verify(rootDir1).hasKeys();
         order.verify(rebase).cancelAndRebaseDiscardedDirectory(rootDir1);
         order.verifyNoMoreInteractions();
@@ -191,15 +197,15 @@ public class DedicatedFileSystemTest {
 
     @Test
     public void destinationChanged() throws IOException {
-        final Closeable diff = mock(Closeable.class);
-        when(dispatcher.openDiffHandler(fs)).thenReturn(diff);
+        final DiffEventDispatcher diffEventDispatcher = mock(DiffEventDispatcher.class);
+        when(manager.openDiff(fs)).thenReturn(diffEventDispatcher);
 
         fs.registerRootDirectory(watchedDirectory1);
         fs.destinationChanged(watchedDirectory1, rootDirPath1);
 
-        final InOrder order = inOrder(rootDir1, pathChangeHandler, diff);
-        order.verify(rootDir1).removeWatchedDirectory(watchedDirectory1);
+        final InOrder order = inOrder(rootDir1, pathChangeHandler, diffEventDispatcher);
+        order.verify(rootDir1).removeWatchedDirectory(diffEventDispatcher, watchedDirectory1);
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
-        order.verify(diff).close();
+        order.verify(diffEventDispatcher).close();
     }
 }

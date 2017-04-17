@@ -17,7 +17,7 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -32,20 +32,20 @@ import java.util.concurrent.ExecutorService;
  */
 public class DedicatedFileSystemFactory {
     private final DirectoryFactory directoryFactory;
-    private final ObserverDispatcher dispatcher;
+    private final ObserverManager dispatcher;
 
     // Injected by SCR
     private Executor directoryWalkerExecutor;
 
     // Constructor for BundleActivator
-    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ObserverDispatcher pDispatcher) {
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ObserverManager pDispatcher) {
         directoryFactory = pDirectoryFactory;
         dispatcher = pDispatcher;
     }
 
     // Constructor for testing
     public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
-                                      final ObserverDispatcher pDispatcher,
+                                      final ObserverManager pDispatcher,
                                       final ExecutorService pDirectoryWalkerExecutor) {
         directoryFactory = pDirectoryFactory;
         dispatcher = pDispatcher;

@@ -19,7 +19,8 @@ import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -32,7 +33,6 @@ import java.util.concurrent.ExecutorService;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.file.FileSystems.getDefault;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
-import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
@@ -54,9 +54,10 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final Executor directoryWalkerExecutor = directExecutor();
     final ExecutorService observerExecutor = newSingleThreadExecutor();
     final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
-    final ObserverDispatcher dispatcher = new ObserverDispatcher();
+    final ObserverManager manager = new ObserverManager();
+    final EventDispatcher dispatcher = manager.getDefaultDispatcher();
     final DirectoryFactory factory = new DirectoryFactory(
-            keyFactory, dispatcher);
+            keyFactory);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
     final FileObserver observer = mock(FileObserver.class);
@@ -68,9 +69,9 @@ public abstract class DirectoryTest extends CopyResourcesTest {
         when(watchedSubDir1.getKey()).thenReturn(SUB_DIR_KEY1);
         when(watchedSubDir2.getKey()).thenReturn(SUB_DIR_KEY2);
         when(config.timeout()).thenReturn(TIMEOUT);
-        dispatcher.addObserver(observer);
-        dispatcher.setDispatcherExecutor(dispatcherExecutor);
-        dispatcher.setObserverExecutor(observerExecutor);
+        manager.addObserver(observer);
+        manager.setDispatcherExecutor(dispatcherExecutor);
+        manager.setObserverExecutor(observerExecutor);
         wrapper = new WatchServiceWrapper(getDefault());
         factory.setConfig(config);
         factory.setObserverExecutor(observerExecutor);
@@ -86,14 +87,9 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     }
 
     @Test
-    public void getDispatcher() {
-        assertSame(dispatcher, factory.getDispatcher());
-    }
-
-    @Test
     public void verifyDirectoryFactoryDefaultConstructor() {
         // Should not throw an exception
-        new DirectoryFactory(keyFactory, dispatcher);
+        new DirectoryFactory(keyFactory);
     }
 
     void setupChecksumAnswer(final Resource pResource, final Checksum pChecksum2) throws IOException {

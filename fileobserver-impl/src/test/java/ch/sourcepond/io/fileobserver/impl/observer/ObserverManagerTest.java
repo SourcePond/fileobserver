@@ -35,12 +35,12 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class ObserverDispatcherTest {
+public class ObserverManagerTest {
     private static final Object PARENT_DIR_KEY = new Object();
     private static final Object DIR_KEY = new Object();
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
-    private final ObserverDispatcher dispatcher = new ObserverDispatcher();
+    private final ObserverManager manager = new ObserverManager();
     private final FileKey parentKey = mock(FileKey.class);
     private final Collection<FileKey> parentKeys = asList(parentKey);
     private final FileKey fileKey = mock(FileKey.class);
@@ -52,10 +52,10 @@ public class ObserverDispatcherTest {
     public void setup() {
         when(parentKey.getDirectoryKey()).thenReturn(PARENT_DIR_KEY);
         when(fileKey.getDirectoryKey()).thenReturn(DIR_KEY);
-        dispatcher.setDispatcherExecutor(dispatcherExecutor);
-        dispatcher.setObserverExecutor(observerExecutor);
-        dispatcher.addObserver(observer);
-        dispatcher.addHook(hook);
+        manager.setDispatcherExecutor(dispatcherExecutor);
+        manager.setObserverExecutor(observerExecutor);
+        manager.addObserver(observer);
+        manager.addHook(hook);
     }
 
     @After
@@ -65,8 +65,8 @@ public class ObserverDispatcherTest {
 
     @Test
     public void modifiedCurrentlyNoObserversAvailable() {
-        dispatcher.removeObserver(observer);
-        dispatcher.modified(fileKey, file, parentKeys);
+        manager.removeObserver(observer);
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
         verifyZeroInteractions(observer);
     }
 
@@ -81,20 +81,20 @@ public class ObserverDispatcherTest {
 
     @Test
     public void modifiedWithKeyCollection() throws IOException {
-        dispatcher.modified(asList(fileKey), file, parentKeys);
+        manager.modified(manager.getObservers(), asList(fileKey), file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modified() throws IOException {
-        dispatcher.modified(fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modifiedCurrentlyNoHookAvailable() throws Exception {
-        dispatcher.removeHook(hook);
-        dispatcher.modified(fileKey, file, parentKeys);
+        manager.removeHook(hook);
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
         final InOrder order = inOrder(hook, observer);
         order.verify(observer, timeout(1000)).supplement(fileKey, parentKey);
         order.verify(observer, timeout(1000)).modified(fileKey, file);
@@ -104,14 +104,14 @@ public class ObserverDispatcherTest {
     @Test
     public void modifiedBeforeModifiedFailed() throws IOException {
         doThrow(RuntimeException.class).when(hook).beforeModify(fileKey, file);
-        dispatcher.modified(fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modifiedObserverFailed() throws IOException {
         doThrow(IOException.class).when(observer).modified(fileKey, file);
-        dispatcher.modified(fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
@@ -123,7 +123,7 @@ public class ObserverDispatcherTest {
         }).when(hook).beforeModify(fileKey, file);
         doThrow(RuntimeException.class).when(hook).beforeModify(fileKey, file);
         sleep(200);
-        dispatcher.modified(fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
         assertTrue(dispatcherExecutor.shutdownNow().isEmpty());
         verifyZeroInteractions(observer);
     }
@@ -131,15 +131,15 @@ public class ObserverDispatcherTest {
 
     @Test
     public void discardCurrentlyNoObserversAvailable() {
-        dispatcher.removeObserver(observer);
-        dispatcher.discard(fileKey);
+        manager.removeObserver(observer);
+        manager.discard(manager.getObservers(), fileKey);
         verifyZeroInteractions(observer);
     }
 
     @Test
     public void discardCurrentlyNoHookAvailable() {
-        dispatcher.removeHook(hook);
-        dispatcher.discard(fileKey);
+        manager.removeHook(hook);
+        manager.discard(manager.getObservers(), fileKey);
         final InOrder order = inOrder(hook, observer);
         order.verify(observer, timeout(1000)).discard(fileKey);
         order.verifyNoMoreInteractions();
@@ -147,20 +147,11 @@ public class ObserverDispatcherTest {
 
     @Test
     public void discard() {
-        dispatcher.discard(fileKey);
+        manager.discard(manager.getObservers(), fileKey);
         final InOrder order = inOrder(hook, observer);
         order.verify(hook, timeout(1000)).beforeDiscard(fileKey);
         order.verify(observer, timeout(1000)).discard(fileKey);
         order.verify(hook, timeout(1000)).afterDiscard(fileKey);
         order.verifyNoMoreInteractions();
-    }
-
-    @Test
-    public void hasObservers() {
-        assertTrue(dispatcher.hasObservers());
-        dispatcher.removeObserver(observer);
-        assertFalse(dispatcher.hasObservers());
-        dispatcher.addObserver(observer);
-        assertTrue(dispatcher.hasObservers());
     }
 }

@@ -40,11 +40,11 @@ class DiffObserver implements FileObserver, Closeable {
     private final Set<FileKey> discardedKeys = new HashSet<>();
     private final Map<FileKey, Collection<FileKey>> supplementKeys = new HashMap<>();
     private final DedicatedFileSystem fs;
-    private final ObserverDispatcher dispatcher;
+    private final EventDispatcher dispatcher;
     private final Config config;
 
     DiffObserver(final DedicatedFileSystem pFs,
-                 final ObserverDispatcher pDispatcher,
+                 final EventDispatcher pDispatcher,
                  final Config pConfig) {
         fs = pFs;
         dispatcher = pDispatcher;
@@ -84,7 +84,7 @@ class DiffObserver implements FileObserver, Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         modifiedKeys.forEach(this::updateResource);
         discardedKeys.removeAll(modifiedKeys.keySet());
         discardedKeys.forEach(dispatcher::discard);
@@ -102,6 +102,6 @@ class DiffObserver implements FileObserver, Closeable {
 
     @Override
     public void supplement(final FileKey pKnownKey, final FileKey pAdditionalKey) {
-        supplementKeys.computeIfAbsent(pKnownKey, k -> new LinkedHashSet<FileKey>()).add(pAdditionalKey);
+        supplementKeys.computeIfAbsent(pKnownKey, k -> new LinkedHashSet<>()).add(pAdditionalKey);
     }
 }

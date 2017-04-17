@@ -21,7 +21,8 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.osgi.service.component.annotations.Activate;
@@ -55,7 +56,7 @@ public class VirtualRoot implements RelocationObserver {
     private static final String KEY_IS_NULL = "Key is null";
     private static final String DIRECTORY_IS_NULL = "Directory is null";
     private static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
-    private final ObserverDispatcher dispatcher;
+    private final ObserverManager dispatcher;
     private final InitSwitch<WatchedDirectory> rootInitSwitch = new InitSwitch<>(this::doAddRoot);
     private final InitSwitch<FileObserver> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
@@ -65,16 +66,16 @@ public class VirtualRoot implements RelocationObserver {
 
     // Constructor for BundleActivator
     public VirtualRoot() {
-        dispatcher = new ObserverDispatcher();
+        dispatcher = new ObserverManager();
         final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
-                new DirectoryFactory(keyFactory, dispatcher),
+                new DirectoryFactory(keyFactory),
                 dispatcher);
     }
 
     // Constructor for testing
     public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory,
-                       final ObserverDispatcher pDispatcher) {
+                       final ObserverManager pDispatcher) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
         dispatcher = pDispatcher;
     }
@@ -120,8 +121,8 @@ public class VirtualRoot implements RelocationObserver {
     }
 
     private void doAddObserver(final FileObserver pObserver) {
-        dispatcher.addObserver(pObserver);
-        children.values().forEach(dfs -> dfs.forceInform(pObserver));
+        final EventDispatcher session = dispatcher.addObserver(pObserver);
+        children.values().forEach(dfs -> dfs.forceInform(session));
     }
 
     /**

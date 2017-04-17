@@ -68,7 +68,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final FileKey supplementKey3 = mock(FileKey.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
-    private final ObserverDispatcher dispatcher = new ObserverDispatcher();
+    private final ObserverManager dispatcher = new ObserverManager();
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {
@@ -135,7 +135,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         dispatcher.setObserverExecutor(observerExecutor);
         dispatcher.setConfig(config);
         dispatcher.addObserver(observer);
-        diff = (DiffObserver) dispatcher.openDiffHandler(fs);
+        diff = dispatcher.openDiff(fs).getDiffObserver();
     }
 
     @Test

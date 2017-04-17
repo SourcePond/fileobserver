@@ -16,7 +16,9 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.DiffEventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -48,20 +50,20 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
-    private final ObserverDispatcher dispatcher;
+    private final ObserverManager manager;
     private final PathChangeHandler pathChangeHandler;
 
     DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
-                        final ObserverDispatcher pDispatcher,
+                        final ObserverManager pManager,
                         final PathChangeHandler pPathChangeHandler,
                         final ConcurrentMap<Path, Directory> pDirs) {
         pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
-        dispatcher = pDispatcher;
+        manager = pManager;
         dirs = pDirs;
         thread = new Thread(this, format("fileobserver %s", this));
     }
@@ -69,13 +71,13 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     /**
      * <p>Iterates through all registered directories and passes all their files to the
      * {@link FileObserver#modified(ch.sourcepond.io.fileobserver.api.FileKey, Path)} of the observer specified. This is necessary for newly registered
-     * observers who need to know about all watched files. See {@link #registerRootDirectory(WatchedDirectory)} and
-     * {@link PathChangeHandler#pathModified(BasicFileAttributes, Path)} to get an idea how directories are registered with this object.
+     * observers who need to know about all watched files. See {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and
+     * {@link PathChangeHandler#pathModified(EventDispatcher, BasicFileAttributes, Path)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      */
-    public void forceInform(final FileObserver pObserver) {
-        dirs.values().forEach(d -> d.forceInform(pObserver));
+    public void forceInform(final EventDispatcher pDispatcher) {
+        dirs.values().forEach(d -> d.forceInform(pDispatcher));
     }
 
     /**
@@ -84,6 +86,11 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * @param pWatchedDirectory
      */
     public void registerRootDirectory(final WatchedDirectory pWatchedDirectory)
+            throws IOException {
+        registerRootDirectory(manager.getDefaultDispatcher(), pWatchedDirectory);
+    }
+
+    private void registerRootDirectory(final EventDispatcher pDispatcher, final WatchedDirectory pWatchedDirectory)
             throws IOException {
         // It's already checked that the directory is not null
         final Path directory = pWatchedDirectory.getDirectory();
@@ -100,7 +107,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
 
             // Register directories; important here is to pass the newly created root-directory
             // (otherwise FileObserver#supplement would not be called).
-            pathChangeHandler.rootAdded(dir);
+            pathChangeHandler.rootAdded(pDispatcher, dir);
         }
 
         // VERY IMPORTANT: in any case, associate the directory with the watched-directory
@@ -115,13 +122,20 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     public void unregisterRootDirectory(
             final Path pToBeUnregistered,
             final WatchedDirectory pWatchedDirectory) {
+        unregisterRootDirectory(manager.getDefaultDispatcher(), pToBeUnregistered, pWatchedDirectory);
+    }
+
+    private void unregisterRootDirectory(
+            final EventDispatcher pDispatcher,
+            final Path pToBeUnregistered,
+            final WatchedDirectory pWatchedDirectory) {
         // It's already checked that the directory-key and the directory are not null
         final Directory dir = dirs.get(pToBeUnregistered);
         if (dir == null) {
             LOG.warn(format("Directory %s is unknown; nothing unregistered", pWatchedDirectory.getDirectory()));
         } else {
             // Remove the directory-key of the watched directory from the key list
-            dir.removeWatchedDirectory(pWatchedDirectory);
+            dir.removeWatchedDirectory(pDispatcher, pWatchedDirectory);
 
             // If all watched-directories which referenced the directory have been de-registered,
             // it's time to clean-up.
@@ -143,9 +157,9 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         } else {
             // Unregister and register watched-directory. IMPORTANT: do not
             // inform observers at all, this will be handled later!
-            try (final Closeable handler = dispatcher.openDiffHandler(this)) {
-                unregisterRootDirectory(pPrevious, pWatchedDirectory);
-                registerRootDirectory(pWatchedDirectory);
+            try (final DiffEventDispatcher dispatcher = manager.openDiff(this)) {
+                unregisterRootDirectory(dispatcher, pPrevious, pWatchedDirectory);
+                registerRootDirectory(dispatcher, pWatchedDirectory);
             }
 
             LOG.info("Destination changed from {} to {}", pPrevious, pWatchedDirectory.getDirectory());
@@ -210,16 +224,16 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             if (ENTRY_CREATE == pKind) {
                 final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
                 if (currentAttrs.size() > 0 && hasChanged(child, currentAttrs)) {
-                    pathChangeHandler.pathModified(currentAttrs, child);
+                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), currentAttrs, child);
                 }
             } else if (ENTRY_MODIFY == pKind) {
                 final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
                 if (hasChanged(child, currentAttrs)) {
-                    pathChangeHandler.pathModified(currentAttrs, child);
+                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), currentAttrs, child);
                 }
             } else if (ENTRY_DELETE == pKind) {
                 try {
-                    pathChangeHandler.pathDiscarded(child);
+                    pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);
                 } finally {
                     timestamps.remove(child);
                 }

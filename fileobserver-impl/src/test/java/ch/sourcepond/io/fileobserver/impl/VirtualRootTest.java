@@ -20,7 +20,8 @@ import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,14 +60,16 @@ public class VirtualRootTest {
     private final DedicatedFileSystemFactory dedicatedFsFactory = mock(DedicatedFileSystemFactory.class);
     private final SmartSwitchBuilderFactory ssbFactory = mock(SmartSwitchBuilderFactory.class);
     private final SmartSwitchBuilder<ExecutorService> executorBuilder = mock(SmartSwitchBuilder.class);
+    private final ObserverManager manager = mock(ObserverManager.class);
+    private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private ExecutorService dispatcherExecutor;
     private ExecutorService observerExecutor;
     private ExecutorService directoryWalkerExecutor;
-    private ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
-    private VirtualRoot virtualRoot = new VirtualRoot(dedicatedFsFactory, dispatcher);
+    private VirtualRoot virtualRoot = new VirtualRoot(dedicatedFsFactory, manager);
 
     @Before
     public void setup() throws IOException {
+        when(manager.addObserver(observer)).thenReturn(dispatcher);
         when(modifiedPath.getFileSystem()).thenReturn(fs);
         when(provider.readAttributes(modifiedPath, BasicFileAttributes.class)).thenReturn(modifiedPathAttrs);
 
@@ -93,7 +96,7 @@ public class VirtualRootTest {
     @Test
     public void setConfig() {
         verify(dedicatedFsFactory).setConfig(config);
-        verify(dispatcher).setConfig(config);
+        verify(manager).setConfig(config);
     }
 
     private void setupDefaultExecutor(final String pFilter, final SmartSwitchBuilder<ExecutorService> pBuilder, final Answer<ExecutorService> pAnswer) {
@@ -127,8 +130,8 @@ public class VirtualRootTest {
             return directoryWalkerExecutor;
         });
         virtualRoot.initExecutors(ssbFactory);
-        verify(dispatcher).setObserverExecutor(observerExecutor);
-        verify(dispatcher).setDispatcherExecutor(dispatcherExecutor);
+        verify(manager).setObserverExecutor(observerExecutor);
+        verify(manager).setDispatcherExecutor(dispatcherExecutor);
         verify(dedicatedFsFactory).setObserverExecutor(observerExecutor);
         verify(dedicatedFsFactory).setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
@@ -163,7 +166,7 @@ public class VirtualRootTest {
 
     @Test
     public void addRootDirectoriesCouldNotBeCreated() throws IOException {
-        virtualRoot = new VirtualRoot(dedicatedFsFactory, dispatcher);
+        virtualRoot = new VirtualRoot(dedicatedFsFactory, manager);
         doThrow(IOException.class).when(dedicatedFsFactory).openFileSystem(virtualRoot, fs);
 
         // This should not cause an exception
@@ -178,19 +181,19 @@ public class VirtualRootTest {
     @Test
     public void addHook() {
         virtualRoot.addHook(hook);
-        verify(dispatcher).addHook(hook);
+        verify(manager).addHook(hook);
     }
 
     @Test
     public void removeHook() {
         virtualRoot.removeHook(hook);
-        verify(dispatcher).removeHook(hook);
+        verify(manager).removeHook(hook);
     }
 
     @Test
     public void addObserver() {
         virtualRoot.removeObserver(observer);
-        verify(dedicatedFs).forceInform(observer);
+        verify(dedicatedFs).forceInform(dispatcher);
     }
 
     @Test
@@ -233,7 +236,7 @@ public class VirtualRootTest {
 
     @Test
     public void removeRootNoSuchDirectoryRegistered() throws IOException {
-        virtualRoot = new VirtualRoot(dedicatedFsFactory, dispatcher);
+        virtualRoot = new VirtualRoot(dedicatedFsFactory, manager);
 
         // This should not cause an exception
         virtualRoot.removeRoot(watchedDir);

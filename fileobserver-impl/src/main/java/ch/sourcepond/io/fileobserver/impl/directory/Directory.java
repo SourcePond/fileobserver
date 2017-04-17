@@ -16,7 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -55,11 +55,11 @@ public abstract class Directory {
      * the currently focused observer. Only direct children will be considered,
      * sub-directories and non-regular files will be ignored.
      */
-    private void streamDirectoryAndForceInform(final FileObserver pObserver) {
+    private void streamDirectoryAndForceInform(final EventDispatcher pDispatcher) {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
             stream.forEach(p ->
                     createKeys(p).forEach(k ->
-                            getFactory().getDispatcher().modified(pObserver, k, p, emptyList())));
+                            pDispatcher.modified(k, p, emptyList())));
         } catch (final IOException e) {
             LOG.warn("Exception occurred while trying to inform single observers!", e);
         }
@@ -168,7 +168,7 @@ public abstract class Directory {
      *
      * @param pWatchedDirectory Directory-key to be removed, must be not {@code null}
      */
-    public void removeWatchedDirectory(final WatchedDirectory pWatchedDirectory) {
+    public void removeWatchedDirectory(final EventDispatcher pDispatcher, final WatchedDirectory pWatchedDirectory) {
         // It is important to evaluate to relative path before the
         // has been removed otherwise the resulting key has not the
         // expected value!
@@ -176,10 +176,9 @@ public abstract class Directory {
 
         // Now, the key can be safely removed
         if (remove(pWatchedDirectory)) {
-            final ObserverDispatcher dispatcher = getFactory().getDispatcher();
-            if (dispatcher.hasObservers()) {
+            if (pDispatcher.hasObservers()) {
                 final FileKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
-                dispatcher.discard(key);
+                pDispatcher.discard(key);
             }
         }
     }
@@ -202,8 +201,8 @@ public abstract class Directory {
      * {@link FileObserver#modified(FileKey, Path)} method. Note: only direct children will be
      * considered, sub-directories and non-regular files will be ignored.
      */
-    public void forceInform(final FileObserver pObserver) {
-        getFactory().executeDirectoryWalkerTask(() -> streamDirectoryAndForceInform(pObserver));
+    public void forceInform(final EventDispatcher pDispatcher) {
+        getFactory().executeDirectoryWalkerTask(() -> streamDirectoryAndForceInform(pDispatcher));
     }
 
     /**
@@ -222,13 +221,12 @@ public abstract class Directory {
      *
      * @param pFile Discarded file, must be {@code null}
      */
-    public void informDiscard(final Path pFile) {
+    public void informDiscard(final EventDispatcher pDispatcher, final Path pFile) {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
-        final ObserverDispatcher dispatcher = getFactory().getDispatcher();
-        if (dispatcher.hasObservers()) {
-            createKeys(pFile).forEach(dispatcher::discard);
+        if (pDispatcher.hasObservers()) {
+            createKeys(pFile).forEach(k -> pDispatcher.discard(k));
         }
     }
 
@@ -251,11 +249,10 @@ public abstract class Directory {
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
-     * @param pFile      File which potentially has changed, must not be {@code null}
+     * @param pFile File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final Directory pNewRootOrNull, final Path pFile) {
-        final ObserverDispatcher dispatcher = getFactory().getDispatcher();
-        if (dispatcher.hasObservers()) {
+    public void informIfChanged(final EventDispatcher pDispatcher, final Directory pNewRootOrNull, final Path pFile) {
+        if (pDispatcher.hasObservers()) {
             try {
                 getResource(pFile).update(getTimeout(),
                         update -> {
@@ -265,7 +262,7 @@ public abstract class Directory {
                                 final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
                                         emptyList() : pNewRootOrNull.createKeys(pFile);
 
-                                createKeys(pFile).forEach(k -> dispatcher.modified(k, pFile, supplementKeys));
+                                createKeys(pFile).forEach(k -> pDispatcher.modified(k, pFile, supplementKeys));
                             }
                         });
             } catch (final IOException e) {
@@ -279,10 +276,10 @@ public abstract class Directory {
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
-     * @param pFile      File which potentially has changed, must not be {@code null}
+     * @param pFile File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final Path pFile) {
-        informIfChanged(null, pFile);
+    public void informIfChanged(final EventDispatcher pDispatcher, final Path pFile) {
+        informIfChanged(pDispatcher,null, pFile);
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);

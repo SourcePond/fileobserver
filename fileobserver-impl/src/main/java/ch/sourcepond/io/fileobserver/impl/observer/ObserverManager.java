@@ -21,7 +21,6 @@ import ch.sourcepond.io.fileobserver.impl.filekey.KeyDeliveryConsumer;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import org.slf4j.Logger;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -30,7 +29,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
-import static java.util.Arrays.asList;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -38,18 +36,31 @@ import static org.slf4j.LoggerFactory.getLogger;
  * This class handles everything necessary to inform registered {@link FileObserver} and
  * {@link KeyDeliveryHook} instances.
  */
-public class ObserverDispatcher {
-    private static final Logger LOG = getLogger(ObserverDispatcher.class);
+public class ObserverManager {
+    private static final Logger LOG = getLogger(ObserverManager.class);
     private final Set<KeyDeliveryHook> hooks = newKeySet();
     private final Set<FileObserver> observers = newKeySet();
+    private final EventDispatcher defaultDispatcher = new EventDispatcher(this, observers);
     private volatile Executor dispatcherExecutor;
     private volatile ExecutorService observerExecutor;
     private volatile Config config;
 
-    public Closeable openDiffHandler(final DedicatedFileSystem pFs) {
-        return new DiffObserver(pFs, this, config);
+    public EventDispatcher addObserver(final FileObserver pObserver) {
+        observers.add(pObserver);
+        return new EventDispatcher(this, pObserver);
     }
 
+    public DiffEventDispatcher openDiff(final DedicatedFileSystem pFs) {
+        return new DiffEventDispatcher(this, new DiffObserver(pFs, defaultDispatcher, config));
+    }
+
+    public EventDispatcher getDefaultDispatcher() {
+        return defaultDispatcher;
+    }
+
+    Collection<FileObserver> getObservers() {
+        return observers;
+    }
 
     public void setConfig(final Config pConfig) {
         config = pConfig;
@@ -61,10 +72,6 @@ public class ObserverDispatcher {
 
     public void setObserverExecutor(final ExecutorService pObserverExecutor) {
         observerExecutor = pObserverExecutor;
-    }
-
-    public void addObserver(final FileObserver pObserver) {
-        observers.add(pObserver);
     }
 
     public void addHook(final KeyDeliveryHook pHook) {
@@ -124,10 +131,11 @@ public class ObserverDispatcher {
         }
     }
 
-    private void submitModifiedTask(final Collection<FileObserver> pObservers,
-                                    final FileKey pKey,
-                                    final Path pFile,
-                                    final Collection<FileKey> pParentKeys) {
+    void modified(final Collection<FileObserver> pObservers, final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
+        pKeys.forEach(key -> modified(pObservers, key, pFile, pParentKeys));
+    }
+
+    void modified(final Collection<FileObserver> pObservers, final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
         submitTask(
                 pObservers,
                 pKey,
@@ -137,29 +145,13 @@ public class ObserverDispatcher {
         );
     }
 
-    public void modified(final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
-        pKeys.forEach(key -> modified(key, pFile, pParentKeys));
-    }
-
-    public void modified(final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
-        submitModifiedTask(observers, pKey, pFile, pParentKeys);
-    }
-
-    public void modified(final FileObserver pObserver, final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
-        submitModifiedTask(asList(pObserver), pKey, pFile, pParentKeys);
-    }
-
-    public void discard(final FileKey pKey) {
+    void discard(final Collection<FileObserver> pObservers, final FileKey pKey) {
         submitTask(
-                observers,
+                pObservers,
                 pKey,
                 observer -> observer.discard(pKey),
                 (hook, key) -> hook.beforeDiscard(key),
                 (hook, key) -> hook.afterDiscard(key)
         );
-    }
-
-    public boolean hasObservers() {
-        return !observers.isEmpty();
     }
 }

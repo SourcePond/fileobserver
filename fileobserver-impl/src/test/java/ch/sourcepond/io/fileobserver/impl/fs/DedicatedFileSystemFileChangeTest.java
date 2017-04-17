@@ -16,7 +16,8 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +48,8 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
-    private final ObserverDispatcher dispatcher = mock(ObserverDispatcher.class);
+    private final ObserverManager manager = mock(ObserverManager.class);
+    private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private DedicatedFileSystem child;
     private volatile Throwable threadKiller;
@@ -57,12 +59,13 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws Exception {
+        when(manager.getDefaultDispatcher()).thenReturn(dispatcher);
         when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
         when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);
         wrapper = new WatchServiceWrapper(fs);
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, dispatcher, pathChangeHandler, new ConcurrentHashMap<>());
+        child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager, pathChangeHandler, new ConcurrentHashMap<>());
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
@@ -85,15 +88,15 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
 
     private void changeContent(final Path pPath) throws Exception {
         writeContent(pPath);
-        verify(pathChangeHandler, timeout(15000)).pathModified(notNull(), eq(pPath));
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(pPath));
         reset(pathChangeHandler);
     }
 
     @Test
     public void verifyThreadNotKillWhenRuntimeExceptionOccurs() throws Exception {
-        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(notNull(), eq(file));
+        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), notNull(), eq(file));
         writeContent(file);
-        verify(pathChangeHandler, timeout(15000)).pathModified(notNull(), eq(file));
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(file));
         assertNull(threadKiller);
     }
 
@@ -111,6 +114,6 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     public void entryDelete() throws Exception {
         changeContent(file);
         delete(file);
-        verify(pathChangeHandler, timeout(15000)).pathDiscarded(file);
+        verify(pathChangeHandler, timeout(15000)).pathDiscarded(dispatcher, file);
     }
 }

@@ -19,7 +19,6 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 
 import java.nio.file.Path;
@@ -27,11 +26,10 @@ import java.nio.file.WatchKey;
 import java.util.concurrent.Executor;
 
 /**
- * Created by rolandhauser on 08.02.17.
+ *
  */
 public class DirectoryFactory {
     private final DefaultFileKeyFactory fileKeyFactory;
-    private final ObserverDispatcher dispatcher;
     private volatile Config config;
 
     // Injected by SCR
@@ -43,9 +41,8 @@ public class DirectoryFactory {
     private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
-    public DirectoryFactory(final DefaultFileKeyFactory pFileKeyFactory, final ObserverDispatcher pDispatcher) {
+    public DirectoryFactory(final DefaultFileKeyFactory pFileKeyFactory) {
         fileKeyFactory = pFileKeyFactory;
-        dispatcher = pDispatcher;
     }
 
     public void setConfig(final Config pConfig) {
@@ -108,10 +105,6 @@ public class DirectoryFactory {
      */
     void executeObserverTask(final Runnable pTask) {
         observerExecutor.execute(pTask);
-    }
-
-    ObserverDispatcher getDispatcher() {
-        return dispatcher;
     }
 
     /**
