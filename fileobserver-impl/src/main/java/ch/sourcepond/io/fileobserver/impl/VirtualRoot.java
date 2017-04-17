@@ -196,7 +196,6 @@ public class VirtualRoot implements RelocationObserver {
      * method is called when a client exports a service which implements the {@link WatchedDirectory} interface.
      *
      * @param pWatchedDirectory Watched-directory service to be registered.
-     * @throws IOException Thrown, if the root directory could not be added.
      */
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
     public void addRoot(final WatchedDirectory pWatchedDirectory) {
