@@ -120,7 +120,8 @@ public class VirtualRoot implements RelocationObserver {
     }
 
     private void doAddObserver(final FileObserver pObserver) {
-        dispatcher.addObserver(pObserver, () -> children.values().forEach(DedicatedFileSystem::forceInform));
+        dispatcher.addObserver(pObserver);
+        children.values().forEach(dfs -> dfs.forceInform(pObserver));
     }
 
     /**

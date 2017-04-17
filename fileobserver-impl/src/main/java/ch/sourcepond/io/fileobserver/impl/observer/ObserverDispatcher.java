@@ -40,7 +40,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class ObserverDispatcher {
     private static final Logger LOG = getLogger(ObserverDispatcher.class);
-    private final ThreadLocal<FileObserver> focusOrNull = new ThreadLocal<>();
     private final Set<KeyDeliveryHook> hooks = newKeySet();
     private final Set<FileObserver> observers = newKeySet();
     private Executor dispatcherExecutor;
@@ -48,14 +47,9 @@ public class ObserverDispatcher {
     private Config config;
 
     public Closeable openDiffHandler(final DedicatedFileSystem pFs) {
-        final DiffObserver observer = new DiffObserver(pFs, this, config);
-        focusOrNull.set(observer);
-        return observer;
+        return new DiffObserver(pFs, this, config);
     }
 
-    void resetFocus() {
-        focusOrNull.set(null);
-    }
 
     public void setConfig(final Config pConfig) {
         config = pConfig;
@@ -69,14 +63,8 @@ public class ObserverDispatcher {
         observerExecutor = pObserverExecutor;
     }
 
-    public void addObserver(final FileObserver pObserver, final Runnable pPostAddAction) {
-        focusOrNull.set(pObserver);
+    public void addObserver(final FileObserver pObserver) {
         observers.add(pObserver);
-        try {
-            pPostAddAction.run();
-        } finally {
-            focusOrNull.set(null);
-        }
     }
 
     public void addHook(final KeyDeliveryHook pHook) {
@@ -92,9 +80,9 @@ public class ObserverDispatcher {
     }
 
     private static void fireModification(final FileObserver pObserver,
-                                  final FileKey pKey,
-                                  final Path pFile,
-                                  final Collection<FileKey> pParentKeys) {
+                                         final FileKey pKey,
+                                         final Path pFile,
+                                         final Collection<FileKey> pParentKeys) {
         if (!pParentKeys.isEmpty()) {
             for (final FileKey parentKey : pParentKeys) {
                 /*
@@ -118,27 +106,16 @@ public class ObserverDispatcher {
         }
     }
 
-    private Collection<FileObserver> determineObservers() {
-        final Collection<FileObserver> determineObservers;
-        final FileObserver focus = focusOrNull.get();
-        if (focus == null) {
-            determineObservers = observers;
-        } else {
-            determineObservers = asList(focus);
-        }
-        return determineObservers;
-    }
-
-    private void submitTask(final FileKey pKey,
+    private void submitTask(final Collection<FileObserver> pObservers,
+                            final FileKey pKey,
                             final Consumer<FileObserver> pFireEventConsumer,
                             final KeyDeliveryConsumer pBeforeConsumer,
                             final KeyDeliveryConsumer pAfterConsumer) {
-        final Collection<FileObserver> determinedObservers = determineObservers();
-        if (!determinedObservers.isEmpty()) {
+        if (!pObservers.isEmpty()) {
             dispatcherExecutor.execute(new DispatcherTask(
                     observerExecutor,
                     hooks,
-                    determinedObservers,
+                    pObservers,
                     pKey,
                     pFireEventConsumer,
                     pBeforeConsumer,
@@ -147,12 +124,12 @@ public class ObserverDispatcher {
         }
     }
 
-    public void modified(final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
-        pKeys.forEach(key -> modified(key, pFile, pParentKeys));
-    }
-
-    public void modified(final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
+    private void submitModifiedTask(final Collection<FileObserver> pObservers,
+                                    final FileKey pKey,
+                                    final Path pFile,
+                                    final Collection<FileKey> pParentKeys) {
         submitTask(
+                pObservers,
                 pKey,
                 observer -> fireModification(observer, pKey, pFile, pParentKeys),
                 (hook, key) -> hook.beforeModify(key, pFile),
@@ -160,8 +137,22 @@ public class ObserverDispatcher {
         );
     }
 
+    public void modified(final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
+        pKeys.forEach(key -> modified(key, pFile, pParentKeys));
+    }
+
+    public void modified(final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
+        submitModifiedTask(observers, pKey, pFile, pParentKeys);
+    }
+
+    public void modified(final FileObserver pObserver, final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
+        submitModifiedTask(asList(pObserver), pKey, pFile, pParentKeys);
+    }
+
+
     public void discard(final FileKey pKey) {
         submitTask(
+                observers,
                 pKey,
                 observer -> observer.discard(pKey),
                 (hook, key) -> hook.beforeDiscard(key),

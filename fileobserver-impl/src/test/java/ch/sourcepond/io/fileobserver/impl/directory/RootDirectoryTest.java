@@ -40,7 +40,7 @@ public class RootDirectoryTest extends DirectoryTest {
         final FileObserver observer = mock(FileObserver.class);
         when(watchedRootDir.isBlacklisted(subdir_1_path.relativize(testfile_11_xml_path))).thenReturn(true);
         root.addWatchedDirectory(watchedRootDir);
-        root.forceInform();
+        root.forceInform(observer);
         verifyZeroInteractions(observer);
     }
 

@@ -190,13 +190,7 @@ public class VirtualRootTest {
     @Test
     public void addObserver() {
         virtualRoot.removeObserver(observer);
-        doAnswer(inv -> {
-            final Runnable postAddAction = inv.getArgument(1);
-            postAddAction.run();
-            return null;
-        }).when(dispatcher).addObserver(same(observer), notNull());
-        virtualRoot.addObserver(observer);
-        verify(dedicatedFs).forceInform();
+        verify(dedicatedFs).forceInform(observer);
     }
 
     @Test

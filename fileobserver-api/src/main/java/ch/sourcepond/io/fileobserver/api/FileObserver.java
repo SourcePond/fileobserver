@@ -24,7 +24,9 @@ import java.nio.file.Path;
  */
 public interface FileObserver {
 
-    void setup(DeliveryRestriction pSetup);
+    default void setup(DeliveryRestriction pSetup) {
+        pSetup.acceptAll();
+    }
 
     /**
      * <p>

@@ -60,7 +60,6 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
     final FileObserver observer = mock(FileObserver.class);
-    private final Runnable postAddAction = mock(Runnable.class);
     WatchServiceWrapper wrapper;
 
     @Before
@@ -69,7 +68,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
         when(watchedSubDir1.getKey()).thenReturn(SUB_DIR_KEY1);
         when(watchedSubDir2.getKey()).thenReturn(SUB_DIR_KEY2);
         when(config.timeout()).thenReturn(TIMEOUT);
-        dispatcher.addObserver(observer, postAddAction);
+        dispatcher.addObserver(observer);
         dispatcher.setDispatcherExecutor(dispatcherExecutor);
         dispatcher.setObserverExecutor(observerExecutor);
         wrapper = new WatchServiceWrapper(getDefault());

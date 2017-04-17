@@ -108,9 +108,11 @@ public class FileObserverTest {
     @Inject
     private BundleContext context;
 
-    private final FileObserver observer = mock(FileObserver.class);
+    private final FileObserver observer = mock(FileObserver.class, withSettings().name("observer"));
+    private final FileObserver secondObserver = mock(FileObserver.class, withSettings().name("secondObserver"));
     private ServiceRegistration<WatchedDirectory> watchedDirectoryRegistration;
     private ServiceRegistration<FileObserver> fileObserverRegistration;
+    private ServiceRegistration<FileObserver> secondObserverRegistration;
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private ServiceRegistration<KeyDeliveryHook> hookRegistration;
     private WatchedDirectory watchedDirectory;
@@ -128,26 +130,30 @@ public class FileObserverTest {
 
         // Step 2: register FileObserver
         fileObserverRegistration = context.registerService(FileObserver.class, observer, null);
-
-        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
-        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
-        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
-        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
-        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
-        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
-        verify(observer, timeout(5000)).modified(key(ROOT, R.relativize(C)), eq(C));
-
+        verifyForceInform(observer);
         reset(observer);
 
         // Step 3: register key-hook
         hookRegistration = context.registerService(KeyDeliveryHook.class, hook, null);
     }
 
+    private void verifyForceInform(final FileObserver pObserver) throws Exception {
+        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
+        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
+        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
+        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
+        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
+        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
+        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(C)), eq(C));
+    }
+
     private void unregisterService(final ServiceRegistration<?> pRegistration) {
-        try {
-            pRegistration.unregister();
-        } catch (final IllegalStateException e) {
-            e.printStackTrace();
+        if (pRegistration != null) {
+            try {
+                pRegistration.unregister();
+            } catch (final IllegalStateException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -155,7 +161,15 @@ public class FileObserverTest {
     public void tearDown() throws InterruptedException {
         unregisterService(watchedDirectoryRegistration);
         unregisterService(fileObserverRegistration);
+        unregisterService(secondObserverRegistration);
         unregisterService(hookRegistration);
+    }
+
+    @Test
+    public void doExlusivelyInformNewlyRegisteredObserver() throws Exception {
+        secondObserverRegistration = context.registerService(FileObserver.class, secondObserver, null);
+        verifyForceInform(secondObserver);
+        verifyZeroInteractions(observer);
     }
 
     /**

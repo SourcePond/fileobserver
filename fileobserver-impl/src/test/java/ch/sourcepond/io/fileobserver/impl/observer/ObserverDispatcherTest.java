@@ -46,7 +46,6 @@ public class ObserverDispatcherTest {
     private final FileKey fileKey = mock(FileKey.class);
     private final Path file = mock(Path.class);
     private final FileObserver observer = mock(FileObserver.class);
-    private final Runnable postAddAction = mock(Runnable.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
 
     @Before
@@ -55,18 +54,13 @@ public class ObserverDispatcherTest {
         when(fileKey.getDirectoryKey()).thenReturn(DIR_KEY);
         dispatcher.setDispatcherExecutor(dispatcherExecutor);
         dispatcher.setObserverExecutor(observerExecutor);
-        dispatcher.addObserver(observer, postAddAction);
+        dispatcher.addObserver(observer);
         dispatcher.addHook(hook);
     }
 
     @After
     public void tearDown() {
         observerExecutor.shutdown();
-    }
-
-    @Test
-    public void verifyPostAddActionExecuted() {
-        verify(postAddAction).run();
     }
 
     @Test
@@ -166,7 +160,7 @@ public class ObserverDispatcherTest {
         assertTrue(dispatcher.hasObservers());
         dispatcher.removeObserver(observer);
         assertFalse(dispatcher.hasObservers());
-        dispatcher.addObserver(observer, postAddAction);
+        dispatcher.addObserver(observer);
         assertTrue(dispatcher.hasObservers());
     }
 }

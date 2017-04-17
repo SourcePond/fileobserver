@@ -74,8 +74,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      */
-    public void forceInform() {
-        dirs.values().forEach(Directory::forceInform);
+    public void forceInform(final FileObserver pObserver) {
+        dirs.values().forEach(d -> d.forceInform(pObserver));
     }
 
     /**
@@ -160,16 +160,18 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      */
     @Override
     public void close() {
-        try {
-            thread.interrupt();
-            LOG.info("Event receiver stopped");
-        } finally {
+        if (!thread.isInterrupted()) {
             try {
-                wrapper.close();
+                thread.interrupt();
+                LOG.info("Event receiver stopped");
             } finally {
-                dirs.clear();
-                timestamps.clear();
-                pathChangeHandler.removeFileSystem(this);
+                try {
+                    wrapper.close();
+                } finally {
+                    dirs.clear();
+                    timestamps.clear();
+                    pathChangeHandler.removeFileSystem(this);
+                }
             }
         }
     }

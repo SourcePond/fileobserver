@@ -85,7 +85,6 @@ class DiffObserver implements FileObserver, Closeable {
 
     @Override
     public void close() throws IOException {
-        dispatcher.resetFocus();
         modifiedKeys.forEach(this::updateResource);
         discardedKeys.removeAll(modifiedKeys.keySet());
         discardedKeys.forEach(dispatcher::discard);

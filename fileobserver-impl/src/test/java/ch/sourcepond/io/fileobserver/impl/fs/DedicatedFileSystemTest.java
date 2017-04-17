@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
@@ -48,6 +49,7 @@ public class DedicatedFileSystemTest {
     private final RootDirectory rootDir1 = mock(RootDirectory.class);
     private final RootDirectory rootDir2 = mock(RootDirectory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
+    private final FileObserver observer = mock(FileObserver.class);
     private final Path rootDirPath1 = mock(Path.class);
     private final Path rootDirPath2 = mock(Path.class);
     private final WatchKey rootWatchKey1 = mock(WatchKey.class);
@@ -84,9 +86,9 @@ public class DedicatedFileSystemTest {
     public void forceInform() {
         dirs.put(rootDirPath1, rootDir1);
         dirs.put(rootDirPath2, rootDir2);
-        fs.forceInform();
-        verify(rootDir1).forceInform();
-        verify(rootDir2).forceInform();
+        fs.forceInform(observer);
+        verify(rootDir1).forceInform(observer);
+        verify(rootDir2).forceInform(observer);
     }
 
     @Test(expected = NullPointerException.class)
