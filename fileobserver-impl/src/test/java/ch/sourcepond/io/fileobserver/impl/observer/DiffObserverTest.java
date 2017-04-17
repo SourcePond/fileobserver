@@ -68,7 +68,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final FileKey supplementKey3 = mock(FileKey.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
-    private final ObserverManager dispatcher = new ObserverManager();
+    private final ObserverManager manager = new ObserverManager();
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {
@@ -131,11 +131,11 @@ public class DiffObserverTest extends CopyResourcesTest {
         when(subdir_211.getResource(notNull())).thenReturn(resource);
         when(subdir_22.getResource(notNull())).thenReturn(resource);
 
-        dispatcher.setDispatcherExecutor(dispatcherExecutor);
-        dispatcher.setObserverExecutor(observerExecutor);
-        dispatcher.setConfig(config);
-        dispatcher.addObserver(observer);
-        diff = dispatcher.openDiff(fs).getDiffObserver();
+        manager.setDispatcherExecutor(dispatcherExecutor);
+        manager.setObserverExecutor(observerExecutor);
+        manager.setConfig(config);
+        manager.addObserver(observer);
+        diff = manager.openDiff(fs).getDiffObserver();
     }
 
     @Test

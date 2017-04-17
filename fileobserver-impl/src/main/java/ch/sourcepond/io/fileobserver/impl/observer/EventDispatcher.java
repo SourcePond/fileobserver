@@ -28,14 +28,14 @@ public class EventDispatcher {
     private final ObserverManager dispatcher;
     private final Collection<FileObserver> observers;
 
-    EventDispatcher(final ObserverManager pDispatcher,
+    EventDispatcher(final ObserverManager pManager,
                     final FileObserver pAddedObserver) {
-        this(pDispatcher, asList(pAddedObserver));
+        this(pManager, asList(pAddedObserver));
     }
 
-    EventDispatcher(final ObserverManager pDispatcher,
+    EventDispatcher(final ObserverManager pManager,
                     final Collection<FileObserver> pObservers) {
-        dispatcher = pDispatcher;
+        dispatcher = pManager;
         observers = pObservers;
     }
 
