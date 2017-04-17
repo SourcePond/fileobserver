@@ -42,9 +42,9 @@ public class ObserverDispatcher {
     private static final Logger LOG = getLogger(ObserverDispatcher.class);
     private final Set<KeyDeliveryHook> hooks = newKeySet();
     private final Set<FileObserver> observers = newKeySet();
-    private Executor dispatcherExecutor;
-    private ExecutorService observerExecutor;
-    private Config config;
+    private volatile Executor dispatcherExecutor;
+    private volatile ExecutorService observerExecutor;
+    private volatile Config config;
 
     public Closeable openDiffHandler(final DedicatedFileSystem pFs) {
         return new DiffObserver(pFs, this, config);
@@ -148,7 +148,6 @@ public class ObserverDispatcher {
     public void modified(final FileObserver pObserver, final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
         submitModifiedTask(asList(pObserver), pKey, pFile, pParentKeys);
     }
-
 
     public void discard(final FileKey pKey) {
         submitTask(

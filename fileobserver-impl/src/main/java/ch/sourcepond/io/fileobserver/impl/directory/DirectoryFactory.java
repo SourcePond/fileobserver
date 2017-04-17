@@ -32,15 +32,15 @@ import java.util.concurrent.Executor;
 public class DirectoryFactory {
     private final DefaultFileKeyFactory fileKeyFactory;
     private final ObserverDispatcher dispatcher;
-    private Config config;
+    private volatile Config config;
 
     // Injected by SCR
-    private Executor directoryWalkerExecutor;
+    private volatile Executor directoryWalkerExecutor;
 
     // Injected by SCR
-    private Executor observerExecutor;
+    private volatile Executor observerExecutor;
     // Injected by SCR
-    private ResourcesFactory resourcesFactory;
+    private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
     public DirectoryFactory(final DefaultFileKeyFactory pFileKeyFactory, final ObserverDispatcher pDispatcher) {
