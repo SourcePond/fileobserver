@@ -29,15 +29,17 @@ import java.util.Collection;
  * The answer is that it must be possible to relocate a watched root directory during runtime. If a path would be used
  * to identify a watched root directory, it would not be possible for a {@link FileObserver} to determine which
  * resource is associated with the relocated directory.
+ *
+ * @param <K> Type of the directory key, see {@link #getDirectoryKey()}
  */
-public interface FileKey {
+public interface FileKey<K> {
 
     /**
      * The key which represents a watched root directory.
      *
      * @return Directory-key, never {@code null}
      */
-    Object getDirectoryKey();
+    K getDirectoryKey();
 
     /**
      * Returns the relative path (relative to the watched directory) of the file on which this key points to.
@@ -59,7 +61,7 @@ public interface FileKey {
      * @param pOther Other key to check whether it is a sub-key of this, must not be {@code null}
      * @return {@code true} if this key is a parent-key of the key specified, {@code false} otherwise.
      */
-    boolean isParentKeyOf(FileKey pOther);
+    boolean isParentKeyOf(FileKey<?> pOther);
 
     /**
      * Checks whether this key is a sub-key of the key specified. A key is a sub-key when:
@@ -72,7 +74,7 @@ public interface FileKey {
      * @param pOther Other key to check whether it is a parent-key of this, must not be {@code null}
      * @return {@code true} if this key is a sub-key of the key specified, {@code false} otherwise.
      */
-    boolean isSubKeyOf(FileKey pOther);
+    boolean isSubKeyOf(FileKey<?> pOther);
 
     /**
      * Creates a new collection containing all keys which are sub-keys of this key and
@@ -81,7 +83,7 @@ public interface FileKey {
      * @param pKeys Collection of potential sub-keys, must not be {@code null}
      * @return Collection of found sub-keys, possibly empty, never {@code null}
      */
-    Collection<FileKey> findSubKeys(Collection<FileKey> pKeys);
+    Collection<FileKey<K>> findSubKeys(Collection<FileKey<?>> pKeys);
 
     /**
      * Removes all keys which are sub-keys of this key from the collection specified
@@ -90,5 +92,5 @@ public interface FileKey {
      *
      * @param pKeys Collection of potential sub-keys, must not be {@code null}
      */
-    void removeSubKeys(Collection<FileKey> pKeys);
+    void removeSubKeys(Collection<FileKey<?>> pKeys);
 }

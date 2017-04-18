@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
 /**
  *
  */
-final class DefaultFileKey implements FileKey {
+final class DefaultFileKey implements FileKey<Object> {
     private final Object directoryKey;
     private final Path relativePath;
 
@@ -81,18 +81,18 @@ final class DefaultFileKey implements FileKey {
     }
 
     @Override
-    public Collection<FileKey> findSubKeys(final Collection<FileKey> pKeys) {
-        final Collection<FileKey> subKeys = new LinkedList<>();
+    public Collection<FileKey<Object>> findSubKeys(final Collection<FileKey<?>> pKeys) {
+        final Collection<FileKey<Object>> subKeys = new LinkedList<>();
         pKeys.forEach(k -> {
             if (k.isSubKeyOf(this)) {
-                subKeys.add(k);
+                subKeys.add((FileKey<Object>)k);
             }
         });
         return subKeys;
     }
 
     @Override
-    public void removeSubKeys(final Collection<FileKey> pKeys) {
+    public void removeSubKeys(final Collection<FileKey<?>> pKeys) {
         pKeys.removeIf(k -> k.isSubKeyOf(this));
     }
 }

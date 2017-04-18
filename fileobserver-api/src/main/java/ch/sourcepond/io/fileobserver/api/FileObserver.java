@@ -56,7 +56,7 @@ public interface FileObserver {
      * @param pFile Readable path, never {@code null}
      * @throws IOException Thrown, if the modified path could not be read.
      */
-    void modified(FileKey pKey, Path pFile) throws IOException;
+    void modified(FileKey<?> pKey, Path pFile) throws IOException;
 
     /**
      * <p>Indicates, that the file or directory with the {@link FileKey} specified has been discarded for some reason
@@ -79,7 +79,7 @@ public interface FileObserver {
      *
      * @param pKey File-key of the discarded file or directory, never {@code null}
      */
-    void discard(FileKey pKey);
+    void discard(FileKey<?> pKey);
 
     /**
      * <p>Informs this observer that the known key specified is being supplemented with the additional key
@@ -98,7 +98,7 @@ public interface FileObserver {
      * @param pAdditionalKey Key which never has been delivered until now to this observer, and, which supplements
      *                       the known key specified, never {@code null}
      */
-    default void supplement(FileKey pKnownKey, FileKey pAdditionalKey) {
+    default void supplement(FileKey<?> pKnownKey, FileKey<?> pAdditionalKey) {
         // Implementation of the method is optional
 
     }
