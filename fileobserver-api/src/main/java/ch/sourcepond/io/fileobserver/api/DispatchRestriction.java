@@ -31,7 +31,7 @@ package ch.sourcepond.io.fileobserver.api;
  * It is optional to restrict the file-observer so that it receives certain events only.
  * If nothing is set up, it will receive everything.
  */
-public interface DispatchRestriction {
+public interface DispatchRestriction extends SimpleDispatchRestriction {
 
     /**
      * <p>Determines, which directory-keys should be accepted by the {@link FileObserver}. This means, that a path
@@ -45,10 +45,13 @@ public interface DispatchRestriction {
 
     DispatchRestriction acceptAll();
 
+    @Override
     DispatchRestriction addGlob(String... pPatterns);
 
+    @Override
     DispatchRestriction addRegex(String... pPatterns);
 
+    @Override
     DispatchRestriction add(String pSyntax, String... pPatterns);
 
     DispatchRestriction addGlob(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
