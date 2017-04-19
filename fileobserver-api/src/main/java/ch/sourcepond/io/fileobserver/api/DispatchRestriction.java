@@ -51,7 +51,6 @@ public interface DispatchRestriction extends SimpleDispatchRestriction {
     @Override
     DispatchRestriction addRegex(String... pPatterns);
 
-    @Override
     DispatchRestriction add(String pSyntax, String... pPatterns);
 
     DispatchRestriction addGlob(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);

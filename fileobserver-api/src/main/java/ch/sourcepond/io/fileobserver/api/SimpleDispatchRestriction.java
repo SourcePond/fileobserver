@@ -21,6 +21,4 @@ public interface SimpleDispatchRestriction {
     SimpleDispatchRestriction addGlob(String... pPatterns);
 
     SimpleDispatchRestriction addRegex(String... pPatterns);
-
-    SimpleDispatchRestriction add(String pSyntax, String... pPatterns);
 }
