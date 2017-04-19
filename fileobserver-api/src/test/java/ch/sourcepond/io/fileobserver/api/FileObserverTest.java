@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
  */
 public class FileObserverTest {
     private final DispatchRestriction restriction = mock(DispatchRestriction.class);
-    private final FileKey key = mock(FileKey.class);
+    private final FileKey<?> key = mock(FileKey.class);
     private final FileObserver observer = mock(FileObserver.class);
 
     @Test

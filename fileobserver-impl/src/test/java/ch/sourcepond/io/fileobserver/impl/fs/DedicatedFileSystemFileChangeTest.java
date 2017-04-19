@@ -44,7 +44,6 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private static final String DIRECTORY_KEY = "getDirectoryKey";
     private static final String NEW_FILE_NAME = "newfile.txt";
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
-    private final ch.sourcepond.io.fileobserver.impl.VirtualRoot virtualRoot = mock(ch.sourcepond.io.fileobserver.impl.VirtualRoot.class);
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);

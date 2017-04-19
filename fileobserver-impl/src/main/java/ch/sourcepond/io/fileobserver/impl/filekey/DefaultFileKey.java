@@ -59,13 +59,13 @@ final class DefaultFileKey implements FileKey<Object> {
     }
 
     @Override
-    public boolean isParentKeyOf(final FileKey pOther) {
+    public boolean isParentKeyOf(final FileKey<?> pOther) {
         requireNonNull(pOther, "Other key is null");
         return getDirectoryKey().equals(pOther.getDirectoryKey()) && pOther.getRelativePath().startsWith(getRelativePath());
     }
 
     @Override
-    public boolean isSubKeyOf(final FileKey pOther) {
+    public boolean isSubKeyOf(final FileKey<?> pOther) {
         requireNonNull(pOther, "Other key is null");
         return getDirectoryKey().equals(pOther.getDirectoryKey()) && getRelativePath().startsWith(pOther.getRelativePath());
     }

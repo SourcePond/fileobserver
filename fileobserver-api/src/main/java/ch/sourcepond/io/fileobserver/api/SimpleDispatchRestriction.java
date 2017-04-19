@@ -13,12 +13,30 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.api;
 
+import java.nio.file.PathMatcher;
+
+import static ch.sourcepond.io.fileobserver.api.PathMatcherBuilder.GLOB;
+import static ch.sourcepond.io.fileobserver.api.PathMatcherBuilder.REGEX;
+
 /**
  *
  */
 public interface SimpleDispatchRestriction {
 
-    SimpleDispatchRestriction addGlob(String... pPatterns);
+    /**
+     *
+     * @param pPattern
+     * @return
+     */
+    default PathMatcherBuilder whenPathMatchesGlob(String pPattern) {
+        return whenPathMatchesPattern(GLOB, pPattern);
+    }
 
-    SimpleDispatchRestriction addRegex(String... pPatterns);
+    default PathMatcherBuilder whenPathMatchesRegex(String pPattern) {
+        return whenPathMatchesPattern(REGEX, pPattern);
+    }
+
+    PathMatcherBuilder whenPathMatchesPattern(String pSyntax, String pPattern);
+
+    PathMatcherBuilder whenPathMatches(PathMatcher pMatcher);
 }

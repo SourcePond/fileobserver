@@ -36,9 +36,9 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 class DiffObserver implements FileObserver, Closeable {
     private static final Logger LOG = getLogger(DiffObserver.class);
-    private final Map<FileKey, Path> modifiedKeys = new HashMap<>();
-    private final Set<FileKey> discardedKeys = new HashSet<>();
-    private final Map<FileKey, Collection<FileKey>> supplementKeys = new HashMap<>();
+    private final Map<FileKey<?>, Path> modifiedKeys = new HashMap<>();
+    private final Set<FileKey<?>> discardedKeys = new HashSet<>();
+    private final Map<FileKey<?>, Collection<FileKey<?>>> supplementKeys = new HashMap<>();
     private final DedicatedFileSystem fs;
     private final EventDispatcher dispatcher;
     private final Config config;
@@ -56,9 +56,9 @@ class DiffObserver implements FileObserver, Closeable {
         // noop
     }
 
-    private void informModified(final Update pUpdate, final FileKey pKey, final Path pFile) {
+    private void informModified(final Update pUpdate, final FileKey<?> pKey, final Path pFile) {
         if (pUpdate.hasChanged()) {
-            final Collection<FileKey> supplementKeysOrNull = supplementKeys.computeIfAbsent(pKey, k -> emptyList());
+            final Collection<FileKey<?>> supplementKeysOrNull = supplementKeys.computeIfAbsent(pKey, k -> emptyList());
             dispatcher.modified(pKey, pFile, supplementKeysOrNull);
         }
     }
@@ -72,7 +72,7 @@ class DiffObserver implements FileObserver, Closeable {
         return dir.getResource(pFile);
     }
 
-    private void updateResource(final FileKey pKey, final Path pFile) {
+    private void updateResource(final FileKey<?> pKey, final Path pFile) {
         final Resource resource = getResource(pFile);
         if (resource != null) {
             try {
@@ -91,17 +91,17 @@ class DiffObserver implements FileObserver, Closeable {
     }
 
     @Override
-    public void modified(final FileKey pKey, final Path pFile) throws IOException {
+    public void modified(final FileKey<?> pKey, final Path pFile) throws IOException {
         modifiedKeys.put(pKey, pFile);
     }
 
     @Override
-    public void discard(final FileKey pKey) {
+    public void discard(final FileKey<?> pKey) {
         discardedKeys.add(pKey);
     }
 
     @Override
-    public void supplement(final FileKey pKnownKey, final FileKey pAdditionalKey) {
+    public void supplement(final FileKey<?> pKnownKey, final FileKey<?> pAdditionalKey) {
         supplementKeys.computeIfAbsent(pKnownKey, k -> new LinkedHashSet<>()).add(pAdditionalKey);
     }
 }

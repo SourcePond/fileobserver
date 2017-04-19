@@ -31,10 +31,10 @@ public class DefaultFileKeyTest {
     private static final String DIRECTORY_KEY_2 = "directoryKey2";
     private final Path path = mock(Path.class, withSettings().name("root"));
     private Path otherPath = mock(Path.class);
-    private final FileKey key1 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
-    private final FileKey key2 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
-    private final FileKey key3 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, otherPath);
-    private FileKey key4 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
+    private final FileKey<Object> key1 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
+    private final FileKey<Object> key2 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
+    private final FileKey<Object> key3 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, otherPath);
+    private FileKey<?> key4 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
 
     @Test
     public void key() {
@@ -79,7 +79,7 @@ public class DefaultFileKeyTest {
     @Test
     public void findSubKeys() {
         when(otherPath.startsWith(path)).thenReturn(true);
-        final Collection<FileKey> subKeys = key1.findSubKeys(asList(key2, key3, key4));
+        final Collection<FileKey<Object>> subKeys = key1.findSubKeys(asList(key2, key3, key4));
         assertEquals(1, subKeys.size());
         assertSame(key3, subKeys.iterator().next());
     }
@@ -87,13 +87,13 @@ public class DefaultFileKeyTest {
     @Test
     public void removeKeys() {
         when(otherPath.startsWith(path)).thenReturn(true);
-        final List<FileKey> keys = new LinkedList<>();
+        final List<FileKey<?>> keys = new LinkedList<>();
         keys.add(key2);
         keys.add(key3);
         keys.add(key4);
         key1.removeSubKeys(keys);
         assertEquals(2, keys.size());
-        final Iterator<FileKey> it = keys.iterator();
+        final Iterator<FileKey<?>> it = keys.iterator();
         assertSame(key2, it.next());
         assertSame(key4, it.next());
     }

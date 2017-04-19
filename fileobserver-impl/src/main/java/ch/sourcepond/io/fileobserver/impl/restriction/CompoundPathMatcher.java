@@ -13,14 +13,29 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.restriction;
 
-import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.List;
 
 /**
  *
  */
-public class DefaultDispatchRestrictionFactory {
+class CompoundPathMatcher implements PathMatcher {
+    private final List<PathMatcher> matchers;
 
-    public DefaultDispatchRestriction createRestriction(final FileSystem pFs) {
-        return new DefaultDispatchRestriction(pFs);
+    CompoundPathMatcher(final List<PathMatcher> pMatchers) {
+        matchers = pMatchers;
+    }
+
+    @Override
+    public boolean matches(final Path path) {
+        final List<PathMatcher> m = matchers;
+        final int size = m.size();
+        for (int i = 0 ; i < size ; i++) {
+            if (!m.get(i).matches(path)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

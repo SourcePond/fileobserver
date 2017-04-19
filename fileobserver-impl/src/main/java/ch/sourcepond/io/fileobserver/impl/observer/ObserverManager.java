@@ -24,16 +24,14 @@ import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
-import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -44,8 +42,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class ObserverManager {
     private static final Logger LOG = getLogger(ObserverManager.class);
     private final DefaultDispatchRestrictionFactory restrictionFactory;
-    private final Set<KeyDeliveryHook> hooks = newKeySet();
-    private final ConcurrentMap<FileObserver, DefaultDispatchRestriction> observers = new ConcurrentHashMap<>();
+    private final Set<KeyDeliveryHook> hooks = new CopyOnWriteArraySet<>();
+    private final ConcurrentMap<FileObserver, Map<FileSystem, DefaultDispatchRestriction>> observers = new ConcurrentHashMap<>();
     private final EventDispatcher defaultDispatcher = new EventDispatcher(this, observers.keySet());
     private volatile Executor dispatcherExecutor;
     private volatile ExecutorService observerExecutor;
@@ -62,9 +60,7 @@ public class ObserverManager {
     }
 
     public EventDispatcher addObserver(final FileObserver pObserver) {
-        final DefaultDispatchRestriction restriction = restrictionFactory.createRestriction();
-        pObserver.setup(restriction);
-        observers.put(pObserver, restriction);
+        observers.computeIfAbsent(pObserver, o -> new ConcurrentHashMap<>());
         return new EventDispatcher(this, pObserver);
     }
 
@@ -105,11 +101,11 @@ public class ObserverManager {
     }
 
     private static void fireModification(final FileObserver pObserver,
-                                         final FileKey pKey,
+                                         final FileKey<?> pKey,
                                          final Path pFile,
-                                         final Collection<FileKey> pParentKeys) {
+                                         final Collection<FileKey<?>> pParentKeys) {
         if (!pParentKeys.isEmpty()) {
-            for (final FileKey parentKey : pParentKeys) {
+            for (final FileKey<?> parentKey : pParentKeys) {
                 /*
                  * Suppose:
                  * Parent /A [dirKey:K2] -> Has been added as new root
@@ -131,13 +127,21 @@ public class ObserverManager {
         }
     }
 
-    private boolean isAccepted(final FileObserver pObserver, final FileKey pFileKey) {
-        final DefaultDispatchRestriction restriction = observers.get(pObserver);
-        return restriction != null && restriction.isAccepted(pFileKey);
+    private DefaultDispatchRestriction createRestriction(final FileObserver pObserver, final FileSystem pFs) {
+        final DefaultDispatchRestriction restriction = restrictionFactory.createRestriction(pFs);
+        pObserver.setup(restriction);
+        return restriction;
+    }
+
+    private boolean isAccepted(final FileObserver pObserver, final FileKey<?> pFileKey) {
+        final FileSystem fs = pFileKey.getRelativePath().getFileSystem();
+        return observers.computeIfAbsent(
+                pObserver, o -> new ConcurrentHashMap<>()).
+                computeIfAbsent(fs, f -> createRestriction(pObserver, f)).isAccepted(pFileKey);
     }
 
     private void submitTask(final Collection<FileObserver> pObservers,
-                            final FileKey pKey,
+                            final FileKey<?> pKey,
                             final Consumer<FileObserver> pFireEventConsumer,
                             final KeyDeliveryConsumer pBeforeConsumer,
                             final KeyDeliveryConsumer pAfterConsumer) {
@@ -156,11 +160,11 @@ public class ObserverManager {
         }
     }
 
-    void modified(final Collection<FileObserver> pObservers, final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
+    void modified(final Collection<FileObserver> pObservers, final Collection<FileKey<?>> pKeys, final Path pFile, final Collection<FileKey<?>> pParentKeys) {
         pKeys.forEach(key -> modified(pObservers, key, pFile, pParentKeys));
     }
 
-    void modified(final Collection<FileObserver> pObservers, final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
+    void modified(final Collection<FileObserver> pObservers, final FileKey<?> pKey, final Path pFile, final Collection<FileKey<?>> pParentKeys) {
         submitTask(
                 pObservers,
                 pKey,
@@ -170,7 +174,7 @@ public class ObserverManager {
         );
     }
 
-    void discard(final Collection<FileObserver> pObservers, final FileKey pKey) {
+    void discard(final Collection<FileObserver> pObservers, final FileKey<?> pKey) {
         submitTask(
                 pObservers,
                 pKey,
@@ -178,5 +182,9 @@ public class ObserverManager {
                 (hook, key) -> hook.beforeDiscard(key),
                 (hook, key) -> hook.afterDiscard(key)
         );
+    }
+
+    public void removeFileSystem(final FileSystem pFs) {
+        observers.values().forEach(m -> m.remove(pFs));
     }
 }

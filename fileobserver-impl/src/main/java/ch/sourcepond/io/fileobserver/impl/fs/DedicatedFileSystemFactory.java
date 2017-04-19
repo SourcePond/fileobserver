@@ -15,6 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
+import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
@@ -61,7 +62,7 @@ public class DedicatedFileSystemFactory {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
-    public DedicatedFileSystem openFileSystem(final ch.sourcepond.io.fileobserver.impl.VirtualRoot pVirtualRoot, final FileSystem pFs) throws IOException {
+    public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs) throws IOException {
         final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
         final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs);
         final DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(

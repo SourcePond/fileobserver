@@ -44,18 +44,4 @@ public interface DispatchRestriction extends SimpleDispatchRestriction {
     DispatchRestriction accept(Object... pDirectoryKeys);
 
     DispatchRestriction acceptAll();
-
-    @Override
-    DispatchRestriction addGlob(String... pPatterns);
-
-    @Override
-    DispatchRestriction addRegex(String... pPatterns);
-
-    DispatchRestriction add(String pSyntax, String... pPatterns);
-
-    DispatchRestriction addGlob(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
-
-    DispatchRestriction addRegex(int pStartIndexInclusive, int pEndIndexExlusive, String... pPatterns);
-
-    DispatchRestriction add(int pStartIndexInclusive, int pEndIndexExlusive, String pSyntax, String... pPatterns);
 }

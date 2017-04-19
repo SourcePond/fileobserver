@@ -46,7 +46,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         root_dir.addWatchedDirectory(watchedRootDir);
     }
 
-    private FileKey toKey(final Path pBasePath, final Path pPath) {
+    private FileKey<?> toKey(final Path pBasePath, final Path pPath) {
         return argThat(k -> pBasePath.relativize(pPath).equals(k.getRelativePath()));
     }
 
@@ -57,8 +57,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     public void rootDirInformIfChangedChecksumsEqual() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum1);
         root_dir.informIfChanged(dispatcher, testfile_txt_path);
-        verify(observer).setup(notNull());
-        verifyNoMoreInteractions(observer);
+        verifyZeroInteractions(observer);
     }
 
     /**
@@ -82,8 +81,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         setupChecksumAnswer(testfile_txt_resource, checksum2);
         root_dir.remove(watchedRootDir);
         root_dir.informIfChanged(dispatcher, testfile_txt_path);
-        verify(observer).setup(notNull());
-        verifyNoMoreInteractions(observer);
+        verifyZeroInteractions(observer);
     }
 
     /**
@@ -93,8 +91,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     public void subDirInformIfChangedChecksumsEqual() throws Exception {
         setupChecksumAnswer(testfile_11_xml_resource, checksum1);
         subdir_1.informIfChanged(dispatcher, testfile_11_xml_path);
-        verify(observer).setup(notNull());
-        verifyNoMoreInteractions(observer);
+        verifyZeroInteractions(observer);
     }
 
     /**
@@ -118,8 +115,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         subdir_1.addWatchedDirectory(watchedSubDir1);
         setupChecksumAnswer(testfile_11_xml_resource, checksum1);
         subdir_1.informIfChanged(dispatcher, testfile_11_xml_path);
-        verify(observer).setup(notNull());
-        verifyNoMoreInteractions(observer);
+        verifyZeroInteractions(observer);
     }
 
     /**
@@ -186,8 +182,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
 
         // Should not cause an exception
         root_dir.forceInform(dispatcher);
-        verify(observer).setup(notNull());
-        verifyNoMoreInteractions(observer);
+        verifyZeroInteractions(observer);
     }
 
 

@@ -19,14 +19,13 @@ import com.google.common.jimfs.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 
 import static com.google.common.jimfs.Jimfs.newFileSystem;
 import static java.util.UUID.randomUUID;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -34,16 +33,16 @@ import static org.mockito.Mockito.*;
 public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
     private static final Object ANY_ACCEPTED_DIRECTORY_KEY = new Object();
     private static final Object ANY_IGNORED_DIRECTORY_KEY = new Object();
-    protected FileKey testfile_1111_txt_key = mock(FileKey.class);
-    protected FileKey testfile_111_txt_key = mock(FileKey.class);
-    protected FileKey testfile_121_txt_key = mock(FileKey.class);
-    protected FileKey testfile_11_xml_key = mock(FileKey.class);
-    protected FileKey testfile_2111_txt_key = mock(FileKey.class);
-    protected FileKey testfile_211_txt_key = mock(FileKey.class);
-    protected FileKey testfile_221_txt_key = mock(FileKey.class);
-    protected FileKey testfile_21_xml_key = mock(FileKey.class);
-    protected FileKey testfile_txt_key = mock(FileKey.class);
-    private final DefaultDispatchRestriction restriction = new DefaultDispatchRestrictionFactory().createRestriction();
+    protected FileKey<Object> testfile_1111_txt_key = mock(FileKey.class);
+    protected FileKey<Object> testfile_111_txt_key = mock(FileKey.class);
+    protected FileKey<Object> testfile_121_txt_key = mock(FileKey.class);
+    protected FileKey<Object> testfile_11_xml_key = mock(FileKey.class);
+    protected FileKey<Object> testfile_2111_txt_key = mock(FileKey.class);
+    protected FileKey<Object> testfile_211_txt_key = mock(FileKey.class);
+    protected FileKey<Object> testfile_221_txt_key = mock(FileKey.class);
+    protected FileKey<Object> testfile_21_xml_key = mock(FileKey.class);
+    protected FileKey<Object> testfile_txt_key = mock(FileKey.class);
+    private final DefaultDispatchRestriction restriction = new DefaultDispatchRestrictionFactory().createRestriction(root_dir_path.getFileSystem());
 
     @Override
     protected Path createRootPath() {
@@ -96,61 +95,38 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
 
     @Test
     public void add() {
-        assertSame(restriction, restriction.add("glob", "subdir_1", "*.xml"));
-        assertSame(restriction, restriction.add("glob", "subdir_2", "*.xml"));
+        assertSame(restriction, restriction.whenPathMatchesPattern("glob", "subdir_1/*.xml").thenAccept());
+        assertSame(restriction, restriction.whenPathMatchesPattern("glob", "subdir_2/*.xml").thenAccept());
         assertSame(restriction, restriction.acceptAll());
         verifyMatches();
     }
 
     @Test
     public void addGlob() {
-        assertSame(restriction, restriction.addGlob("subdir_1", "*.xml"));
-        assertSame(restriction, restriction.addGlob("subdir_2", "*.xml"));
+        assertSame(restriction, restriction.whenPathMatchesGlob("subdir_1/*.xml").thenAccept());
+        assertSame(restriction, restriction.whenPathMatchesGlob("subdir_2/*.xml").thenAccept());
         assertSame(restriction, restriction.acceptAll());
         verifyMatches();
     }
 
     @Test
     public void addRegex() {
-        assertSame(restriction, restriction.addRegex("subdir_1", ".*\\.xml"));
-        assertSame(restriction, restriction.addRegex("subdir_2", ".*\\.xml"));
+        assertSame(restriction, restriction.whenPathMatchesRegex("subdir_1(/|\\\\).*\\.xml").thenAccept());
+        assertSame(restriction, restriction.whenPathMatchesRegex("subdir_2(/|\\\\).*\\.xml").thenAccept());
         assertSame(restriction, restriction.acceptAll());
         verifyMatches();
     }
 
     @Test
-    public void addMatchSubPath() {
-        assertSame(restriction, restriction.add(1, 4,"glob", "**", "*.txt"));
-        assertSame(restriction, restriction.acceptAll());
-        verifySubPathMatches();
-    }
-
-    @Test
-    public void addGlobMatchSubPath() {
-        assertSame(restriction, restriction.addGlob(1, 4, "**", "*.txt"));
-        assertSame(restriction, restriction.addGlob(1, 4, "**", "*.txt"));
-        assertSame(restriction, restriction.acceptAll());
-        verifySubPathMatches();
-    }
-
-    @Test
-    public void addRegexMatchSubPath() {
-        assertSame(restriction, restriction.addRegex(1, 4, ".*\\.txt"));
-        assertSame(restriction, restriction.addRegex(1, 4, ".*\\.txt"));
-        assertSame(restriction, restriction.acceptAll());
-        verifySubPathMatches();
-    }
-
-    @Test
     public void directoryKeyNotAccepted() {
-        assertSame(restriction, restriction.addGlob("**", "*.*"));
+        assertSame(restriction, restriction.whenPathMatchesGlob("**/*.*").thenAccept());
         when(testfile_11_xml_key.getDirectoryKey()).thenReturn(ANY_IGNORED_DIRECTORY_KEY);
         assertFalse(restriction.isAccepted(testfile_11_xml_key));
     }
 
     @Test
     public void allDirectoryKeysAccepted() {
-        assertSame(restriction, restriction.addGlob("**", "*.*"));
+        assertSame(restriction, restriction.whenPathMatchesGlob("**/*.*").thenAccept());
         when(testfile_11_xml_key.getDirectoryKey()).thenReturn(new Object());
         when(testfile_21_xml_key.getDirectoryKey()).thenReturn(new Object());
         assertSame(restriction, restriction.acceptAll());
@@ -160,49 +136,11 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
 
     @Test
     public void acceptSpecifiedDirectoryKeyOnly() {
-        assertSame(restriction, restriction.addGlob("**", "*.*"));
+        assertSame(restriction, restriction.whenPathMatchesGlob("**/*.*").thenAccept());
         when(testfile_11_xml_key.getDirectoryKey()).thenReturn(ANY_ACCEPTED_DIRECTORY_KEY);
         when(testfile_21_xml_key.getDirectoryKey()).thenReturn(ANY_IGNORED_DIRECTORY_KEY);
         assertSame(restriction, restriction.accept(ANY_ACCEPTED_DIRECTORY_KEY));
         assertTrue(restriction.isAccepted(testfile_11_xml_key));
         assertFalse(restriction.isAccepted(testfile_21_xml_key));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void validateNoNegativeStartIndex() {
-        restriction.add(-1, 10, "any", "any");
-    }
-
-
-    @Test(expected = IllegalArgumentException.class)
-    public void validateNoNegativeEndIndex() {
-        restriction.add(0, -1, "any", "any");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void validateStartIndexEqualToEndIndexNotAllowed() {
-        restriction.add(10, 10, "any", "any");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void validateStartIndexGreaterThanEndIndexNotAllowed() {
-        restriction.add(10, 5, "any", "any");
-    }
-
-    @Test
-    public void removeFileSystem() {
-        final FileKey key = mock(FileKey.class);
-        final FileSystem fs = mock(FileSystem.class);
-        final Path path = mock(Path.class);
-        final PathMatcher matcher = mock(PathMatcher.class);
-        when(key.getRelativePath()).thenReturn(path);
-        when(path.getFileSystem()).thenReturn(fs);
-        when(fs.getPathMatcher("any:any")).thenReturn(matcher);
-        restriction.add("any", "any");
-        restriction.acceptAll();
-        restriction.isAccepted(key);
-        restriction.removeFileSystem(fs);
-        restriction.isAccepted(key);
-        verify(fs, times(2)).getPathMatcher("any:any");
     }
 }

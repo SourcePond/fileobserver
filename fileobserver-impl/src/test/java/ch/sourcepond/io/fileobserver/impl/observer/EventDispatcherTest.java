@@ -35,9 +35,9 @@ public class EventDispatcherTest {
     private final ObserverManager manager = mock(ObserverManager.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
-    private final FileKey key = mock(FileKey.class);
-    private final Collection<FileKey> keys = asList(key);
-    private final Collection<FileKey> parentKeys = mock(Collection.class);
+    private final FileKey<?> key = mock(FileKey.class);
+    private final Collection<FileKey<?>> keys = asList(key);
+    private final Collection<FileKey<?>> parentKeys = mock(Collection.class);
     private final Path file = mock(Path.class);
     private EventDispatcher dispatcher = new EventDispatcher(manager, observers);
 

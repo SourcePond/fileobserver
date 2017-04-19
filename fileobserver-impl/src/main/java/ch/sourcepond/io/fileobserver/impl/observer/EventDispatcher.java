@@ -43,15 +43,15 @@ public class EventDispatcher {
         return !observers.isEmpty();
     }
 
-    public void modified(final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
+    public void modified(final Collection<FileKey<?>> pKeys, final Path pFile, final Collection<FileKey<?>> pParentKeys) {
         dispatcher.modified(observers, pKeys, pFile, pParentKeys);
     }
 
-    public void modified(final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
+    public void modified(final FileKey<?> pKey, final Path pFile, final Collection<FileKey<?>> pParentKeys) {
         dispatcher.modified(observers, pKey, pFile, pParentKeys);
     }
 
-    public void discard(final FileKey pKey) {
+    public void discard(final FileKey<?> pKey) {
         dispatcher.discard(observers, pKey);
     }
 }

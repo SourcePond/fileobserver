@@ -22,5 +22,5 @@ import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 @FunctionalInterface
 public interface KeyDeliveryConsumer {
 
-    void consume(KeyDeliveryHook pHook, FileKey pKey);
+    void consume(KeyDeliveryHook pHook, FileKey<?> pKey);
 }

@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -282,6 +283,12 @@ public class VirtualRoot implements RelocationObserver {
      * @param pDedicatedFileSystem
      */
     public void removeFileSystem(final DedicatedFileSystem pDedicatedFileSystem) {
-        children.values().remove(pDedicatedFileSystem);
+        for (final Iterator<Map.Entry<FileSystem, DedicatedFileSystem>> it = children.entrySet().iterator() ; it.hasNext() ; ) {
+            final Map.Entry<FileSystem, DedicatedFileSystem> next = it.next();
+            if (pDedicatedFileSystem.equals(next.getValue())) {
+                dispatcher.removeFileSystem(next.getKey());
+                it.remove();
+            }
+        }
     }
 }

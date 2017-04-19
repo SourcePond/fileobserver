@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -45,16 +46,19 @@ public class ObserverManagerTest {
     private final DefaultDispatchRestrictionFactory restrictionFactory = mock(DefaultDispatchRestrictionFactory.class);
     private final DefaultDispatchRestriction restriction = mock(DefaultDispatchRestriction.class);
     private final ObserverManager manager = new ObserverManager(restrictionFactory);
-    private final FileKey parentKey = mock(FileKey.class);
-    private final Collection<FileKey> parentKeys = asList(parentKey);
-    private final FileKey fileKey = mock(FileKey.class);
+    private final FileKey<Object> parentKey = mock(FileKey.class);
+    private final Collection<FileKey<?>> parentKeys = asList(parentKey);
+    private final FileKey<Object> fileKey = mock(FileKey.class);
+    private final FileSystem fs = mock(FileSystem.class);
     private final Path file = mock(Path.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
 
     @Before
     public void setup() {
-        when(restrictionFactory.createRestriction()).thenReturn(restriction);
+        when(file.getFileSystem()).thenReturn(fs);
+        when(fileKey.getRelativePath()).thenReturn(file);
+        when(restrictionFactory.createRestriction(fs)).thenReturn(restriction);
         when(restriction.isAccepted(fileKey)).thenReturn(true);
         when(parentKey.getDirectoryKey()).thenReturn(PARENT_DIR_KEY);
         when(fileKey.getDirectoryKey()).thenReturn(DIR_KEY);
@@ -73,8 +77,7 @@ public class ObserverManagerTest {
     public void modifiedCurrentlyNoObserversAvailable() {
         manager.removeObserver(observer);
         manager.modified(manager.getObservers(), fileKey, file, parentKeys);
-        verify(observer).setup(restriction);
-        verifyNoMoreInteractions(observer);
+        verifyZeroInteractions(observer);
     }
 
     private void verifyHookObserverFlow() throws IOException {
@@ -148,8 +151,7 @@ public class ObserverManagerTest {
     public void discardCurrentlyNoObserversAvailable() {
         manager.removeObserver(observer);
         manager.discard(manager.getObservers(), fileKey);
-        verify(observer).setup(restriction);
-        verifyNoMoreInteractions(observer);
+        verifyZeroInteractions(observer);
     }
 
     @Test
