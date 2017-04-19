@@ -15,6 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.restriction;
 
 import ch.sourcepond.io.fileobserver.api.FileKey;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
+import com.google.common.jimfs.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,13 +23,15 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 
+import static com.google.common.jimfs.Jimfs.newFileSystem;
+import static java.util.UUID.randomUUID;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
  *
  */
-public class DefaultDispatchRestrictionTest extends CopyResourcesTest {
+public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
     private static final Object ANY_ACCEPTED_DIRECTORY_KEY = new Object();
     private static final Object ANY_IGNORED_DIRECTORY_KEY = new Object();
     protected FileKey testfile_1111_txt_key = mock(FileKey.class);
@@ -41,6 +44,13 @@ public class DefaultDispatchRestrictionTest extends CopyResourcesTest {
     protected FileKey testfile_21_xml_key = mock(FileKey.class);
     protected FileKey testfile_txt_key = mock(FileKey.class);
     private final DefaultDispatchRestriction restriction = new DefaultDispatchRestrictionFactory().createRestriction();
+
+    @Override
+    protected Path createRootPath() {
+        return newFileSystem(configuration()).getPath(randomUUID().toString());
+    }
+
+    protected abstract Configuration configuration();
 
     private void setupKey(final FileKey pKey, final Path pPath, final Object pDirectoryKey) {
         when(pKey.getDirectoryKey()).thenReturn(pDirectoryKey);

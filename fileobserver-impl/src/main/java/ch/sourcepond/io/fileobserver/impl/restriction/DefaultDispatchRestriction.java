@@ -29,6 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.String.format;
+import static java.lang.String.valueOf;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
@@ -74,6 +75,7 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
     }
 
     private static final Object ACCEPT_ALL = new Object();
+    private static final char[] SPECIAL_CHARS = {'\\', '^', '$', '.', '|', '?', '*', '+', '(', ')', '[', '{'};
     private static final int START_INDEX = 0;
     private static final String GLOB = "glob";
     private static final String REGEX = "regex";
@@ -81,7 +83,8 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
     private final Collection<PatternTemplate> patternTemplates = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<FileSystem, Collection<PathMatcherHolder>> matchers = new ConcurrentHashMap<>();
 
-    DefaultDispatchRestriction() {}
+    DefaultDispatchRestriction() {
+    }
 
     @Override
     public DispatchRestriction accept(final Object... pDirectoryKeys) {
@@ -159,13 +162,25 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
         patternTemplates.add(new PatternTemplate(pStartIndexInclusive, pEndIndexExlusive, pSyntax, pPatterns));
     }
 
+    private static String escapedSeparator(final FileSystem pFs) {
+        String separator = pFs.getSeparator();
+        for (final char specialChar : SPECIAL_CHARS) {
+            if (valueOf(specialChar).equals(separator)) {
+                separator = '\\' + separator;
+                break;
+            }
+        }
+        return separator;
+    }
+
     private PathMatcherHolder createMatcher(final FileSystem pFs, final PatternTemplate pTemplate) {
         final StringBuilder builder = new StringBuilder(pTemplate.syntax).append(':');
         final String[] patternTokens = pTemplate.patternTokens;
+        final String separator = escapedSeparator(pFs);
         for (int i = 0, end = patternTokens.length - 1; i < patternTokens.length; i++) {
             builder.append(patternTokens[i]);
             if (end > i) {
-                builder.append(pFs.getSeparator());
+                builder.append(separator);
             }
         }
         return new PathMatcherHolder(pTemplate.startIndexInclusive,

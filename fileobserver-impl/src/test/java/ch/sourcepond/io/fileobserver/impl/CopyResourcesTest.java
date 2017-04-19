@@ -17,7 +17,6 @@ import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
@@ -36,9 +35,8 @@ public abstract class CopyResourcesTest {
     protected static final String TEST_FILE_TXT_NAME = "testfile.txt";
     protected static final String TEST_FILE_XML_NAME = "testfile_11.xml";
     protected static final String SUB_DIR_NAME = "subdir_1";
-    protected final FileSystem fs = getDefault();
-    private final Path sourceDir = fs.getPath(getProperty("user.dir"), "src", "test", "resources");
-    protected final Path root_dir_path = fs.getPath(getProperty("java.io.tmpdir"), getClass().getName(), randomUUID().toString());
+    private final Path sourceDir = getDefault().getPath(getProperty("user.dir"), "src", "test", "resources");
+    protected final Path root_dir_path = createRootPath();
     protected Path subdir_1_path;
     protected Path subdir_11_path;
     protected Path subdir_111_path;
@@ -57,6 +55,14 @@ public abstract class CopyResourcesTest {
     protected Path testfile_21_xml_path;
     protected Path testfile_txt_path;
 
+    /**
+     * Creates the target root path; can also be located on a different file-system!
+     * @return
+     */
+    protected Path createRootPath() {
+        return getDefault().getPath(getProperty("java.io.tmpdir"), getClass().getName(), randomUUID().toString());
+    }
+
     @Before
     public final void copyResources() throws Exception {
         createDirectories(root_dir_path);
@@ -65,7 +71,7 @@ public abstract class CopyResourcesTest {
             @Override
             public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
                 final Path relativePath = sourceDir.relativize(file);
-                final Path targetFile = root_dir_path.resolve(relativePath);
+                final Path targetFile = root_dir_path.resolve(relativePath.toString());
                 createDirectories(targetFile.getParent());
                 copy(file, targetFile);
                 return CONTINUE;

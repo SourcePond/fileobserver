@@ -62,7 +62,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         when(manager.getDefaultDispatcher()).thenReturn(dispatcher);
         when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
         when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);
-        wrapper = new WatchServiceWrapper(fs);
+        wrapper = new WatchServiceWrapper(root_dir_path.getFileSystem());
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
         child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager, pathChangeHandler, new ConcurrentHashMap<>());
