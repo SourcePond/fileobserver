@@ -26,11 +26,14 @@ import java.util.List;
  */
 class DefaultPathMatcherBuilder implements PathMatcherBuilder {
     private final List<PathMatcher> matchers = new ArrayList<>();
+    private final CompoundPathMatcherFactory factory;
     private final DefaultDispatchRestriction restriction;
     private final FileSystem fs;
 
-    public DefaultPathMatcherBuilder(final DefaultDispatchRestriction pRestriction,
+    DefaultPathMatcherBuilder(final CompoundPathMatcherFactory pFactory,
+                                     final DefaultDispatchRestriction pRestriction,
                                      final FileSystem pFs) {
+        factory = pFactory;
         restriction = pRestriction;
         fs = pFs;
     }
@@ -49,7 +52,7 @@ class DefaultPathMatcherBuilder implements PathMatcherBuilder {
 
     @Override
     public SimpleDispatchRestriction thenAccept() {
-        restriction.addMatchers(new CompoundPathMatcher(matchers));
+        restriction.addMatchers(factory.createMatcher(matchers));
         return restriction;
     }
 }

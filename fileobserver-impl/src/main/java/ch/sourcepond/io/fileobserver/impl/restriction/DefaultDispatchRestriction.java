@@ -32,11 +32,19 @@ import static java.util.Objects.requireNonNull;
  */
 public class DefaultDispatchRestriction implements DispatchRestriction {
     private static final Object ACCEPT_ALL = new Object();
+    private final CompoundPathMatcherFactory matcherFactory;
     private final Set<Object> acceptedDirectoryKeys = new CopyOnWriteArraySet<>();
     private final List<PathMatcher> matchers = new CopyOnWriteArrayList<>();
     private final FileSystem fs;
 
+    // Constructor for activator
     DefaultDispatchRestriction(final FileSystem pFs) {
+        this(pFs, new CompoundPathMatcherFactory());
+    }
+
+    // Constructor for testing
+    DefaultDispatchRestriction(final FileSystem pFs, final CompoundPathMatcherFactory pMatcherFactory) {
+        matcherFactory = pMatcherFactory;
         fs = pFs;
     }
 
@@ -60,12 +68,12 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
 
     @Override
     public PathMatcherBuilder whenPathMatchesPattern(final String pSyntax, final String pPattern) {
-        return new DefaultPathMatcherBuilder(this, fs).andPattern(pSyntax, pPattern);
+        return new DefaultPathMatcherBuilder(matcherFactory, this, fs).andPattern(pSyntax, pPattern);
     }
 
     @Override
     public PathMatcherBuilder whenPathMatches(final PathMatcher pMatcher) {
-        return new DefaultPathMatcherBuilder(this, fs).andWith(pMatcher);
+        return new DefaultPathMatcherBuilder(matcherFactory, this, fs).andWith(pMatcher);
     }
 
     public boolean isAccepted(final FileKey<?> pFileKey) {

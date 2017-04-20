@@ -69,6 +69,12 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
         setupKey(testfile_txt_key, root_dir_path.relativize(testfile_txt_path), ANY_ACCEPTED_DIRECTORY_KEY);
     }
 
+    @Test
+    public void verifyDefaultConstructor() {
+        // Should not cause an exception
+        new DefaultDispatchRestriction(root_dir_path.getFileSystem());
+    }
+
     private void verifyMatches() {
         assertTrue(restriction.isAccepted(testfile_11_xml_key));
         assertFalse(restriction.isAccepted(testfile_1111_txt_key));
