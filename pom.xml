@@ -17,8 +17,8 @@
 
 	<properties>
 		<repo.project>${project.artifactId}</repo.project>
-		<checksum.version>[2.0.0,3.0.0)</checksum.version>
-		<smartswitch.version>[4.0.0,5.0.0)</smartswitch.version>
+		<checksum.version>2.0.3</checksum.version>
+		<smartswitch.version>4.0.1</smartswitch.version>
 	</properties>
 
 	<modules>
