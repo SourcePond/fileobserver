@@ -31,6 +31,9 @@ class CompoundPathMatcher implements PathMatcher {
     public boolean matches(final Path path) {
         final List<PathMatcher> m = matchers;
         final int size = m.size();
+
+        // To avoid creating to many objects we use a traditional
+        // for-loop here
         for (int i = 0 ; i < size ; i++) {
             if (!m.get(i).matches(path)) {
                 return false;
