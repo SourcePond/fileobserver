@@ -20,6 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 
 import static com.google.common.jimfs.Jimfs.newFileSystem;
 import static java.util.UUID.randomUUID;
@@ -87,18 +88,6 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
         assertFalse(restriction.isAccepted(testfile_txt_key));
     }
 
-    private void verifySubPathMatches() {
-        assertFalse(restriction.isAccepted(testfile_11_xml_key));
-        assertTrue(restriction.isAccepted(testfile_1111_txt_key));
-        assertFalse(restriction.isAccepted(testfile_111_txt_key));
-        assertFalse(restriction.isAccepted(testfile_121_txt_key));
-        assertTrue(restriction.isAccepted(testfile_2111_txt_key));
-        assertFalse(restriction.isAccepted(testfile_211_txt_key));
-        assertFalse(restriction.isAccepted(testfile_221_txt_key));
-        assertFalse(restriction.isAccepted(testfile_21_xml_key));
-        assertFalse(restriction.isAccepted(testfile_txt_key));
-    }
-
     @Test
     public void add() {
         assertSame(restriction, restriction.whenPathMatchesPattern("glob", "subdir_1/*.xml").thenAccept());
@@ -120,6 +109,16 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
         assertSame(restriction, restriction.whenPathMatchesRegex("subdir_1(/|\\\\).*\\.xml").thenAccept());
         assertSame(restriction, restriction.whenPathMatchesRegex("subdir_2(/|\\\\).*\\.xml").thenAccept());
         assertSame(restriction, restriction.acceptAll());
+        verifyMatches();
+    }
+
+    @Test
+    public void addCustomPattern() {
+        final PathMatcher customMatcher = mock(PathMatcher.class);
+        when(customMatcher.matches(root_dir_path.relativize(testfile_11_xml_path))).thenReturn(true);
+        when(customMatcher.matches(root_dir_path.relativize(testfile_21_xml_path))).thenReturn(true);
+        assertSame(restriction, restriction.acceptAll());
+        assertSame(restriction, restriction.whenPathMatches(customMatcher).thenAccept());
         verifyMatches();
     }
 
