@@ -81,12 +81,22 @@ public class ObserverManagerTest {
     }
 
     private void verifyHookObserverFlow() throws IOException {
-        final InOrder order = inOrder(hook, observer);
+        final InOrder order = inOrder(observer, restriction, hook);
+        order.verify(observer).setup(restriction);
+        order.verify(restriction).isAccepted(fileKey);
         order.verify(hook, timeout(1000)).beforeModify(fileKey, file);
         order.verify(observer, timeout(1000)).supplement(fileKey, parentKey);
         order.verify(observer, timeout(1000)).modified(fileKey, file);
         order.verify(hook, timeout(1000)).afterModify(fileKey, file);
         order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void removeFileSystem() throws IOException {
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        manager.removeFileSystem(fs);
+        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        verify(restrictionFactory, times(2)).createRestriction(fs);
     }
 
     @Test
