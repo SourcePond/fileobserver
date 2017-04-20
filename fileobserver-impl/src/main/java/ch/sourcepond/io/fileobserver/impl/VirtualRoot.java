@@ -57,7 +57,7 @@ public class VirtualRoot implements RelocationObserver {
     private static final String KEY_IS_NULL = "Key is null";
     private static final String DIRECTORY_IS_NULL = "Directory is null";
     private static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
-    private final ObserverManager dispatcher;
+    private final ObserverManager manager;
     private final InitSwitch<WatchedDirectory> rootInitSwitch = new InitSwitch<>(this::doAddRoot);
     private final InitSwitch<FileObserver> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
@@ -67,18 +67,18 @@ public class VirtualRoot implements RelocationObserver {
 
     // Constructor for BundleActivator
     public VirtualRoot() {
-        dispatcher = new ObserverManager();
+        manager = new ObserverManager();
         final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
-                dispatcher);
+                manager);
     }
 
     // Constructor for testing
     public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory,
-                       final ObserverManager pDispatcher) {
+                       final ObserverManager pManager) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
-        dispatcher = pDispatcher;
+        manager = pManager;
     }
 
     @Activate
@@ -92,7 +92,7 @@ public class VirtualRoot implements RelocationObserver {
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
-        dispatcher.setConfig(pConfig);
+        manager.setConfig(pConfig);
     }
 
     @Reference
@@ -106,14 +106,14 @@ public class VirtualRoot implements RelocationObserver {
                 setFilter("(sourcepond.io.fileobserver.dispatcherexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
-        dispatcher.setDispatcherExecutor(dispatcherExecutor);
+        manager.setDispatcherExecutor(dispatcherExecutor);
 
         final ExecutorService observerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
         dedicatedFileSystemFactory.setObserverExecutor(observerExecutor);
-        dispatcher.setObserverExecutor(observerExecutor);
+        manager.setObserverExecutor(observerExecutor);
         final Executor directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
@@ -122,7 +122,7 @@ public class VirtualRoot implements RelocationObserver {
     }
 
     private void doAddObserver(final FileObserver pObserver) {
-        final EventDispatcher session = dispatcher.addObserver(pObserver);
+        final EventDispatcher session = manager.addObserver(pObserver);
         children.values().forEach(dfs -> dfs.forceInform(session));
     }
 
@@ -146,7 +146,7 @@ public class VirtualRoot implements RelocationObserver {
      */
     public void removeObserver(final FileObserver pObserver) {
         requireNonNull(pObserver, "Observer is null");
-        dispatcher.removeObserver(pObserver);
+        manager.removeObserver(pObserver);
     }
 
     private DedicatedFileSystem newDedicatedFileSystem(final FileSystem pFs) {
@@ -159,11 +159,11 @@ public class VirtualRoot implements RelocationObserver {
 
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
     public void addHook(final KeyDeliveryHook pHook) {
-        dispatcher.addHook(pHook);
+        manager.addHook(pHook);
     }
 
     public void removeHook(final KeyDeliveryHook pHook) {
-        dispatcher.removeHook(pHook);
+        manager.removeHook(pHook);
     }
 
     // This method must be synchronized because all sub-directories need to be
@@ -286,7 +286,7 @@ public class VirtualRoot implements RelocationObserver {
         for (final Iterator<Map.Entry<FileSystem, DedicatedFileSystem>> it = children.entrySet().iterator() ; it.hasNext() ; ) {
             final Map.Entry<FileSystem, DedicatedFileSystem> next = it.next();
             if (pDedicatedFileSystem.equals(next.getValue())) {
-                dispatcher.removeFileSystem(next.getKey());
+                manager.removeFileSystem(next.getKey());
                 it.remove();
             }
         }

@@ -86,6 +86,8 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
                 acceptedDirectoryKeys.contains(directoryKey);
 
         if (accept) {
+            // To avoid creating to many objects we use a traditional
+            // for-loop here
             for (int i = 0; i < size; i++) {
                 accept = m.get(i).matches(relativePath);
                 if (accept) {

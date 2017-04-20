@@ -265,6 +265,7 @@ public class VirtualRootTest {
     public void removeFileSystem() {
         virtualRoot.removeFileSystem(dedicatedFs);
         final FileObserver otherObserver = mock(FileObserver.class);
+        verify(manager).removeFileSystem(fs);
         virtualRoot.addObserver(otherObserver);
         verifyZeroInteractions(otherObserver);
     }
