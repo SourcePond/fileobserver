@@ -15,6 +15,9 @@ package ch.sourcepond.io.fileobserver.api;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.LinkedList;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A file key combines a watched root directory (see {@link #getDirectoryKey()}) and relative path within
@@ -61,7 +64,11 @@ public interface FileKey<K> {
      * @param pOther Other key to check whether it is a sub-key of this, must not be {@code null}
      * @return {@code true} if this key is a parent-key of the key specified, {@code false} otherwise.
      */
-    boolean isParentKeyOf(FileKey<?> pOther);
+    default boolean isParentKeyOf(final FileKey<?> pOther) {
+        requireNonNull(pOther, "Other key is null");
+        return getDirectoryKey().equals(pOther.getDirectoryKey()) &&
+                pOther.getRelativePath().startsWith(getRelativePath());
+    }
 
     /**
      * Checks whether this key is a sub-key of the key specified. A key is a sub-key when:
@@ -74,7 +81,11 @@ public interface FileKey<K> {
      * @param pOther Other key to check whether it is a parent-key of this, must not be {@code null}
      * @return {@code true} if this key is a sub-key of the key specified, {@code false} otherwise.
      */
-    boolean isSubKeyOf(FileKey<?> pOther);
+    default boolean isSubKeyOf(final FileKey<?> pOther) {
+        requireNonNull(pOther, "Other key is null");
+        return getDirectoryKey().equals(pOther.getDirectoryKey()) &&
+                getRelativePath().startsWith(pOther.getRelativePath());
+    }
 
     /**
      * Creates a new collection containing all keys which are sub-keys of this key and
@@ -83,7 +94,15 @@ public interface FileKey<K> {
      * @param pKeys Collection of potential sub-keys, must not be {@code null}
      * @return Collection of found sub-keys, possibly empty, never {@code null}
      */
-    Collection<FileKey<K>> findSubKeys(Collection<FileKey<?>> pKeys);
+    default Collection<FileKey<K>> findSubKeys(Collection<FileKey<?>> pKeys) {
+        final Collection<FileKey<K>> subKeys = new LinkedList<>();
+        pKeys.forEach(k -> {
+            if (k.isSubKeyOf(this)) {
+                subKeys.add((FileKey<K>)k);
+            }
+        });
+        return subKeys;
+    }
 
     /**
      * Removes all keys which are sub-keys of this key from the collection specified
@@ -92,5 +111,7 @@ public interface FileKey<K> {
      *
      * @param pKeys Collection of potential sub-keys, must not be {@code null}
      */
-    void removeSubKeys(Collection<FileKey<?>> pKeys);
+    default void removeSubKeys(Collection<FileKey<?>> pKeys) {
+        pKeys.removeIf(k -> k.isSubKeyOf(this));
+    }
 }

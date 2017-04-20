@@ -16,12 +16,9 @@ package ch.sourcepond.io.fileobserver.impl.filekey;
 import ch.sourcepond.io.fileobserver.api.FileKey;
 
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Objects;
 
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -59,18 +56,6 @@ final class DefaultFileKey implements FileKey<Object> {
     }
 
     @Override
-    public boolean isParentKeyOf(final FileKey<?> pOther) {
-        requireNonNull(pOther, "Other key is null");
-        return getDirectoryKey().equals(pOther.getDirectoryKey()) && pOther.getRelativePath().startsWith(getRelativePath());
-    }
-
-    @Override
-    public boolean isSubKeyOf(final FileKey<?> pOther) {
-        requireNonNull(pOther, "Other key is null");
-        return getDirectoryKey().equals(pOther.getDirectoryKey()) && getRelativePath().startsWith(pOther.getRelativePath());
-    }
-
-    @Override
     public int hashCode() {
         return Objects.hash(directoryKey, relativePath);
     }
@@ -78,21 +63,5 @@ final class DefaultFileKey implements FileKey<Object> {
     @Override
     public String toString() {
         return format("[%s:%s]", directoryKey, relativePath);
-    }
-
-    @Override
-    public Collection<FileKey<Object>> findSubKeys(final Collection<FileKey<?>> pKeys) {
-        final Collection<FileKey<Object>> subKeys = new LinkedList<>();
-        pKeys.forEach(k -> {
-            if (k.isSubKeyOf(this)) {
-                subKeys.add((FileKey<Object>)k);
-            }
-        });
-        return subKeys;
-    }
-
-    @Override
-    public void removeSubKeys(final Collection<FileKey<?>> pKeys) {
-        pKeys.removeIf(k -> k.isSubKeyOf(this));
     }
 }

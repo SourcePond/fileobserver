@@ -17,9 +17,8 @@ import ch.sourcepond.io.fileobserver.api.FileKey;
 import org.junit.Test;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Objects;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -47,26 +46,6 @@ public class DefaultFileKeyTest {
     }
 
     @Test
-    public void isParentKey() {
-        when(path.startsWith(path)).thenReturn(true);
-        assertTrue(key1.isParentKeyOf(key2));
-        when(otherPath.startsWith(path)).thenReturn(true);
-        assertTrue(key1.isParentKeyOf(key3));
-        when(path.startsWith(otherPath)).thenReturn(true);
-        assertFalse(key1.isParentKeyOf(key4));
-    }
-
-    @Test
-    public void isSubKey() {
-        when(path.startsWith(path)).thenReturn(true);
-        assertTrue(key1.isSubKeyOf(key2));
-        when(path.startsWith(otherPath)).thenReturn(true);
-        assertTrue(key1.isSubKeyOf(key3));
-        when(otherPath.startsWith(path)).thenReturn(true);
-        assertFalse(key1.isSubKeyOf(key4));
-    }
-
-    @Test
     public void verifyEquals() {
         assertTrue(key1.equals(key1));
         assertFalse(key1.equals(null));
@@ -74,28 +53,6 @@ public class DefaultFileKeyTest {
         assertTrue(key1.equals(key2));
         assertFalse(key1.equals(key3));
         assertFalse(key2.equals(key4));
-    }
-
-    @Test
-    public void findSubKeys() {
-        when(otherPath.startsWith(path)).thenReturn(true);
-        final Collection<FileKey<Object>> subKeys = key1.findSubKeys(asList(key2, key3, key4));
-        assertEquals(1, subKeys.size());
-        assertSame(key3, subKeys.iterator().next());
-    }
-
-    @Test
-    public void removeKeys() {
-        when(otherPath.startsWith(path)).thenReturn(true);
-        final List<FileKey<?>> keys = new LinkedList<>();
-        keys.add(key2);
-        keys.add(key3);
-        keys.add(key4);
-        key1.removeSubKeys(keys);
-        assertEquals(2, keys.size());
-        final Iterator<FileKey<?>> it = keys.iterator();
-        assertSame(key2, it.next());
-        assertSame(key4, it.next());
     }
 
     @Test
