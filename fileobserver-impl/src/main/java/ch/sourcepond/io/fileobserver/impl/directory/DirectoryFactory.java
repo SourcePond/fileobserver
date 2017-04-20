@@ -92,7 +92,7 @@ public class DirectoryFactory {
      * @param pRelativePath Relative path, must not be {@code null}
      * @return New file-key, never {@code null}
      */
-    FileKey<?> newKey(final Object pDirectoryKey, final Path pRelativePath) {
+    FileKey<Object> newKey(final Object pDirectoryKey, final Path pRelativePath) {
         return fileKeyFactory.newKey(pDirectoryKey, pRelativePath);
     }
 
