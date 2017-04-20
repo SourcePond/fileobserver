@@ -15,26 +15,34 @@ package ch.sourcepond.io.fileobserver.api;
 
 import java.nio.file.PathMatcher;
 
-import static ch.sourcepond.io.fileobserver.api.PathMatcherBuilder.GLOB;
-import static ch.sourcepond.io.fileobserver.api.PathMatcherBuilder.REGEX;
-
 /**
  *
  */
-public interface SimpleDispatchRestriction {
+public interface PathMatcherBuilder {
+    String GLOB = "glob";
+    String REGEX = "regex";
 
     /**
      *
+     * @param pPattern
+     * @return
      */
-    default PathMatcherBuilder whenPathMatchesGlob(String pPattern) {
-        return whenPathMatchesPattern(GLOB, pPattern);
+    default PathMatcherBuilder andGlob(String pPattern) {
+        return andPattern(GLOB, pPattern);
     }
 
-    default PathMatcherBuilder whenPathMatchesRegex(String pPattern) {
-        return whenPathMatchesPattern(REGEX, pPattern);
+    default PathMatcherBuilder andRegex(String pPattern) {
+        return andPattern(REGEX, pPattern);
     }
 
-    PathMatcherBuilder whenPathMatchesPattern(String pSyntax, String pPattern);
+    PathMatcherBuilder andPattern(String pSyntax, String pPattern);
 
-    PathMatcherBuilder whenPathMatches(PathMatcher pMatcher);
+    /**
+     *
+     * @param pMatcher
+     * @return
+     */
+    PathMatcherBuilder andWith(PathMatcher pMatcher);
+
+    SimpleDispatchRestriction thenAccept();
 }

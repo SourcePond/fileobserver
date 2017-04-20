@@ -13,28 +13,32 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.api;
 
-import java.nio.file.PathMatcher;
+import org.junit.Test;
 
 import static ch.sourcepond.io.fileobserver.api.PathMatcherBuilder.GLOB;
 import static ch.sourcepond.io.fileobserver.api.PathMatcherBuilder.REGEX;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  *
  */
-public interface SimpleDispatchRestriction {
+public class PathMatcherBuilderTest {
+    private static final String ANY_PATTERN = "anyPattern";
+    private final PathMatcherBuilder builder = mock(PathMatcherBuilder.class);
 
-    /**
-     *
-     */
-    default PathMatcherBuilder whenPathMatchesGlob(String pPattern) {
-        return whenPathMatchesPattern(GLOB, pPattern);
+    @Test
+    public void andGlob() {
+        doCallRealMethod().when(builder).andGlob(ANY_PATTERN);
+        builder.andGlob(ANY_PATTERN);
+        verify(builder).andPattern(GLOB, ANY_PATTERN);
     }
 
-    default PathMatcherBuilder whenPathMatchesRegex(String pPattern) {
-        return whenPathMatchesPattern(REGEX, pPattern);
+    @Test
+    public void andRegex() {
+        doCallRealMethod().when(builder).andRegex(ANY_PATTERN);
+        builder.andRegex(ANY_PATTERN);
+        verify(builder).andPattern(REGEX, ANY_PATTERN);
     }
-
-    PathMatcherBuilder whenPathMatchesPattern(String pSyntax, String pPattern);
-
-    PathMatcherBuilder whenPathMatches(PathMatcher pMatcher);
 }
