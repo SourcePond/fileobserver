@@ -30,10 +30,12 @@ import static org.mockito.Mockito.*;
  *
  */
 public class FileKeyTest {
+    private static final String ANY_NAME = "anyName";
     private static final String DIRECTORY_KEY_1 = "directoryKey1";
     private static final String DIRECTORY_KEY_2 = "directoryKey2";
     private final Path path = mock(Path.class, withSettings().name("root"));
     private Path otherPath = mock(Path.class);
+    private final Path fileName = mock(Path.class, withSettings().name(ANY_NAME));
     private final FileKey<Object> key1 = mock(FileKey.class);
     private final FileKey<Object> key2 = mock(FileKey.class);
     private final FileKey<Object> key3 = mock(FileKey.class);
@@ -50,10 +52,17 @@ public class FileKeyTest {
 
     @Before
     public void setup() {
+        when(path.getFileName()).thenReturn(fileName);
         setup(key1, DIRECTORY_KEY_1, path);
         setup(key2, DIRECTORY_KEY_1, path);
         setup(key3, DIRECTORY_KEY_1, otherPath);
         setup(key4, DIRECTORY_KEY_2, otherPath);
+    }
+
+    @Test
+    public void getFileName() {
+        doCallRealMethod().when(key1).getFileName();
+        assertEquals(ANY_NAME, key1.getFileName());
     }
 
     @Test

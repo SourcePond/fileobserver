@@ -54,6 +54,16 @@ public interface FileKey<T> {
     Path getRelativePath();
 
     /**
+     * Returns the name of the farthest path element denoted by {@link #getRelativePath()}. The default
+     * implementation is a shorthand for {@code getRelativePath().getFileName().toString()}.
+     *
+     * @return Name of the last element of {@link #getRelativePath()}, never {@code null}
+     */
+    default String getFileName() {
+        return getRelativePath().getFileName().toString();
+    }
+
+    /**
      * Checks whether this key is a parent-key of the key specified. A key is a parent-key when:
      * <ul>
      * <li>The directory-key of {@code pOther} is equal to the directory-key of
