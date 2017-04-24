@@ -33,16 +33,16 @@ import static java.util.Objects.requireNonNull;
  * to identify a watched root directory, it would not be possible for a {@link FileObserver} to determine which
  * resource is associated with the relocated directory.
  *
- * @param <K> Type of the directory key, see {@link #getDirectoryKey()}
+ * @param <T> Type of the directory key, see {@link #getDirectoryKey()}
  */
-public interface FileKey<K> {
+public interface FileKey<T> {
 
     /**
      * The key which represents a watched root directory.
      *
      * @return Directory-key, never {@code null}
      */
-    K getDirectoryKey();
+    T getDirectoryKey();
 
     /**
      * Returns the relative path (relative to the watched directory) of the file on which this key points to.
@@ -64,7 +64,7 @@ public interface FileKey<K> {
      * @param pOther Other key to check whether it is a sub-key of this, must not be {@code null}
      * @return {@code true} if this key is a parent-key of the key specified, {@code false} otherwise.
      */
-    default boolean isParentKeyOf(final FileKey<?> pOther) {
+    default boolean isParentKeyOf(final FileKey<? extends T> pOther) {
         requireNonNull(pOther, "Other key is null");
         return getDirectoryKey().equals(pOther.getDirectoryKey()) &&
                 pOther.getRelativePath().startsWith(getRelativePath());
@@ -81,7 +81,7 @@ public interface FileKey<K> {
      * @param pOther Other key to check whether it is a parent-key of this, must not be {@code null}
      * @return {@code true} if this key is a sub-key of the key specified, {@code false} otherwise.
      */
-    default boolean isSubKeyOf(final FileKey<?> pOther) {
+    default boolean isSubKeyOf(final FileKey<T> pOther) {
         requireNonNull(pOther, "Other key is null");
         return getDirectoryKey().equals(pOther.getDirectoryKey()) &&
                 getRelativePath().startsWith(pOther.getRelativePath());
@@ -94,11 +94,11 @@ public interface FileKey<K> {
      * @param pKeys Collection of potential sub-keys, must not be {@code null}
      * @return Collection of found sub-keys, possibly empty, never {@code null}
      */
-    default Collection<FileKey<K>> findSubKeys(Collection<FileKey<?>> pKeys) {
-        final Collection<FileKey<K>> subKeys = new LinkedList<>();
+    default Collection<FileKey<T>> findSubKeys(Collection<FileKey<T>> pKeys) {
+        final Collection<FileKey<T>> subKeys = new LinkedList<>();
         pKeys.forEach(k -> {
             if (k.isSubKeyOf(this)) {
-                subKeys.add((FileKey<K>)k);
+                subKeys.add(k);
             }
         });
         return subKeys;
@@ -111,7 +111,7 @@ public interface FileKey<K> {
      *
      * @param pKeys Collection of potential sub-keys, must not be {@code null}
      */
-    default void removeSubKeys(Collection<FileKey<?>> pKeys) {
+    default void removeSubKeys(Collection<FileKey<T>> pKeys) {
         pKeys.removeIf(k -> k.isSubKeyOf(this));
     }
 }

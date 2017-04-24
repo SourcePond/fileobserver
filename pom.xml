@@ -21,7 +21,6 @@
 		<smartswitch.version>4.0.1</smartswitch.version>
 	</properties>
 
-
 	<modules>
 		<module>fileobserver-api</module>
 		<module>fileobserver-impl</module>

@@ -17,7 +17,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
@@ -84,13 +87,13 @@ public class FileKeyTest {
     @Test
     public void removeKeys() {
         when(otherPath.startsWith(path)).thenReturn(true);
-        final List<FileKey<?>> keys = new LinkedList<>();
+        final List<FileKey<Object>> keys = new LinkedList<>();
         keys.add(key2);
         keys.add(key3);
         keys.add(key4);
         key1.removeSubKeys(keys);
         assertEquals(2, keys.size());
-        final Iterator<FileKey<?>> it = keys.iterator();
+        final Iterator<FileKey<Object>> it = keys.iterator();
         assertSame(key2, it.next());
         assertSame(key4, it.next());
     }
