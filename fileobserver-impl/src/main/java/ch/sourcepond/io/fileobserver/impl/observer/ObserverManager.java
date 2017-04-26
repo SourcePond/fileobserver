@@ -129,7 +129,7 @@ public class ObserverManager {
 
     private DefaultDispatchRestriction createRestriction(final FileObserver pObserver, final FileSystem pFs) {
         final DefaultDispatchRestriction restriction = restrictionFactory.createRestriction(pFs);
-        pObserver.setup(restriction);
+        pObserver.restrict(restriction);
         return restriction;
     }
 

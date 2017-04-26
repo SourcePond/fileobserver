@@ -119,8 +119,8 @@ public class FileObserverTest {
 
     @Before
     public void setup() throws Exception {
-        doCallRealMethod().when(observer).setup(notNull());
-        doCallRealMethod().when(secondObserver).setup(notNull());
+        doCallRealMethod().when(observer).restrict(notNull());
+        doCallRealMethod().when(secondObserver).restrict(notNull());
 
         // Step 1: make fileobserver bundle watching R by
         // registering an appropriate service.

@@ -65,7 +65,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
 
     @Before
     public void setupFactories() throws IOException {
-        doCallRealMethod().when(observer).setup(any());
+        doCallRealMethod().when(observer).restrict(any());
         when(watchedRootDir.getKey()).thenReturn(ROOT_DIR_KEY);
         when(watchedSubDir1.getKey()).thenReturn(SUB_DIR_KEY1);
         when(watchedSubDir2.getKey()).thenReturn(SUB_DIR_KEY2);

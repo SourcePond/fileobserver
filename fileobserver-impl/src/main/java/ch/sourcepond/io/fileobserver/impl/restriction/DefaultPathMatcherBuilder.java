@@ -39,13 +39,13 @@ class DefaultPathMatcherBuilder implements PathMatcherBuilder {
     }
 
     @Override
-    public PathMatcherBuilder andPattern(final String pSyntax, final String pPattern) {
-        matchers.add(fs.getPathMatcher(pSyntax + ":" + pPattern));
+    public PathMatcherBuilder and(final String pSyntaxAndPattern) {
+        matchers.add(fs.getPathMatcher(pSyntaxAndPattern));
         return this;
     }
 
     @Override
-    public PathMatcherBuilder andWith(final PathMatcher pMatcher) {
+    public PathMatcherBuilder and(final PathMatcher pMatcher) {
         matchers.add(pMatcher);
         return this;
     }

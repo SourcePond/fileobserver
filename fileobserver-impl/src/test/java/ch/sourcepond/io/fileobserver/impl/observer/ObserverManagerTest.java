@@ -82,7 +82,7 @@ public class ObserverManagerTest {
 
     private void verifyHookObserverFlow() throws IOException {
         final InOrder order = inOrder(observer, restriction, hook);
-        order.verify(observer).setup(restriction);
+        order.verify(observer).restrict(restriction);
         order.verify(restriction).isAccepted(dispatchKey);
         order.verify(hook, timeout(1000)).beforeModify(dispatchKey, file);
         order.verify(observer, timeout(1000)).supplement(dispatchKey, parentKey);
@@ -152,7 +152,7 @@ public class ObserverManagerTest {
         sleep(200);
         manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         assertTrue(dispatcherExecutor.shutdownNow().isEmpty());
-        verify(observer).setup(restriction);
+        verify(observer).restrict(restriction);
         verifyNoMoreInteractions(observer);
     }
 

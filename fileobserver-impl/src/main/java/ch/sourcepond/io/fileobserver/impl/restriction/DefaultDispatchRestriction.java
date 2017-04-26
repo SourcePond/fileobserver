@@ -16,6 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.restriction;
 import ch.sourcepond.io.fileobserver.api.DispatchRestriction;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathMatcherBuilder;
+import ch.sourcepond.io.fileobserver.api.SimpleDispatchRestriction;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -52,8 +53,18 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
         matchers.add(pCompoundMatcher);
     }
 
+    private void validateInitialState() {
+        if (!acceptedDirectoryKeys.isEmpty()) {
+            throw new IllegalStateException("Either accept or acceptAll has already been called!");
+        }
+    }
+
     @Override
-    public DispatchRestriction accept(final Object... pDirectoryKeys) {
+    public SimpleDispatchRestriction accept(final Object... pDirectoryKeys) {
+        if (requireNonNull(pDirectoryKeys, "Keys are null!").length == 0) {
+            throw new IllegalArgumentException("Keys are empty!");
+        }
+        validateInitialState();
         for (final Object directoryKey : pDirectoryKeys) {
             acceptedDirectoryKeys.add(requireNonNull(directoryKey, "Directory-key is null"));
         }
@@ -61,19 +72,20 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
     }
 
     @Override
-    public DispatchRestriction acceptAll() {
+    public SimpleDispatchRestriction acceptAll() {
+        validateInitialState();
         accept(ACCEPT_ALL);
         return this;
     }
 
     @Override
-    public PathMatcherBuilder whenPathMatchesPattern(final String pSyntax, final String pPattern) {
-        return new DefaultPathMatcherBuilder(matcherFactory, this, fs).andPattern(pSyntax, pPattern);
+    public PathMatcherBuilder whenPathMatches(final String pSyntaxAndPattern) {
+        return new DefaultPathMatcherBuilder(matcherFactory, this, fs).and(pSyntaxAndPattern);
     }
 
     @Override
     public PathMatcherBuilder whenPathMatches(final PathMatcher pMatcher) {
-        return new DefaultPathMatcherBuilder(matcherFactory, this, fs).andWith(pMatcher);
+        return new DefaultPathMatcherBuilder(matcherFactory, this, fs).and(pMatcher);
     }
 
     public boolean isAccepted(final DispatchKey pDispatchKey) {

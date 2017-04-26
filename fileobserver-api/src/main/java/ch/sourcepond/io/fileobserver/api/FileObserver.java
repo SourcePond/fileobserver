@@ -19,42 +19,31 @@ import java.nio.file.Path;
 /**
  * <p>Observer to receive notifications about changes on files
  * within a watched directory and its sub-directories.</p>
- * <p>
  * <p><em>Implementations of this interface must be thread-safe.</em></p>
  */
 public interface FileObserver {
 
-    default void setup(final DispatchRestriction pSetup) {
-        pSetup.acceptAll();
+    /**
+     * <p>Setups the restriction object. That object will always be checked before any event is delivered to
+     * {@link #modified(DispatchKey, Path)}, {@link #supplement(DispatchKey, DispatchKey)}, or
+     * {@link #modified(DispatchKey, Path)}. This method is will be called once during this observer instance
+     * is being registered.</p>
+     * <p>Note: Implementing this method is optional; the default method tells the restriction object to accept
+     * anything.</p>
+     *
+     * @param pRestriction Restriction object, never {@code null}.
+     */
+    default void restrict(final DispatchRestriction pRestriction) {
+        pRestriction.acceptAll();
     }
 
     /**
-     * <p>
-     * Indicates, that the file specified has been modified. Modified means,
-     * that the file has been created or updated. This method takes two parameters:
+     * Indicates, that file (never a directory) has been modified. Modified means,
+     * that the file has been created or updated.
      *
-     * <h3>Relative path</h3>
-     * This path is relative to the watched directory. This path <em>cannot</em> be used to read any data.
-     * The relative path always remains the same for a specific file, even when the underlying
-     * watched directory (and therefore the absolute file) has been updated to point to another location.
-     * Because this, use the relative path for any caching of objects created out of the file data.
-     *
-     * <h3>Readable Path</h3>
-     * This is the (absolute) path which can be opened for reading. The readable path of a file can change in
-     * case when the underlying watched directory (and therefore the absolute file) is updated to point to another
-     * location. Because this, do <em>not</em> use the readable path for any caching, but, only for reading (or writing)
-     * data.
-     * <p>
-     * Following code snipped should give an idea how caching of an object created out of the readable path
-     * should be implemented:
-     * <pre>
-     *      final Map&lt;DispatchKey, Object&gt; cache = ...
-     *      cache.put(pKey, readObject(pFile));
-     * </pre>
-     *
-     * @param pKey  File-key of the modified file, never {@code null}
-     * @param pFile Readable path, never {@code null}
-     * @throws IOException Thrown, if the modified path could not be read.
+     * @param pKey
+     * @param pFile
+     * @throws IOException
      */
     void modified(DispatchKey pKey, Path pFile) throws IOException;
 

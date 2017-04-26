@@ -108,7 +108,7 @@ public class DiffObserverTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws Exception {
-        doCallRealMethod().when(observer).setup(notNull());
+        doCallRealMethod().when(observer).restrict(notNull());
         when(config.timeout()).thenReturn(TIMEOUT);
         setupUpdate(resource, update, true);
 
@@ -156,7 +156,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         verify(observer, timeout(500)).modified(key(root_dir_path, testfile_221_txt_path), testfile_221_txt_path);
         verify(observer, timeout(500)).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
         verify(observer, timeout(500)).modified(key(root_dir_path, testfile_txt_path), testfile_txt_path);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 
@@ -180,7 +180,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         verify(observer).modified(key(root_dir_path, testfile_121_txt_path), testfile_121_txt_path);
         verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
         verify(observer).modified(key(root_dir_path, testfile_txt_path), testfile_txt_path);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 
@@ -209,7 +209,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         verify(observer).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
         verify(observer).modified(key(root_dir_path, testfile_211_txt_path), testfile_211_txt_path);
         verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 
@@ -248,7 +248,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         verify(observer).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
         verify(observer).modified(key(root_dir_path, testfile_221_txt_path), testfile_221_txt_path);
         verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 
@@ -271,7 +271,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         order.verify(observer).supplement(key, supplementKey2);
         order.verify(observer).supplement(key, supplementKey3);
         order.verify(observer).modified(key, testfile_1111_txt_path);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 

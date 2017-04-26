@@ -30,8 +30,7 @@ import static org.mockito.Mockito.when;
  *
  */
 public class DefaultPathMatcherBuilderTest {
-    private final String ANY_SYNTAX = "anySyntax";
-    private final String ANY_PATTERN = "anyPattern";
+    private final String ANY_PATTERN = "glob:anyPattern";
     private final DefaultDispatchRestriction restriction = mock(DefaultDispatchRestriction.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final PathMatcher matcher = mock(PathMatcher.class);
@@ -43,7 +42,7 @@ public class DefaultPathMatcherBuilderTest {
 
     @Before
     public void setup() {
-        when(fs.getPathMatcher("anySyntax:anyPattern")).thenReturn(matcher);
+        when(fs.getPathMatcher(ANY_PATTERN)).thenReturn(matcher);
         when(matcher.matches(path)).thenReturn(true);
     }
 
@@ -55,13 +54,13 @@ public class DefaultPathMatcherBuilderTest {
 
     @Test
     public void andPattern() {
-        assertSame(builder, builder.andPattern(ANY_SYNTAX, ANY_PATTERN));
+        assertSame(builder, builder.and(ANY_PATTERN));
         verifyMatcher(matcher);
     }
 
     @Test
     public void andWith() {
-        assertSame(builder, builder.andWith(customMatcher));
+        assertSame(builder, builder.and(customMatcher));
         verifyMatcher(customMatcher);
     }
 }

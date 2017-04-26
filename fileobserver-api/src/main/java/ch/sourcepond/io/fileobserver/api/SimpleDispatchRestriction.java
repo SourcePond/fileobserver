@@ -15,26 +15,27 @@ package ch.sourcepond.io.fileobserver.api;
 
 import java.nio.file.PathMatcher;
 
-import static ch.sourcepond.io.fileobserver.api.PathMatcherBuilder.GLOB;
-import static ch.sourcepond.io.fileobserver.api.PathMatcherBuilder.REGEX;
-
 /**
- *
+ * An object which can be used to restrict which {@link DispatchKey} can be handled by a specific {@link FileObserver}.
  */
 public interface SimpleDispatchRestriction {
 
     /**
+     * Adds a new {@link PathMatcher}, which matches the pattern specified, to the compound matcher being
+     * constructed, see {@link PathMatcherBuilder#and(String)}.
      *
+     * @param pSyntaxAndPattern The syntax and the pattern, must not be {@code null}
+     * @return Associated builder, never {@code null}
      */
-    default PathMatcherBuilder whenPathMatchesGlob(String pPattern) {
-        return whenPathMatchesPattern(GLOB, pPattern);
-    }
+    PathMatcherBuilder whenPathMatches(String pSyntaxAndPattern);
 
-    default PathMatcherBuilder whenPathMatchesRegex(String pPattern) {
-        return whenPathMatchesPattern(REGEX, pPattern);
-    }
 
-    PathMatcherBuilder whenPathMatchesPattern(String pSyntax, String pPattern);
-
+    /**
+     * Adds the custom {@link PathMatcher} specified to the compound matcher being constructed, see
+     * {@link PathMatcherBuilder#and(PathMatcher)}.
+     *
+     * @param pMatcher A custom matcher, must not be {@code null}
+     * @return Associated builder, never {@code null}
+     */
     PathMatcherBuilder whenPathMatches(PathMatcher pMatcher);
 }

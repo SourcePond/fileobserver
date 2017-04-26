@@ -69,7 +69,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         root_dir.informIfChanged(dispatcher, testfile_txt_path);
         verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_txt_path), eq(testfile_txt_path));
         sleep(500);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 
@@ -103,7 +103,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         subdir_1.informIfChanged(dispatcher, testfile_11_xml_path);
         verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_11_xml_path), eq(testfile_11_xml_path));
         sleep(500);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 
@@ -129,7 +129,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_11_xml_path), eq(testfile_11_xml_path));
         verify(observer, timeout(500)).modified(toKey(subdir_1_path, testfile_11_xml_path), eq(testfile_11_xml_path));
         sleep(500);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 
@@ -162,7 +162,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
 
         // This should have no effect
         root_dir.removeWatchedDirectory(dispatcher, watchedRootDir);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 
@@ -171,7 +171,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         root_dir.forceInform(dispatcher);
         verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_txt_path), eq(testfile_txt_path));
         sleep(500);
-        verify(observer).setup(notNull());
+        verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
 

@@ -90,24 +90,8 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
 
     @Test
     public void add() {
-        assertSame(restriction, restriction.whenPathMatchesPattern("glob", "subdir_1/*.xml").thenAccept());
-        assertSame(restriction, restriction.whenPathMatchesPattern("glob", "subdir_2/*.xml").thenAccept());
-        assertSame(restriction, restriction.acceptAll());
-        verifyMatches();
-    }
-
-    @Test
-    public void addGlob() {
-        assertSame(restriction, restriction.whenPathMatchesGlob("subdir_1/*.xml").thenAccept());
-        assertSame(restriction, restriction.whenPathMatchesGlob("subdir_2/*.xml").thenAccept());
-        assertSame(restriction, restriction.acceptAll());
-        verifyMatches();
-    }
-
-    @Test
-    public void addRegex() {
-        assertSame(restriction, restriction.whenPathMatchesRegex("subdir_1(/|\\\\).*\\.xml").thenAccept());
-        assertSame(restriction, restriction.whenPathMatchesRegex("subdir_2(/|\\\\).*\\.xml").thenAccept());
+        assertSame(restriction, restriction.whenPathMatches("glob:subdir_1/*.xml").thenAccept());
+        assertSame(restriction, restriction.whenPathMatches("glob:subdir_2/*.xml").thenAccept());
         assertSame(restriction, restriction.acceptAll());
         verifyMatches();
     }
@@ -124,14 +108,14 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
 
     @Test
     public void directoryKeyNotAccepted() {
-        assertSame(restriction, restriction.whenPathMatchesGlob("**/*.*").thenAccept());
+        assertSame(restriction, restriction.whenPathMatches("glob:**/*.*").thenAccept());
         when(testfile_11_xml_key.getDirectoryKey()).thenReturn(ANY_IGNORED_DIRECTORY_KEY);
         assertFalse(restriction.isAccepted(testfile_11_xml_key));
     }
 
     @Test
     public void allDirectoryKeysAccepted() {
-        assertSame(restriction, restriction.whenPathMatchesGlob("**/*.*").thenAccept());
+        assertSame(restriction, restriction.whenPathMatches("glob:**/*.*").thenAccept());
         when(testfile_11_xml_key.getDirectoryKey()).thenReturn(new Object());
         when(testfile_21_xml_key.getDirectoryKey()).thenReturn(new Object());
         assertSame(restriction, restriction.acceptAll());
@@ -141,7 +125,7 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
 
     @Test
     public void acceptSpecifiedDirectoryKeyOnly() {
-        assertSame(restriction, restriction.whenPathMatchesGlob("**/*.*").thenAccept());
+        assertSame(restriction, restriction.whenPathMatches("glob:**/*.*").thenAccept());
         when(testfile_11_xml_key.getDirectoryKey()).thenReturn(ANY_ACCEPTED_DIRECTORY_KEY);
         when(testfile_21_xml_key.getDirectoryKey()).thenReturn(ANY_IGNORED_DIRECTORY_KEY);
         assertSame(restriction, restriction.accept(ANY_ACCEPTED_DIRECTORY_KEY));

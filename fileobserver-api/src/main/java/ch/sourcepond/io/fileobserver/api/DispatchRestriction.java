@@ -13,35 +13,44 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.api;
 
+import java.nio.file.PathMatcher;
+
 /**
- * A {@link FileObserver} is able to specify which file changes should be observed. To do the necessary setup,
- * an object implementing this interface is passed to the {@link FileObserver#setup(DispatchRestriction)} method
+ * A {@link FileObserver} is able to specify which file changes should be observed. To do the necessary restrict,
+ * an object implementing this interface is passed to the {@link FileObserver#restrict(DispatchRestriction)} method
  * of a file-observer when it is being registered. Note:
  * <ul>
- * <li>If {@link #accept(Object...)} has never been called during the observer setup, the observer will then accept
- * any directory-key.</li>
- * <li>If {@link #accept(Object...)} has been called at least once, the observer will only accept
- * those directory-keys which has been passed as arguments.</li>
- * <li>When none of the {@code add*} methods has been called during the observer setup, any path modification or discard
- * will be delivered if it it has an accepted directory-key.</li>
- * <li>When one of the {@code add*} methods has been called at least once, a path modification or discard will only be
- * delivered it it has an accepted directory-key, and, {@link DispatchKey#getRelativePath()} matches at least one added
- * rule.</li>
+ * <li>If neither {@link #accept(Object...)} nor {@link #acceptAll()} has ever been called during the observer restrict, the
+ * listener will not receive any events at all!</li>
+ * <li>If {@link #accept(Object...)} has been called, the observer will only accept events when their
+ * {@link DispatchEvent#getKey()} method returns an accepted value.</li>
+ * <li>When none of the {@code add*} methods has been called during the observer restrict, any dispatch event or
+ * file/directory discard will be delivered, if the directory-key is accepted.</li>
+ * <li>When one of the {@code add*} methods has been called at least once, a dispatch event or file/directory
+ * discard will only be delivered, if {@link DispatchKey#getRelativePath()} matches one of the compound
+ * path matchers, and, if the directory-key is accepted.</li>
  * </ul>
- * It is optional to restrict the file-observer so that it receives certain events only.
- * If nothing is set up, it will receive everything.
  */
 public interface DispatchRestriction extends SimpleDispatchRestriction {
 
     /**
-     * <p>Determines, which directory-keys should be accepted by the {@link FileObserver}. This means, that a path
-     * modification or discard is only delivered to the observer, if the directory-key of the associated {@link DispatchKey}
-     * is contained in the keys specified, see {@link DispatchKey#getDirectoryKey()}.</p>
+     * <p>Specifies, which directory-keys should be accepted by the {@link FileObserver}. This means, that
+     * dispatch events or a file/directory discards are pre-filtered before any added compound path-matcher applies (if
+     * any, see {@link #whenPathMatches(String)} and {@link #whenPathMatches(PathMatcher)}).</p>
      *
-     * @param pDirectoryKeys Directory-keys to be accepted by the file-observer, must not be {@code null}
-     * @throws NullPointerException Thrown, if a key is {@code null}
+     * @param pDirectoryKeys Directory-keys which are accepted by the file-observer, must not be {@code null}
+     * @throws NullPointerException Thrown, if a key is {@code null}.
+     * @throws IllegalArgumentException Thrown, if no keys are specified, i.e. the vararg is empty.
+     * @throws IllegalStateException Thrown, if either this method or {@link #acceptAll()} has already been called.
      */
-    DispatchRestriction accept(Object... pDirectoryKeys);
+    SimpleDispatchRestriction accept(Object... pDirectoryKeys);
 
-    DispatchRestriction acceptAll();
+    /**
+     * <p>Specifies, that all directory-keys should be accepted by the {@link FileObserver}. This means, that
+     * any dispatch event or a file/directory discard is directly matched against the registered compound path-matcher
+     * (if any, see {@link #whenPathMatches(String)} and {@link #whenPathMatches(PathMatcher)}).</p>
+     *
+     * @throws IllegalStateException Thrown, if either this method or {@link #accept(Object...)} has already been called.
+     */
+    SimpleDispatchRestriction acceptAll();
 }

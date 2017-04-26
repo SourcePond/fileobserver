@@ -27,8 +27,8 @@ public class FileObserverTest {
 
     @Test
     public void setup() {
-        doCallRealMethod().when(observer).setup(restriction);
-        observer.setup(restriction);
+        doCallRealMethod().when(observer).restrict(restriction);
+        observer.restrict(restriction);
         verify(restriction).acceptAll();
     }
 
