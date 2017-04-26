@@ -196,7 +196,7 @@ public abstract class Directory {
     /**
      * Iterates over the files contained by this directory and creates tasks which will be executed
      * sometime in the future. Such a task will inform the observer specified through its
-     * {@link PathChangeListener#modified(DispatchKey, Path)} method. Note: only direct children will be
+     * {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} method. Note: only direct children will be
      * considered, sub-directories and non-regular files will be ignored.
      */
     public void forceInform(final EventDispatcher pDispatcher) {
@@ -243,7 +243,7 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link PathChangeListener#modified(DispatchKey, Path)} on all observers specified if the
+     * Triggers the {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} on all observers specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
@@ -270,7 +270,7 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link PathChangeListener#modified(DispatchKey, Path)} on all observers specified if the
+     * Triggers the {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} on all observers specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *

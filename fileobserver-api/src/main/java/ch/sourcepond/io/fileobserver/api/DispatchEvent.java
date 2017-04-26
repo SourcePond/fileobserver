@@ -53,7 +53,7 @@ public interface DispatchEvent {
      * a client can stop processing the file and schedule its dispatch to a later point in time. It's possible to
      * query how may times this event has been rescheduled through {@link #getNumReplays()}.</p>
      *
-     * <p>Attention: it's possible to produce an infinite loop if the {@link PathChangeListener#modified(DispatchKey, Path)}
+     * <p>Attention: it's possible to produce an infinite loop if the {@link PathChangeListener#modified(DispatchEvent)}
      * implementation does always call this method for some reason! So implementors should take care that this
      * method is guarded by an appropriate condition.</p>
      */

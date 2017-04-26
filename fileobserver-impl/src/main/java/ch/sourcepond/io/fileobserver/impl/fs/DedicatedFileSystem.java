@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
@@ -71,7 +70,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
 
     /**
      * <p>Iterates through all registered directories and passes all their files to the
-     * {@link PathChangeListener#modified(DispatchKey, Path)} of the observer specified. This is necessary for newly registered
+     * {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} of the observer specified. This is necessary for newly registered
      * observers who need to know about all watched files. See {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and
      * {@link PathChangeHandler#pathModified(EventDispatcher, BasicFileAttributes, Path)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed

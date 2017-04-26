@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
+import ch.sourcepond.io.fileobserver.api.DispatchEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
@@ -85,11 +86,15 @@ public class PathChangeListenerTest {
         };
     }
 
+    private static boolean isKeyEqual(final DispatchKey dispatchKey, final Object pDirectoryKey, final Path pRelativePath) {
+        return pDirectoryKey.equals(dispatchKey.getDirectoryKey()) && dispatchKey.getRelativePath().equals(pRelativePath);
+    }
+
     private static DispatchKey key(final DirectoryKey pKey, final Path pRelativePath) {
         return argThat(new ArgumentMatcher<DispatchKey>() {
             @Override
             public boolean matches(final DispatchKey dispatchKey) {
-                return pKey.equals(dispatchKey.getDirectoryKey()) && dispatchKey.getRelativePath().equals(pRelativePath);
+                return isKeyEqual(dispatchKey, pKey, pRelativePath);
             }
 
             @Override
@@ -98,6 +103,21 @@ public class PathChangeListenerTest {
             }
         });
     }
+
+    private static DispatchEvent event(final DirectoryKey pKey, final Path pRelativePath) {
+        return argThat(new ArgumentMatcher<DispatchEvent>() {
+            @Override
+            public boolean matches(final DispatchEvent event) {
+                return isKeyEqual(event.getKey(), pKey, pRelativePath);
+            }
+
+            @Override
+            public String toString() {
+                return format("event [%s, %s]", pKey, pRelativePath);
+            }
+        });
+    }
+
 
     private static void writeArbitraryContent(final Path pFile) throws IOException {
         try (final BufferedWriter writer = newBufferedWriter(pFile)) {
@@ -141,13 +161,13 @@ public class PathChangeListenerTest {
     }
 
     private void verifyForceInform(final PathChangeListener pObserver) throws Exception {
-        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
-        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
-        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
-        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
-        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
-        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
-        verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(C)), eq(C));
+        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(E11)));
+        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(E12)));
+        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(E2)));
+        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(H11)));
+        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(H12)));
+        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(H2)));
+        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(C)));
     }
 
     private void unregisterService(final ServiceRegistration<?> pRegistration) {
@@ -206,13 +226,13 @@ public class PathChangeListenerTest {
         // Now, observer should be informed about newly registered root
         watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
 
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H11)), eq(H11));
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H2)), eq(H2));
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(C)), eq(C));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(E11)));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(E2)));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(H11)));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(H2)));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(C)));
         verifyNoMoreInteractions(observer);
     }
 
@@ -268,9 +288,9 @@ public class PathChangeListenerTest {
         writeArbitraryContent(H12);
         writeArbitraryContent(C);
 
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(H12)), eq(H12));
-        verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(C)), eq(C));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
+        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(C)));
         verifyNoMoreInteractions(observer);
     }
 
@@ -284,7 +304,7 @@ public class PathChangeListenerTest {
 
         final InOrder order = inOrder(hook, observer);
         order.verify(hook, timeout(15000)).beforeModify(key(ROOT, R.relativize(newFile)), eq(newFile));
-        order.verify(observer, timeout(15000)).modified(key(ROOT, R.relativize(newFile)), eq(newFile));
+        order.verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(newFile)));
         order.verify(hook, timeout(15000)).afterModify(key(ROOT, R.relativize(newFile)), eq(newFile));
 
         verifyNoMoreInteractions(observer);

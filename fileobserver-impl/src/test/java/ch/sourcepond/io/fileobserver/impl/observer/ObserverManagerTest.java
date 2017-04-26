@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
+import ch.sourcepond.io.fileobserver.api.DispatchEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
@@ -45,9 +46,11 @@ public class ObserverManagerTest {
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
     private final DefaultDispatchRestrictionFactory restrictionFactory = mock(DefaultDispatchRestrictionFactory.class);
     private final DefaultDispatchRestriction restriction = mock(DefaultDispatchRestriction.class);
-    private final ObserverManager manager = new ObserverManager(restrictionFactory);
+    private final DispatchEventFactory dispatchEventFactory = mock(DispatchEventFactory.class);
+    private final ObserverManager manager = new ObserverManager(restrictionFactory, dispatchEventFactory);
     private final DispatchKey parentKey = mock(DispatchKey.class);
     private final Collection<DispatchKey> parentKeys = asList(parentKey);
+    private final DispatchEvent dispatchEvent = mock(DispatchEvent.class);
     private final DispatchKey dispatchKey = mock(DispatchKey.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path file = mock(Path.class);
@@ -56,7 +59,9 @@ public class ObserverManagerTest {
 
     @Before
     public void setup() {
+        when(dispatchEventFactory.create(observer, dispatchKey, file, parentKeys, manager)).thenReturn(dispatchEvent);
         when(file.getFileSystem()).thenReturn(fs);
+        when(dispatchEvent.getKey()).thenReturn(dispatchKey);
         when(dispatchKey.getRelativePath()).thenReturn(file);
         when(restrictionFactory.createRestriction(fs)).thenReturn(restriction);
         when(restriction.isAccepted(dispatchKey)).thenReturn(true);
@@ -86,7 +91,7 @@ public class ObserverManagerTest {
         order.verify(restriction).isAccepted(dispatchKey);
         order.verify(hook, timeout(1000)).beforeModify(dispatchKey, file);
         order.verify(observer, timeout(1000)).supplement(dispatchKey, parentKey);
-        order.verify(observer, timeout(1000)).modified(dispatchKey, file);
+        order.verify(observer, timeout(1000)).modified(dispatchEvent);
         order.verify(hook, timeout(1000)).afterModify(dispatchKey, file);
         order.verifyNoMoreInteractions();
     }
@@ -124,7 +129,7 @@ public class ObserverManagerTest {
         manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         final InOrder order = inOrder(hook, observer);
         order.verify(observer, timeout(1000)).supplement(dispatchKey, parentKey);
-        order.verify(observer, timeout(1000)).modified(dispatchKey, file);
+        order.verify(observer, timeout(1000)).modified(dispatchEvent);
         order.verifyNoMoreInteractions();
     }
 
@@ -137,7 +142,7 @@ public class ObserverManagerTest {
 
     @Test
     public void modifiedObserverFailed() throws IOException {
-        doThrow(IOException.class).when(observer).modified(dispatchKey, file);
+        doThrow(IOException.class).when(observer).modified(dispatchEvent);
         manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }

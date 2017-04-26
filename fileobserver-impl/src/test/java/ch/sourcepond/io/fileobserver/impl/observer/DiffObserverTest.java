@@ -16,6 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.checksum.api.UpdateObserver;
+import ch.sourcepond.io.fileobserver.api.DispatchEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
@@ -38,7 +39,9 @@ import static java.lang.Thread.sleep;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.delete;
 import static java.nio.file.Files.walkFileTree;
+import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
 
@@ -67,6 +70,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final DispatchKey supplementKey2 = mock(DispatchKey.class);
     private final DispatchKey supplementKey3 = mock(DispatchKey.class);
     private final Resource resource = mock(Resource.class);
+    private final ReplayDispatcher replayDispatcher = mock(ReplayDispatcher.class);
     private final Update update = mock(Update.class);
     private final ObserverManager manager = new ObserverManager();
     private DiffObserver diff;
@@ -76,7 +80,7 @@ public class DiffObserverTest extends CopyResourcesTest {
 
             @Override
             public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                diff.modified(keyFactory.newKey(DIRECTORY_KEY, pPath.relativize(file)), file);
+                diff.modified(event(pPath, file));
                 return CONTINUE;
             }
         });
@@ -91,6 +95,14 @@ public class DiffObserverTest extends CopyResourcesTest {
                 return CONTINUE;
             }
         });
+    }
+
+    private DispatchEvent event(final Path pRoot, final Path pFile) {
+        return new DefaultDispatchEvent(observer, key(pRoot, pFile), pFile, emptyList(), replayDispatcher);
+    }
+
+    private DispatchEvent eventThat(final Path pRoot, final Path pFile) {
+        return argThat(inv -> inv.getKey().equals(key(pRoot, pFile)));
     }
 
     private DispatchKey key(final Path pRoot, final Path pFile) {
@@ -147,15 +159,15 @@ public class DiffObserverTest extends CopyResourcesTest {
 
         diff.close();
 
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_1111_txt_path), testfile_1111_txt_path);
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_121_txt_path), testfile_121_txt_path);
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_211_txt_path), testfile_211_txt_path);
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_221_txt_path), testfile_221_txt_path);
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
-        verify(observer, timeout(500)).modified(key(root_dir_path, testfile_txt_path), testfile_txt_path);
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_1111_txt_path));
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_111_txt_path));
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_121_txt_path));
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_11_xml_path));
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_2111_txt_path));
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_211_txt_path));
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_221_txt_path));
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_21_xml_path));
+        verify(observer, timeout(500)).modified(eventThat(root_dir_path, testfile_txt_path));
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
@@ -177,9 +189,9 @@ public class DiffObserverTest extends CopyResourcesTest {
         verify(observer).discard(key(root_dir_path, testfile_211_txt_path));
         verify(observer).discard(key(root_dir_path, testfile_221_txt_path));
         verify(observer).discard(key(root_dir_path, testfile_21_xml_path));
-        verify(observer).modified(key(root_dir_path, testfile_121_txt_path), testfile_121_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
-        verify(observer).modified(key(root_dir_path, testfile_txt_path), testfile_txt_path);
+        verify(observer).modified(eventThat(root_dir_path, testfile_121_txt_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_11_xml_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_txt_path));
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
@@ -204,11 +216,11 @@ public class DiffObserverTest extends CopyResourcesTest {
         verify(observer).discard(key(root_dir_path, testfile_121_txt_path));
         verify(observer).discard(key(root_dir_path, testfile_221_txt_path));
         verify(observer).discard(key(root_dir_path, testfile_txt_path));
-        verify(observer).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
-        verify(observer).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_211_txt_path), testfile_211_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
+        verify(observer).modified(eventThat(root_dir_path, testfile_111_txt_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_11_xml_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_2111_txt_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_211_txt_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_21_xml_path));
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
@@ -243,11 +255,11 @@ public class DiffObserverTest extends CopyResourcesTest {
         diff.close();
         sleep(500);
 
-        verify(observer).modified(key(root_dir_path, testfile_111_txt_path), testfile_111_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_11_xml_path), testfile_11_xml_path);
-        verify(observer).modified(key(root_dir_path, testfile_2111_txt_path), testfile_2111_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_221_txt_path), testfile_221_txt_path);
-        verify(observer).modified(key(root_dir_path, testfile_21_xml_path), testfile_21_xml_path);
+        verify(observer).modified(eventThat(root_dir_path, testfile_111_txt_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_11_xml_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_2111_txt_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_221_txt_path));
+        verify(observer).modified(eventThat(root_dir_path, testfile_21_xml_path));
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
@@ -270,7 +282,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         order.verify(observer).supplement(key, supplementKey1);
         order.verify(observer).supplement(key, supplementKey2);
         order.verify(observer).supplement(key, supplementKey3);
-        order.verify(observer).modified(key, testfile_1111_txt_path);
+        order.verify(observer).modified(eventThat(subdir_111_path, testfile_1111_txt_path));
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
     }
@@ -309,7 +321,7 @@ public class DiffObserverTest extends CopyResourcesTest {
 
     @Test
     public void ioExceptionDuringObserverCallShouldBeCaught() throws Exception {
-        doThrow(IOException.class).when(observer).modified(notNull(), notNull());
+        doThrow(IOException.class).when(observer).modified(notNull());
 
         informDiscard(root_dir_path);
         informModified(root_dir_path);

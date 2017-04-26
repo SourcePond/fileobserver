@@ -14,6 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Resource;
+import ch.sourcepond.io.fileobserver.api.DispatchEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,8 +47,16 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         root_dir.addWatchedDirectory(watchedRootDir);
     }
 
+    private static boolean isKeyEqual(final DispatchKey pKey, final Path pBasePath, final Path pPath) {
+        return pBasePath.relativize(pPath).equals(pKey.getRelativePath());
+    }
+
     private DispatchKey toKey(final Path pBasePath, final Path pPath) {
-        return argThat(k -> pBasePath.relativize(pPath).equals(k.getRelativePath()));
+        return argThat(k -> isKeyEqual(k, pBasePath, pPath));
+    }
+
+    private DispatchEvent toEvent(final Path pBasePath, final Path pPath) {
+        return argThat(e -> isKeyEqual(e.getKey(), pBasePath, pPath));
     }
 
     /**
@@ -67,7 +76,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     public void rootDirInformIfChangedChecksumsDifferent() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum2);
         root_dir.informIfChanged(dispatcher, testfile_txt_path);
-        verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_txt_path), eq(testfile_txt_path));
+        verify(observer, timeout(500)).modified(toEvent(root_dir_path, testfile_txt_path));
         sleep(500);
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
@@ -101,7 +110,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     public void subDirInformIfChangedChecksumsDifferent() throws Exception {
         setupChecksumAnswer(testfile_11_xml_resource, checksum2);
         subdir_1.informIfChanged(dispatcher, testfile_11_xml_path);
-        verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_11_xml_path), eq(testfile_11_xml_path));
+        verify(observer, timeout(500)).modified(toEvent(root_dir_path, testfile_11_xml_path));
         sleep(500);
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
@@ -126,8 +135,8 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         subdir_1.addWatchedDirectory(watchedSubDir1);
         setupChecksumAnswer(testfile_11_xml_resource, checksum2);
         subdir_1.informIfChanged(dispatcher, testfile_11_xml_path);
-        verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_11_xml_path), eq(testfile_11_xml_path));
-        verify(observer, timeout(500)).modified(toKey(subdir_1_path, testfile_11_xml_path), eq(testfile_11_xml_path));
+        verify(observer, timeout(500)).modified(toEvent(root_dir_path, testfile_11_xml_path));
+        verify(observer, timeout(500)).modified(toEvent(subdir_1_path, testfile_11_xml_path));
         sleep(500);
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
@@ -169,7 +178,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     @Test
     public void informObserverWhenForceInform() throws IOException, InterruptedException {
         root_dir.forceInform(dispatcher);
-        verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_txt_path), eq(testfile_txt_path));
+        verify(observer, timeout(500)).modified(toEvent(root_dir_path, testfile_txt_path));
         sleep(500);
         verify(observer).restrict(notNull());
         verifyNoMoreInteractions(observer);
@@ -188,11 +197,11 @@ public class FileChangeDirectoryTest extends DirectoryTest {
 
     @Test
     public void verifyExceptionInObserverDoesNotKillThread() throws IOException, InterruptedException {
-        doThrow(IOException.class).when(observer).modified(any(), any());
+        doThrow(IOException.class).when(observer).modified(any());
         root_dir.forceInform(dispatcher);
 
         // Should not cause an exception
-        verify(observer, timeout(500)).modified(toKey(root_dir_path, testfile_txt_path), eq(testfile_txt_path));
+        verify(observer, timeout(500)).modified(toEvent(root_dir_path, testfile_txt_path));
     }
 
     @Test

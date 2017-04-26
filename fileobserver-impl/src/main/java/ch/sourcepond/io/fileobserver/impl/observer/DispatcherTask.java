@@ -13,9 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
 import org.slf4j.Logger;
 
@@ -32,36 +31,36 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-class DispatcherTask implements Runnable {
+class DispatcherTask<T> implements Runnable {
     private static final Logger LOG = getLogger(DispatcherTask.class);
     private final ExecutorService observerExecutor;
     private final Collection<KeyDeliveryHook> hooks;
     private final Collection<PathChangeListener> observers;
     private final Consumer<PathChangeListener> fireEventConsumer;
-    private final KeyDeliveryConsumer beforeConsumer;
-    private final KeyDeliveryConsumer afterConsumer;
-    private final DispatchKey key;
+    private final KeyDeliveryConsumer<T> beforeConsumer;
+    private final KeyDeliveryConsumer<T> afterConsumer;
+    private final T keyOrEvent;
 
     DispatcherTask(final ExecutorService pObserverExecutor,
                    final Collection<KeyDeliveryHook> pHooks,
                    final Collection<PathChangeListener> pObservers,
-                   final DispatchKey pKey,
+                   final T pKeyOrEvent,
                    final Consumer<PathChangeListener> pFireEventConsumer,
-                   final KeyDeliveryConsumer pBeforeConsumer,
-                   final KeyDeliveryConsumer pAfterConsumer) {
+                   final KeyDeliveryConsumer<T> pBeforeConsumer,
+                   final KeyDeliveryConsumer<T> pAfterConsumer) {
         observerExecutor = pObserverExecutor;
         hooks = pHooks;
         observers = pObservers;
-        key = pKey;
+        keyOrEvent = pKeyOrEvent;
         fireEventConsumer = pFireEventConsumer;
         beforeConsumer = pBeforeConsumer;
         afterConsumer = pAfterConsumer;
     }
 
-    private void informHooks(final KeyDeliveryConsumer pConsumer) {
+    private void informHooks(final KeyDeliveryConsumer<T> pConsumer) {
         if (!hooks.isEmpty()) {
             final Collection<Future<?>> joins = new LinkedList<>();
-            hooks.forEach(hook -> joins.add(observerExecutor.submit(() -> pConsumer.consume(hook, key))));
+            hooks.forEach(hook -> joins.add(observerExecutor.submit(() -> pConsumer.consume(hook, keyOrEvent))));
             joins.forEach(this::join);
         }
     }
