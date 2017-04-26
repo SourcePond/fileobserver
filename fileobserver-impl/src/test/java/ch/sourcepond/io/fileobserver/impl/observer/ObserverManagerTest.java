@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
@@ -51,7 +51,7 @@ public class ObserverManagerTest {
     private final DispatchKey dispatchKey = mock(DispatchKey.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path file = mock(Path.class);
-    private final FileObserver observer = mock(FileObserver.class);
+    private final PathChangeListener observer = mock(PathChangeListener.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
 
     @Before

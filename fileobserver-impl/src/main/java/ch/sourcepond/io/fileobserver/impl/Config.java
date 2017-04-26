@@ -19,7 +19,7 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 /**
  *
  */
-@ObjectClassDefinition(name = "Sourcepond fileobserver configuration", description = "FileObserver configuration definition")
+@ObjectClassDefinition(name = "Sourcepond fileobserver configuration", description = "PathChangeListener configuration definition")
 public @interface Config {
 
     @AttributeDefinition(

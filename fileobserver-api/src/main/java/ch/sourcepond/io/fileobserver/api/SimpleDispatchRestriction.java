@@ -16,7 +16,7 @@ package ch.sourcepond.io.fileobserver.api;
 import java.nio.file.PathMatcher;
 
 /**
- * An object which can be used to restrict which {@link DispatchKey} can be handled by a specific {@link FileObserver}.
+ * An object which can be used to restrict which {@link DispatchKey} can be handled by a specific {@link PathChangeListener}.
  */
 public interface SimpleDispatchRestriction {
 

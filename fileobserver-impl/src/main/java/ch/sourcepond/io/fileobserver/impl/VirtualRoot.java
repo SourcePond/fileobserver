@@ -15,7 +15,7 @@ package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
@@ -59,7 +59,7 @@ public class VirtualRoot implements RelocationObserver {
     private static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
     private final ObserverManager manager;
     private final InitSwitch<WatchedDirectory> rootInitSwitch = new InitSwitch<>(this::doAddRoot);
-    private final InitSwitch<FileObserver> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
+    private final InitSwitch<PathChangeListener> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
@@ -121,30 +121,30 @@ public class VirtualRoot implements RelocationObserver {
         dedicatedFileSystemFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
-    private void doAddObserver(final FileObserver pObserver) {
+    private void doAddObserver(final PathChangeListener pObserver) {
         final EventDispatcher session = manager.addObserver(pObserver);
         children.values().forEach(dfs -> dfs.forceInform(session));
     }
 
     /**
-     * Whiteboard bind-method for {@link FileObserver} services exported by any client bundle. This
-     * method is called when a client exports a service which implements the {@link FileObserver} interface.
+     * Whiteboard bind-method for {@link PathChangeListener} services exported by any client bundle. This
+     * method is called when a client exports a service which implements the {@link PathChangeListener} interface.
      *
      * @param pObserver File observer service to be registered.
      */
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
-    public void addObserver(final FileObserver pObserver) {
+    public void addObserver(final PathChangeListener pObserver) {
         requireNonNull(pObserver, "Observer is null");
         observerInitSwitch.add(pObserver);
     }
 
     /**
-     * Whiteboard unbind-method {@link FileObserver} services exported by any client bundle. This method is
-     * called when a client unregisters a service which implements the {@link FileObserver} interface.
+     * Whiteboard unbind-method {@link PathChangeListener} services exported by any client bundle. This method is
+     * called when a client unregisters a service which implements the {@link PathChangeListener} interface.
      *
      * @param pObserver File observer service to be unregistered.
      */
-    public void removeObserver(final FileObserver pObserver) {
+    public void removeObserver(final PathChangeListener pObserver) {
         requireNonNull(pObserver, "Observer is null");
         manager.removeObserver(pObserver);
     }

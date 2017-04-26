@@ -16,8 +16,8 @@ package ch.sourcepond.io.fileobserver.api;
 import java.nio.file.PathMatcher;
 
 /**
- * A {@link FileObserver} is able to specify which file changes should be observed. To do the necessary restrict,
- * an object implementing this interface is passed to the {@link FileObserver#restrict(DispatchRestriction)} method
+ * A {@link PathChangeListener} is able to specify which file changes should be observed. To do the necessary restrict,
+ * an object implementing this interface is passed to the {@link PathChangeListener#restrict(DispatchRestriction)} method
  * of a file-observer when it is being registered. Note:
  * <ul>
  * <li>If neither {@link #accept(Object...)} nor {@link #acceptAll()} has ever been called during the observer restrict, the
@@ -34,7 +34,7 @@ import java.nio.file.PathMatcher;
 public interface DispatchRestriction extends SimpleDispatchRestriction {
 
     /**
-     * <p>Specifies, which directory-keys should be accepted by the {@link FileObserver}. This means, that
+     * <p>Specifies, which directory-keys should be accepted by the {@link PathChangeListener}. This means, that
      * dispatch events or a file/directory discards are pre-filtered before any added compound path-matcher applies (if
      * any, see {@link #whenPathMatches(String)} and {@link #whenPathMatches(PathMatcher)}).</p>
      *
@@ -46,7 +46,7 @@ public interface DispatchRestriction extends SimpleDispatchRestriction {
     SimpleDispatchRestriction accept(Object... pDirectoryKeys);
 
     /**
-     * <p>Specifies, that all directory-keys should be accepted by the {@link FileObserver}. This means, that
+     * <p>Specifies, that all directory-keys should be accepted by the {@link PathChangeListener}. This means, that
      * any dispatch event or a file/directory discard is directly matched against the registered compound path-matcher
      * (if any, see {@link #whenPathMatches(String)} and {@link #whenPathMatches(PathMatcher)}).</p>
      *

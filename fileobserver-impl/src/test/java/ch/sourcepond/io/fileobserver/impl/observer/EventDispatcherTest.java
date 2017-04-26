@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -33,8 +33,8 @@ import static org.mockito.Mockito.verify;
  */
 public class EventDispatcherTest {
     private final ObserverManager manager = mock(ObserverManager.class);
-    private final FileObserver observer = mock(FileObserver.class);
-    private final Collection<FileObserver> observers = asList(observer);
+    private final PathChangeListener observer = mock(PathChangeListener.class);
+    private final Collection<PathChangeListener> observers = asList(observer);
     private final DispatchKey key = mock(DispatchKey.class);
     private final Collection<DispatchKey> keys = asList(key);
     private final Collection<DispatchKey> parentKeys = mock(Collection.class);

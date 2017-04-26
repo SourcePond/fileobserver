@@ -16,7 +16,7 @@ package ch.sourcepond.io.fileobserver.impl;
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilder;
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
@@ -53,7 +53,7 @@ public class VirtualRootTest {
     private final Path directory = mock(Path.class);
     private final BasicFileAttributes modifiedPathAttrs = mock(BasicFileAttributes.class);
     private final Path modifiedPath = mock(Path.class);
-    private final FileObserver observer = mock(FileObserver.class);
+    private final PathChangeListener observer = mock(PathChangeListener.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final DedicatedFileSystem dedicatedFs = mock(DedicatedFileSystem.class);
@@ -256,7 +256,7 @@ public class VirtualRootTest {
     public void stop() {
         virtualRoot.stop();
         verify(dedicatedFs).close();
-        final FileObserver otherObserver = mock(FileObserver.class);
+        final PathChangeListener otherObserver = mock(PathChangeListener.class);
         virtualRoot.addObserver(otherObserver);
         verifyZeroInteractions(otherObserver);
     }
@@ -264,7 +264,7 @@ public class VirtualRootTest {
     @Test
     public void removeFileSystem() {
         virtualRoot.removeFileSystem(dedicatedFs);
-        final FileObserver otherObserver = mock(FileObserver.class);
+        final PathChangeListener otherObserver = mock(PathChangeListener.class);
         verify(manager).removeFileSystem(fs);
         virtualRoot.addObserver(otherObserver);
         verifyZeroInteractions(otherObserver);

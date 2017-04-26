@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +37,7 @@ public class RootDirectoryTest extends DirectoryTest {
 
     @Test
     public void ignoreBlacklistedFiles() {
-        final FileObserver observer = mock(FileObserver.class);
+        final PathChangeListener observer = mock(PathChangeListener.class);
         when(watchedRootDir.isBlacklisted(subdir_1_path.relativize(testfile_11_xml_path))).thenReturn(true);
         root.addWatchedDirectory(watchedRootDir);
         root.forceInform(dispatcher);

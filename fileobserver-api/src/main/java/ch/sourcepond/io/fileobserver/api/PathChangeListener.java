@@ -17,11 +17,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 /**
- * <p>Observer to receive notifications about changes on files
+ * <p>Listener to receive notifications about changes on files
  * within a watched directory and its sub-directories.</p>
  * <p><em>Implementations of this interface must be thread-safe.</em></p>
  */
-public interface FileObserver {
+public interface PathChangeListener {
 
     /**
      * <p>Setups the restriction object. That object will always be checked before any event is delivered to

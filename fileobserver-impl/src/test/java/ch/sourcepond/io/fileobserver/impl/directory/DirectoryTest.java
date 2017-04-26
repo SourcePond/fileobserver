@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.*;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
@@ -60,7 +60,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
             keyFactory);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
-    final FileObserver observer = mock(FileObserver.class);
+    final PathChangeListener observer = mock(PathChangeListener.class);
     WatchServiceWrapper wrapper;
 
     @Before

@@ -14,6 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 
 import java.nio.file.Path;
@@ -54,7 +55,7 @@ public class RootDirectory extends Directory {
      * <p>Adds the directory-key specified to this directory instance. When a change is detected, a
      * {@link DispatchKey} will be generated for every directory-key/relative-path combination.
      * This {@link DispatchKey} instance will then be delivered (along with the readable file path)
-     * to the {@link ch.sourcepond.io.fileobserver.api.FileObserver} objects which should be informed.</p>
+     * to the {@link PathChangeListener} objects which should be informed.</p>
      *
      * <p>Note: The key object should be <em>immutable</em>, {@link String} or an {@link Enum}
      * objects are good condidates for being directory-keys.</p>

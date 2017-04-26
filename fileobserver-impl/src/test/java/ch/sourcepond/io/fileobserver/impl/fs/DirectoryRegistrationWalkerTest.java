@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
@@ -46,7 +46,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private final WatchServiceWrapper wrapper = mock(WatchServiceWrapper.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
-    private final Collection<FileObserver> observers = mock(Collection.class);
+    private final Collection<PathChangeListener> observers = mock(Collection.class);
     private final WatchKey subdir_1_watchKey = mock(WatchKey.class);
     private final WatchKey subdir_11_watchKey = mock(WatchKey.class);
     private final WatchKey subdir_111_watchKey = mock(WatchKey.class);

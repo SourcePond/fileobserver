@@ -1,7 +1,7 @@
 package ch.sourcepond.io.fileobserver;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 /**
  * Created by rolandhauser on 09.03.17.
  */
-final class InitialCheckusmCalculationBarrier implements FileObserver {
+final class InitialCheckusmCalculationBarrier implements PathChangeListener {
     private final Set<Path> expectedFiles = new HashSet<>();
     private int runs = 10;
 

@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
@@ -36,14 +36,14 @@ import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * This class handles everything necessary to inform registered {@link FileObserver} and
+ * This class handles everything necessary to inform registered {@link PathChangeListener} and
  * {@link KeyDeliveryHook} instances.
  */
 public class ObserverManager {
     private static final Logger LOG = getLogger(ObserverManager.class);
     private final DefaultDispatchRestrictionFactory restrictionFactory;
     private final Set<KeyDeliveryHook> hooks = new CopyOnWriteArraySet<>();
-    private final ConcurrentMap<FileObserver, Map<FileSystem, DefaultDispatchRestriction>> observers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<PathChangeListener, Map<FileSystem, DefaultDispatchRestriction>> observers = new ConcurrentHashMap<>();
     private final EventDispatcher defaultDispatcher = new EventDispatcher(this, observers.keySet());
     private volatile Executor dispatcherExecutor;
     private volatile ExecutorService observerExecutor;
@@ -59,7 +59,7 @@ public class ObserverManager {
         restrictionFactory = pRestrictionFactory;
     }
 
-    public EventDispatcher addObserver(final FileObserver pObserver) {
+    public EventDispatcher addObserver(final PathChangeListener pObserver) {
         observers.computeIfAbsent(pObserver, o -> new ConcurrentHashMap<>());
         return new EventDispatcher(this, pObserver);
     }
@@ -72,7 +72,7 @@ public class ObserverManager {
         return defaultDispatcher;
     }
 
-    Collection<FileObserver> getObservers() {
+    Collection<PathChangeListener> getObservers() {
         return observers.keySet();
     }
 
@@ -92,7 +92,7 @@ public class ObserverManager {
         hooks.add(pHook);
     }
 
-    public void removeObserver(final FileObserver pObserver) {
+    public void removeObserver(final PathChangeListener pObserver) {
         observers.remove(pObserver);
     }
 
@@ -100,7 +100,7 @@ public class ObserverManager {
         hooks.remove(pHook);
     }
 
-    private static void fireModification(final FileObserver pObserver,
+    private static void fireModification(final PathChangeListener pObserver,
                                          final DispatchKey pKey,
                                          final Path pFile,
                                          final Collection<DispatchKey> pParentKeys) {
@@ -127,25 +127,25 @@ public class ObserverManager {
         }
     }
 
-    private DefaultDispatchRestriction createRestriction(final FileObserver pObserver, final FileSystem pFs) {
+    private DefaultDispatchRestriction createRestriction(final PathChangeListener pObserver, final FileSystem pFs) {
         final DefaultDispatchRestriction restriction = restrictionFactory.createRestriction(pFs);
         pObserver.restrict(restriction);
         return restriction;
     }
 
-    private boolean isAccepted(final FileObserver pObserver, final DispatchKey pDispatchKey) {
+    private boolean isAccepted(final PathChangeListener pObserver, final DispatchKey pDispatchKey) {
         final FileSystem fs = pDispatchKey.getRelativePath().getFileSystem();
         return observers.computeIfAbsent(
                 pObserver, o -> new ConcurrentHashMap<>()).
                 computeIfAbsent(fs, f -> createRestriction(pObserver, f)).isAccepted(pDispatchKey);
     }
 
-    private void submitTask(final Collection<FileObserver> pObservers,
+    private void submitTask(final Collection<PathChangeListener> pObservers,
                             final DispatchKey pKey,
-                            final Consumer<FileObserver> pFireEventConsumer,
+                            final Consumer<PathChangeListener> pFireEventConsumer,
                             final KeyDeliveryConsumer pBeforeConsumer,
                             final KeyDeliveryConsumer pAfterConsumer) {
-        final Collection<FileObserver> acceptingObservers = pObservers.stream().filter(
+        final Collection<PathChangeListener> acceptingObservers = pObservers.stream().filter(
                 o -> isAccepted(o, pKey)).collect(toList());
         if (!acceptingObservers.isEmpty()) {
             dispatcherExecutor.execute(new DispatcherTask(
@@ -160,11 +160,11 @@ public class ObserverManager {
         }
     }
 
-    void modified(final Collection<FileObserver> pObservers, final Collection<DispatchKey> pKeys, final Path pFile, final Collection<DispatchKey> pParentKeys) {
+    void modified(final Collection<PathChangeListener> pObservers, final Collection<DispatchKey> pKeys, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         pKeys.forEach(key -> modified(pObservers, key, pFile, pParentKeys));
     }
 
-    void modified(final Collection<FileObserver> pObservers, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
+    void modified(final Collection<PathChangeListener> pObservers, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         submitTask(
                 pObservers,
                 pKey,
@@ -174,7 +174,7 @@ public class ObserverManager {
         );
     }
 
-    void discard(final Collection<FileObserver> pObservers, final DispatchKey pKey) {
+    void discard(final Collection<PathChangeListener> pObservers, final DispatchKey pKey) {
         submitTask(
                 pObservers,
                 pKey,

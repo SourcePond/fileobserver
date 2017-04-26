@@ -20,10 +20,10 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class FileObserverTest {
+public class PathChangeListenerTest {
     private final DispatchRestriction restriction = mock(DispatchRestriction.class);
     private final DispatchKey key = mock(DispatchKey.class);
-    private final FileObserver observer = mock(FileObserver.class);
+    private final PathChangeListener observer = mock(PathChangeListener.class);
 
     @Test
     public void setup() {

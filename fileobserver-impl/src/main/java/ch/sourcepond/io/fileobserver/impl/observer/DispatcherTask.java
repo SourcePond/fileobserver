@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
 import org.slf4j.Logger;
@@ -36,17 +36,17 @@ class DispatcherTask implements Runnable {
     private static final Logger LOG = getLogger(DispatcherTask.class);
     private final ExecutorService observerExecutor;
     private final Collection<KeyDeliveryHook> hooks;
-    private final Collection<FileObserver> observers;
-    private final Consumer<FileObserver> fireEventConsumer;
+    private final Collection<PathChangeListener> observers;
+    private final Consumer<PathChangeListener> fireEventConsumer;
     private final KeyDeliveryConsumer beforeConsumer;
     private final KeyDeliveryConsumer afterConsumer;
     private final DispatchKey key;
 
     DispatcherTask(final ExecutorService pObserverExecutor,
                    final Collection<KeyDeliveryHook> pHooks,
-                   final Collection<FileObserver> pObservers,
+                   final Collection<PathChangeListener> pObservers,
                    final DispatchKey pKey,
-                   final Consumer<FileObserver> pFireEventConsumer,
+                   final Consumer<PathChangeListener> pFireEventConsumer,
                    final KeyDeliveryConsumer pBeforeConsumer,
                    final KeyDeliveryConsumer pAfterConsumer) {
         observerExecutor = pObserverExecutor;
@@ -76,7 +76,7 @@ class DispatcherTask implements Runnable {
         }
     }
 
-    private void submitObserverTask(final FileObserver pObserver, final Collection<Future<?>> pJoins) {
+    private void submitObserverTask(final PathChangeListener pObserver, final Collection<Future<?>> pJoins) {
         if (!currentThread().isInterrupted()) {
             pJoins.add(observerExecutor.submit(() ->
                     fireEventConsumer.accept(pObserver)));

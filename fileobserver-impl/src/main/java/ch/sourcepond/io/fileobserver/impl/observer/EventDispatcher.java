@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -26,15 +26,15 @@ import static java.util.Arrays.asList;
  */
 public class EventDispatcher {
     private final ObserverManager dispatcher;
-    private final Collection<FileObserver> observers;
+    private final Collection<PathChangeListener> observers;
 
     EventDispatcher(final ObserverManager pManager,
-                    final FileObserver pAddedObserver) {
+                    final PathChangeListener pAddedObserver) {
         this(pManager, asList(pAddedObserver));
     }
 
     EventDispatcher(final ObserverManager pManager,
-                    final Collection<FileObserver> pObservers) {
+                    final Collection<PathChangeListener> pObservers) {
         dispatcher = pManager;
         observers = pObservers;
     }

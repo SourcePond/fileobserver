@@ -17,7 +17,7 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.checksum.api.UpdateObserver;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
@@ -53,7 +53,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final DedicatedFileSystem fs = mock(DedicatedFileSystem.class);
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
-    private final FileObserver observer = mock(FileObserver.class);
+    private final PathChangeListener observer = mock(PathChangeListener.class);
     private final Directory root_dir = mock(Directory.class);
     private final Directory subdir_1 = mock(Directory.class);
     private final Directory subdir_11 = mock(Directory.class);

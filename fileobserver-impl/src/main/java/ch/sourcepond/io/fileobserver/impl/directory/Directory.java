@@ -15,7 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
@@ -139,7 +139,7 @@ public abstract class Directory {
      * <p>Adds the watched-directory specified to this directory instance. When a change is detected, a
      * {@link DispatchKey} will be generated for every {@link WatchedDirectory#getKey()}/relative-path combination.
      * This {@link DispatchKey} instance will then be delivered (along with the readable file path)
-     * to the {@link FileObserver} objects which should be informed.</p>
+     * to the {@link PathChangeListener} objects which should be informed.</p>
      * <p>
      * <p>Note: The object returned by {@link WatchedDirectory#getKey()} should be <em>immutable</em>,
      * {@link String} or an {@link Enum} objects are good condidates for being directory-keys.</p>
@@ -163,7 +163,7 @@ public abstract class Directory {
 
     /**
      * Removes the watched-directory specified from this directory instance and informs
-     * the observers specified through their {@link FileObserver#discard(DispatchKey)}. If no such
+     * the observers specified through their {@link PathChangeListener#discard(DispatchKey)}. If no such
      * watched-directory is registered nothing happens.
      *
      * @param pWatchedDirectory Directory-key to be removed, must be not {@code null}
@@ -196,7 +196,7 @@ public abstract class Directory {
     /**
      * Iterates over the files contained by this directory and creates tasks which will be executed
      * sometime in the future. Such a task will inform the observer specified through its
-     * {@link FileObserver#modified(DispatchKey, Path)} method. Note: only direct children will be
+     * {@link PathChangeListener#modified(DispatchKey, Path)} method. Note: only direct children will be
      * considered, sub-directories and non-regular files will be ignored.
      */
     public void forceInform(final EventDispatcher pDispatcher) {
@@ -214,7 +214,7 @@ public abstract class Directory {
 
     /**
      * Iterates over the observers specified and informs them that the file specified has
-     * been discarded through their {@link FileObserver#discard(DispatchKey)} method. The observers
+     * been discarded through their {@link PathChangeListener#discard(DispatchKey)} method. The observers
      * will be called asynchronously sometime in the future.
      *
      * @param pFile Discarded file, must be {@code null}
@@ -243,7 +243,7 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link FileObserver#modified(DispatchKey, Path)} on all observers specified if the
+     * Triggers the {@link PathChangeListener#modified(DispatchKey, Path)} on all observers specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
@@ -270,7 +270,7 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link FileObserver#modified(DispatchKey, Path)} on all observers specified if the
+     * Triggers the {@link PathChangeListener#modified(DispatchKey, Path)} on all observers specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *

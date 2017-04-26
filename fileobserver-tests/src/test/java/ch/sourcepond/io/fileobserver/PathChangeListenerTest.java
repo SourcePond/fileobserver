@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import ch.sourcepond.testing.BundleContextClassLoaderRule;
@@ -61,7 +61,7 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
  */
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
-public class FileObserverTest {
+public class PathChangeListenerTest {
 
     @Rule
     public BundleContextClassLoaderRule rule = new BundleContextClassLoaderRule(this);
@@ -108,11 +108,11 @@ public class FileObserverTest {
     @Inject
     private BundleContext context;
 
-    private final FileObserver observer = mock(FileObserver.class, withSettings().name("observer"));
-    private final FileObserver secondObserver = mock(FileObserver.class, withSettings().name("secondObserver"));
+    private final PathChangeListener observer = mock(PathChangeListener.class, withSettings().name("observer"));
+    private final PathChangeListener secondObserver = mock(PathChangeListener.class, withSettings().name("secondObserver"));
     private ServiceRegistration<WatchedDirectory> watchedDirectoryRegistration;
-    private ServiceRegistration<FileObserver> fileObserverRegistration;
-    private ServiceRegistration<FileObserver> secondObserverRegistration;
+    private ServiceRegistration<PathChangeListener> fileObserverRegistration;
+    private ServiceRegistration<PathChangeListener> secondObserverRegistration;
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private ServiceRegistration<KeyDeliveryHook> hookRegistration;
     private WatchedDirectory watchedDirectory;
@@ -125,14 +125,14 @@ public class FileObserverTest {
         // Step 1: make fileobserver bundle watching R by
         // registering an appropriate service.
         final InitialCheckusmCalculationBarrier wait = new InitialCheckusmCalculationBarrier();
-        fileObserverRegistration = context.registerService(FileObserver.class, wait, null);
+        fileObserverRegistration = context.registerService(PathChangeListener.class, wait, null);
         watchedDirectory = create(ROOT, R);
         watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
         wait.waitUntilChecksumsCalculated();
         fileObserverRegistration.unregister();
 
-        // Step 2: register FileObserver
-        fileObserverRegistration = context.registerService(FileObserver.class, observer, null);
+        // Step 2: register PathChangeListener
+        fileObserverRegistration = context.registerService(PathChangeListener.class, observer, null);
         verifyForceInform(observer);
         reset(observer);
 
@@ -140,7 +140,7 @@ public class FileObserverTest {
         hookRegistration = context.registerService(KeyDeliveryHook.class, hook, null);
     }
 
-    private void verifyForceInform(final FileObserver pObserver) throws Exception {
+    private void verifyForceInform(final PathChangeListener pObserver) throws Exception {
         verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E11)), eq(E11));
         verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E12)), eq(E12));
         verify(pObserver, timeout(5000)).modified(key(ROOT, R.relativize(E2)), eq(E2));
@@ -170,7 +170,7 @@ public class FileObserverTest {
 
     @Test
     public void doExlusivelyInformNewlyRegisteredObserver() throws Exception {
-        secondObserverRegistration = context.registerService(FileObserver.class, secondObserver, null);
+        secondObserverRegistration = context.registerService(PathChangeListener.class, secondObserver, null);
         verifyForceInform(secondObserver);
         verifyZeroInteractions(observer);
     }
@@ -248,7 +248,7 @@ public class FileObserverTest {
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E1)));
         verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H1)));
 
-        // See FileObserver::discard for explanation; the following works not for MacOS X
+        // See PathChangeListener::discard for explanation; the following works not for MacOS X
         if ("Linux".equals(System.getProperty("os.name"))) {
             verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
             verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E12)));

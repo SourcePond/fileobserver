@@ -16,7 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.FileObserver;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
@@ -33,7 +33,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-class DiffObserver implements FileObserver, Closeable {
+class DiffObserver implements PathChangeListener, Closeable {
     private static final Logger LOG = getLogger(DiffObserver.class);
     private final Map<DispatchKey, Path> modifiedKeys = new HashMap<>();
     private final Set<DispatchKey> discardedKeys = new HashSet<>();

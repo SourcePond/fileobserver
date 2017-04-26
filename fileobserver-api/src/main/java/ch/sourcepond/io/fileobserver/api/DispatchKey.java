@@ -35,7 +35,7 @@ public interface DispatchKey {
      * observed directories.</p>
      * <p>The next question may be why instead of an absolute {@link Path} an {@link Object} identifies a watched
      * directory. The answer is that it must be possible to relocate a watched directory during runtime.
-     * If an absolute path would be used to identify it, it would be impossible to a {@link FileObserver} to determine
+     * If an absolute path would be used to identify it, it would be impossible to a {@link PathChangeListener} to determine
      * which dispatch-keys were associated with the relocated directory. This is because they would still
      * reference the previous path. For this reason, an independent, immutable directory-key object is used to identify
      * a watched directory. The directory-key remains the same as long this object lives.</p>
