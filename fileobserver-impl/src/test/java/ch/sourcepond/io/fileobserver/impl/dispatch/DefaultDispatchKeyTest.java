@@ -11,9 +11,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.filekey;
+package ch.sourcepond.io.fileobserver.impl.dispatch;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -25,15 +25,15 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class DefaultFileKeyTest {
+public class DefaultDispatchKeyTest {
     private static final String DIRECTORY_KEY_1 = "directoryKey1";
     private static final String DIRECTORY_KEY_2 = "directoryKey2";
     private final Path path = mock(Path.class, withSettings().name("root"));
     private Path otherPath = mock(Path.class);
-    private final FileKey key1 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
-    private final FileKey key2 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
-    private final FileKey key3 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, otherPath);
-    private FileKey key4 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
+    private final DispatchKey key1 = new DefaultDispatchKeyFactory().newKey(DIRECTORY_KEY_1, path);
+    private final DispatchKey key2 = new DefaultDispatchKeyFactory().newKey(DIRECTORY_KEY_1, path);
+    private final DispatchKey key3 = new DefaultDispatchKeyFactory().newKey(DIRECTORY_KEY_1, otherPath);
+    private DispatchKey key4 = new DefaultDispatchKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
 
     @Test
     public void key() {
@@ -58,7 +58,7 @@ public class DefaultFileKeyTest {
     @Test
     public void verifyToString() {
         otherPath = mock(Path.class, withSettings().name("SOME_PATH"));
-        key4 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
+        key4 = new DefaultDispatchKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
         assertEquals("[directoryKey2:SOME_PATH]", key4.toString());
     }
 

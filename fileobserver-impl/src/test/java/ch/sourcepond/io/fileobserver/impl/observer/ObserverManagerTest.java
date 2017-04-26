@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
@@ -46,9 +46,9 @@ public class ObserverManagerTest {
     private final DefaultDispatchRestrictionFactory restrictionFactory = mock(DefaultDispatchRestrictionFactory.class);
     private final DefaultDispatchRestriction restriction = mock(DefaultDispatchRestriction.class);
     private final ObserverManager manager = new ObserverManager(restrictionFactory);
-    private final FileKey parentKey = mock(FileKey.class);
-    private final Collection<FileKey> parentKeys = asList(parentKey);
-    private final FileKey fileKey = mock(FileKey.class);
+    private final DispatchKey parentKey = mock(DispatchKey.class);
+    private final Collection<DispatchKey> parentKeys = asList(parentKey);
+    private final DispatchKey dispatchKey = mock(DispatchKey.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path file = mock(Path.class);
     private final FileObserver observer = mock(FileObserver.class);
@@ -57,11 +57,11 @@ public class ObserverManagerTest {
     @Before
     public void setup() {
         when(file.getFileSystem()).thenReturn(fs);
-        when(fileKey.getRelativePath()).thenReturn(file);
+        when(dispatchKey.getRelativePath()).thenReturn(file);
         when(restrictionFactory.createRestriction(fs)).thenReturn(restriction);
-        when(restriction.isAccepted(fileKey)).thenReturn(true);
+        when(restriction.isAccepted(dispatchKey)).thenReturn(true);
         when(parentKey.getDirectoryKey()).thenReturn(PARENT_DIR_KEY);
-        when(fileKey.getDirectoryKey()).thenReturn(DIR_KEY);
+        when(dispatchKey.getDirectoryKey()).thenReturn(DIR_KEY);
         manager.setDispatcherExecutor(dispatcherExecutor);
         manager.setObserverExecutor(observerExecutor);
         manager.addObserver(observer);
@@ -76,69 +76,69 @@ public class ObserverManagerTest {
     @Test
     public void modifiedCurrentlyNoObserversAvailable() {
         manager.removeObserver(observer);
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         verifyZeroInteractions(observer);
     }
 
     private void verifyHookObserverFlow() throws IOException {
         final InOrder order = inOrder(observer, restriction, hook);
         order.verify(observer).setup(restriction);
-        order.verify(restriction).isAccepted(fileKey);
-        order.verify(hook, timeout(1000)).beforeModify(fileKey, file);
-        order.verify(observer, timeout(1000)).supplement(fileKey, parentKey);
-        order.verify(observer, timeout(1000)).modified(fileKey, file);
-        order.verify(hook, timeout(1000)).afterModify(fileKey, file);
+        order.verify(restriction).isAccepted(dispatchKey);
+        order.verify(hook, timeout(1000)).beforeModify(dispatchKey, file);
+        order.verify(observer, timeout(1000)).supplement(dispatchKey, parentKey);
+        order.verify(observer, timeout(1000)).modified(dispatchKey, file);
+        order.verify(hook, timeout(1000)).afterModify(dispatchKey, file);
         order.verifyNoMoreInteractions();
     }
 
     @Test
     public void removeFileSystem() throws IOException {
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         manager.removeFileSystem(fs);
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         verify(restrictionFactory, times(2)).createRestriction(fs);
     }
 
     @Test
     public void modifiedWithKeyCollection() throws IOException {
-        manager.modified(manager.getObservers(), asList(fileKey), file, parentKeys);
+        manager.modified(manager.getObservers(), asList(dispatchKey), file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modified() throws IOException {
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modifiedNotAccepted() throws IOException {
-        when(restriction.isAccepted(fileKey)).thenReturn(false);
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        when(restriction.isAccepted(dispatchKey)).thenReturn(false);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         verifyZeroInteractions(hook);
     }
 
     @Test
     public void modifiedCurrentlyNoHookAvailable() throws Exception {
         manager.removeHook(hook);
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         final InOrder order = inOrder(hook, observer);
-        order.verify(observer, timeout(1000)).supplement(fileKey, parentKey);
-        order.verify(observer, timeout(1000)).modified(fileKey, file);
+        order.verify(observer, timeout(1000)).supplement(dispatchKey, parentKey);
+        order.verify(observer, timeout(1000)).modified(dispatchKey, file);
         order.verifyNoMoreInteractions();
     }
 
     @Test
     public void modifiedBeforeModifiedFailed() throws IOException {
-        doThrow(RuntimeException.class).when(hook).beforeModify(fileKey, file);
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        doThrow(RuntimeException.class).when(hook).beforeModify(dispatchKey, file);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modifiedObserverFailed() throws IOException {
-        doThrow(IOException.class).when(observer).modified(fileKey, file);
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        doThrow(IOException.class).when(observer).modified(dispatchKey, file);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
@@ -147,10 +147,10 @@ public class ObserverManagerTest {
         doAnswer(inv -> {
             sleep(1000);
             return null;
-        }).when(hook).beforeModify(fileKey, file);
-        doThrow(RuntimeException.class).when(hook).beforeModify(fileKey, file);
+        }).when(hook).beforeModify(dispatchKey, file);
+        doThrow(RuntimeException.class).when(hook).beforeModify(dispatchKey, file);
         sleep(200);
-        manager.modified(manager.getObservers(), fileKey, file, parentKeys);
+        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
         assertTrue(dispatcherExecutor.shutdownNow().isEmpty());
         verify(observer).setup(restriction);
         verifyNoMoreInteractions(observer);
@@ -160,26 +160,26 @@ public class ObserverManagerTest {
     @Test
     public void discardCurrentlyNoObserversAvailable() {
         manager.removeObserver(observer);
-        manager.discard(manager.getObservers(), fileKey);
+        manager.discard(manager.getObservers(), dispatchKey);
         verifyZeroInteractions(observer);
     }
 
     @Test
     public void discardCurrentlyNoHookAvailable() {
         manager.removeHook(hook);
-        manager.discard(manager.getObservers(), fileKey);
+        manager.discard(manager.getObservers(), dispatchKey);
         final InOrder order = inOrder(hook, observer);
-        order.verify(observer, timeout(1000)).discard(fileKey);
+        order.verify(observer, timeout(1000)).discard(dispatchKey);
         order.verifyNoMoreInteractions();
     }
 
     @Test
     public void discard() {
-        manager.discard(manager.getObservers(), fileKey);
+        manager.discard(manager.getObservers(), dispatchKey);
         final InOrder order = inOrder(hook, observer);
-        order.verify(hook, timeout(1000)).beforeDiscard(fileKey);
-        order.verify(observer, timeout(1000)).discard(fileKey);
-        order.verify(hook, timeout(1000)).afterDiscard(fileKey);
+        order.verify(hook, timeout(1000)).beforeDiscard(dispatchKey);
+        order.verify(observer, timeout(1000)).discard(dispatchKey);
+        order.verify(hook, timeout(1000)).afterDiscard(dispatchKey);
         order.verifyNoMoreInteractions();
     }
 }

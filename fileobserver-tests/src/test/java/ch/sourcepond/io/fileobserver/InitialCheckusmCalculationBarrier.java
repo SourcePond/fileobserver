@@ -1,6 +1,6 @@
 package ch.sourcepond.io.fileobserver;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 
 import java.io.IOException;
@@ -29,13 +29,13 @@ final class InitialCheckusmCalculationBarrier implements FileObserver {
     }
 
     @Override
-    public synchronized void modified(final FileKey pKey, final Path pFile) throws IOException {
+    public synchronized void modified(final DispatchKey pKey, final Path pFile) throws IOException {
         expectedFiles.remove(pFile);
         notifyAll();
     }
 
     @Override
-    public void discard(final FileKey pKey) {
+    public void discard(final DispatchKey pKey) {
         // noop
     }
 

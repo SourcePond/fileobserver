@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.Config;
-import ch.sourcepond.io.fileobserver.impl.filekey.KeyDeliveryConsumer;
+import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
@@ -101,11 +101,11 @@ public class ObserverManager {
     }
 
     private static void fireModification(final FileObserver pObserver,
-                                         final FileKey pKey,
+                                         final DispatchKey pKey,
                                          final Path pFile,
-                                         final Collection<FileKey> pParentKeys) {
+                                         final Collection<DispatchKey> pParentKeys) {
         if (!pParentKeys.isEmpty()) {
-            for (final FileKey parentKey : pParentKeys) {
+            for (final DispatchKey parentKey : pParentKeys) {
                 /*
                  * Suppose:
                  * Parent /A [dirKey:K2] -> Has been added as new root
@@ -133,15 +133,15 @@ public class ObserverManager {
         return restriction;
     }
 
-    private boolean isAccepted(final FileObserver pObserver, final FileKey pFileKey) {
-        final FileSystem fs = pFileKey.getRelativePath().getFileSystem();
+    private boolean isAccepted(final FileObserver pObserver, final DispatchKey pDispatchKey) {
+        final FileSystem fs = pDispatchKey.getRelativePath().getFileSystem();
         return observers.computeIfAbsent(
                 pObserver, o -> new ConcurrentHashMap<>()).
-                computeIfAbsent(fs, f -> createRestriction(pObserver, f)).isAccepted(pFileKey);
+                computeIfAbsent(fs, f -> createRestriction(pObserver, f)).isAccepted(pDispatchKey);
     }
 
     private void submitTask(final Collection<FileObserver> pObservers,
-                            final FileKey pKey,
+                            final DispatchKey pKey,
                             final Consumer<FileObserver> pFireEventConsumer,
                             final KeyDeliveryConsumer pBeforeConsumer,
                             final KeyDeliveryConsumer pAfterConsumer) {
@@ -160,11 +160,11 @@ public class ObserverManager {
         }
     }
 
-    void modified(final Collection<FileObserver> pObservers, final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
+    void modified(final Collection<FileObserver> pObservers, final Collection<DispatchKey> pKeys, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         pKeys.forEach(key -> modified(pObservers, key, pFile, pParentKeys));
     }
 
-    void modified(final Collection<FileObserver> pObservers, final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
+    void modified(final Collection<FileObserver> pObservers, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         submitTask(
                 pObservers,
                 pKey,
@@ -174,7 +174,7 @@ public class ObserverManager {
         );
     }
 
-    void discard(final Collection<FileObserver> pObservers, final FileKey pKey) {
+    void discard(final Collection<FileObserver> pObservers, final DispatchKey pKey) {
         submitTask(
                 pObservers,
                 pKey,

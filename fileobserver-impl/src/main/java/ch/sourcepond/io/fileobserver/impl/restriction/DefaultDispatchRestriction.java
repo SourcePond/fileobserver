@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.restriction;
 
 import ch.sourcepond.io.fileobserver.api.DispatchRestriction;
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathMatcherBuilder;
 
 import java.nio.file.FileSystem;
@@ -76,9 +76,9 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
         return new DefaultPathMatcherBuilder(matcherFactory, this, fs).andWith(pMatcher);
     }
 
-    public boolean isAccepted(final FileKey pFileKey) {
-        final Object directoryKey = pFileKey.getDirectoryKey();
-        final Path relativePath = pFileKey.getRelativePath();
+    public boolean isAccepted(final DispatchKey pDispatchKey) {
+        final Object directoryKey = pDispatchKey.getDirectoryKey();
+        final Path relativePath = pDispatchKey.getRelativePath();
         final List<PathMatcher> m = matchers;
         final int size = m.size();
 

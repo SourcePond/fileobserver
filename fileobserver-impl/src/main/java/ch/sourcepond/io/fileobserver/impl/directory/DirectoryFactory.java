@@ -16,9 +16,9 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 import ch.sourcepond.io.checksum.api.Algorithm;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.impl.Config;
-import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 
 import java.nio.file.Path;
@@ -29,7 +29,7 @@ import java.util.concurrent.Executor;
  *
  */
 public class DirectoryFactory {
-    private final DefaultFileKeyFactory fileKeyFactory;
+    private final DefaultDispatchKeyFactory fileKeyFactory;
     private volatile Config config;
 
     // Injected by SCR
@@ -41,7 +41,7 @@ public class DirectoryFactory {
     private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
-    public DirectoryFactory(final DefaultFileKeyFactory pFileKeyFactory) {
+    public DirectoryFactory(final DefaultDispatchKeyFactory pFileKeyFactory) {
         fileKeyFactory = pFileKeyFactory;
     }
 
@@ -85,14 +85,14 @@ public class DirectoryFactory {
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
-     * Creates a new {@link FileKey} based on the directory-key and
+     * Creates a new {@link DispatchKey} based on the directory-key and
      * relative path specified, see {@link Directory#addWatchedDirectory(WatchedDirectory)} for further information.
      *
      * @param pDirectoryKey Directory-key, must not be {@code null}
      * @param pRelativePath Relative path, must not be {@code null}
      * @return New file-key, never {@code null}
      */
-    FileKey newKey(final Object pDirectoryKey, final Path pRelativePath) {
+    DispatchKey newKey(final Object pDirectoryKey, final Path pRelativePath) {
         return fileKeyFactory.newKey(pDirectoryKey, pRelativePath);
     }
 

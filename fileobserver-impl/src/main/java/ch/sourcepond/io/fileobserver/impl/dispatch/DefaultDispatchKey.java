@@ -11,9 +11,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.filekey;
+package ch.sourcepond.io.fileobserver.impl.dispatch;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -23,11 +23,11 @@ import static java.lang.String.format;
 /**
  *
  */
-final class DefaultFileKey implements FileKey {
+final class DefaultDispatchKey implements DispatchKey {
     private final Object directoryKey;
     private final Path relativePath;
 
-    public DefaultFileKey(final Object pDirectoryKey, final Path pRelativePath) {
+    public DefaultDispatchKey(final Object pDirectoryKey, final Path pRelativePath) {
         directoryKey = pDirectoryKey;
         relativePath = pRelativePath;
     }
@@ -50,7 +50,7 @@ final class DefaultFileKey implements FileKey {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final DefaultFileKey other = (DefaultFileKey) o;
+        final DefaultDispatchKey other = (DefaultDispatchKey) o;
         return Objects.equals(directoryKey, other.directoryKey) &&
                 Objects.equals(relativePath, other.relativePath);
     }

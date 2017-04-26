@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
  * resource is associated with the relocated directory.
  *
  */
-public interface FileKey {
+public interface DispatchKey {
 
     /**
      * The key which represents a watched root directory.
@@ -73,7 +73,7 @@ public interface FileKey {
      * @param pOther Other key to check whether it is a sub-key of this, must not be {@code null}
      * @return {@code true} if this key is a parent-key of the key specified, {@code false} otherwise.
      */
-    default boolean isParentKeyOf(final FileKey pOther) {
+    default boolean isParentKeyOf(final DispatchKey pOther) {
         requireNonNull(pOther, "Other key is null");
         return getDirectoryKey().equals(pOther.getDirectoryKey()) &&
                 pOther.getRelativePath().startsWith(getRelativePath());
@@ -90,7 +90,7 @@ public interface FileKey {
      * @param pOther Other key to check whether it is a parent-key of this, must not be {@code null}
      * @return {@code true} if this key is a sub-key of the key specified, {@code false} otherwise.
      */
-    default boolean isSubKeyOf(final FileKey pOther) {
+    default boolean isSubKeyOf(final DispatchKey pOther) {
         requireNonNull(pOther, "Other key is null");
         return getDirectoryKey().equals(pOther.getDirectoryKey()) &&
                 getRelativePath().startsWith(pOther.getRelativePath());
@@ -98,13 +98,13 @@ public interface FileKey {
 
     /**
      * Creates a new collection containing all keys which are sub-keys of this key and
-     * contained in the collection specified and (see {@link #isSubKeyOf(FileKey)}).
+     * contained in the collection specified and (see {@link #isSubKeyOf(DispatchKey)}).
      *
      * @param pKeys Collection of potential sub-keys, must not be {@code null}
      * @return Collection of found sub-keys, possibly empty, never {@code null}
      */
-    default Collection<FileKey> findSubKeys(Collection<FileKey> pKeys) {
-        final Collection<FileKey> subKeys = new LinkedList<>();
+    default Collection<DispatchKey> findSubKeys(Collection<DispatchKey> pKeys) {
+        final Collection<DispatchKey> subKeys = new LinkedList<>();
         pKeys.forEach(k -> {
             if (k.isSubKeyOf(this)) {
                 subKeys.add(k);
@@ -115,12 +115,12 @@ public interface FileKey {
 
     /**
      * Removes all keys which are sub-keys of this key from the collection specified
-     * (see {@link #isSubKeyOf(FileKey)}). If no sub-key could be found, the collection
+     * (see {@link #isSubKeyOf(DispatchKey)}). If no sub-key could be found, the collection
      * specified will not be modified.
      *
      * @param pKeys Collection of potential sub-keys, must not be {@code null}
      */
-    default void removeSubKeys(Collection<FileKey> pKeys) {
+    default void removeSubKeys(Collection<DispatchKey> pKeys) {
         pKeys.removeIf(k -> k.isSubKeyOf(this));
     }
 }

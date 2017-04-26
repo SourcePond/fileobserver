@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
-import ch.sourcepond.io.fileobserver.impl.filekey.KeyDeliveryConsumer;
+import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -40,12 +40,12 @@ class DispatcherTask implements Runnable {
     private final Consumer<FileObserver> fireEventConsumer;
     private final KeyDeliveryConsumer beforeConsumer;
     private final KeyDeliveryConsumer afterConsumer;
-    private final FileKey key;
+    private final DispatchKey key;
 
     DispatcherTask(final ExecutorService pObserverExecutor,
                    final Collection<KeyDeliveryHook> pHooks,
                    final Collection<FileObserver> pObservers,
-                   final FileKey pKey,
+                   final DispatchKey pKey,
                    final Consumer<FileObserver> pFireEventConsumer,
                    final KeyDeliveryConsumer pBeforeConsumer,
                    final KeyDeliveryConsumer pAfterConsumer) {

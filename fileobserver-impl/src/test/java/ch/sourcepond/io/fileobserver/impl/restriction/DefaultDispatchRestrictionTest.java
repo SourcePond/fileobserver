@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.restriction;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import com.google.common.jimfs.Configuration;
 import org.junit.Before;
@@ -34,15 +34,15 @@ import static org.mockito.Mockito.when;
 public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
     private static final Object ANY_ACCEPTED_DIRECTORY_KEY = new Object();
     private static final Object ANY_IGNORED_DIRECTORY_KEY = new Object();
-    protected FileKey testfile_1111_txt_key = mock(FileKey.class);
-    protected FileKey testfile_111_txt_key = mock(FileKey.class);
-    protected FileKey testfile_121_txt_key = mock(FileKey.class);
-    protected FileKey testfile_11_xml_key = mock(FileKey.class);
-    protected FileKey testfile_2111_txt_key = mock(FileKey.class);
-    protected FileKey testfile_211_txt_key = mock(FileKey.class);
-    protected FileKey testfile_221_txt_key = mock(FileKey.class);
-    protected FileKey testfile_21_xml_key = mock(FileKey.class);
-    protected FileKey testfile_txt_key = mock(FileKey.class);
+    protected DispatchKey testfile_1111_txt_key = mock(DispatchKey.class);
+    protected DispatchKey testfile_111_txt_key = mock(DispatchKey.class);
+    protected DispatchKey testfile_121_txt_key = mock(DispatchKey.class);
+    protected DispatchKey testfile_11_xml_key = mock(DispatchKey.class);
+    protected DispatchKey testfile_2111_txt_key = mock(DispatchKey.class);
+    protected DispatchKey testfile_211_txt_key = mock(DispatchKey.class);
+    protected DispatchKey testfile_221_txt_key = mock(DispatchKey.class);
+    protected DispatchKey testfile_21_xml_key = mock(DispatchKey.class);
+    protected DispatchKey testfile_txt_key = mock(DispatchKey.class);
     private final DefaultDispatchRestriction restriction = new DefaultDispatchRestrictionFactory().createRestriction(root_dir_path.getFileSystem());
 
     @Override
@@ -52,7 +52,7 @@ public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
 
     protected abstract Configuration configuration();
 
-    private void setupKey(final FileKey pKey, final Path pPath, final Object pDirectoryKey) {
+    private void setupKey(final DispatchKey pKey, final Path pPath, final Object pDirectoryKey) {
         when(pKey.getDirectoryKey()).thenReturn(pDirectoryKey);
         when(pKey.getRelativePath()).thenReturn(pPath);
     }

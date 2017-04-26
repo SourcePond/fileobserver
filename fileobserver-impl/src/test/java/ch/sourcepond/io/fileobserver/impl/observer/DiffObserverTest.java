@@ -16,12 +16,12 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.checksum.api.UpdateObserver;
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
-import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private static final long TIMEOUT = 2000;
     private static final Object DIRECTORY_KEY = "getDirectoryKey";
     private final Config config = mock(Config.class);
-    private final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
+    private final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
     private final DedicatedFileSystem fs = mock(DedicatedFileSystem.class);
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
     private final ExecutorService observerExecutor = newSingleThreadExecutor();
@@ -63,9 +63,9 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Directory subdir_21 = mock(Directory.class);
     private final Directory subdir_211 = mock(Directory.class);
     private final Directory subdir_22 = mock(Directory.class);
-    private final FileKey supplementKey1 = mock(FileKey.class);
-    private final FileKey supplementKey2 = mock(FileKey.class);
-    private final FileKey supplementKey3 = mock(FileKey.class);
+    private final DispatchKey supplementKey1 = mock(DispatchKey.class);
+    private final DispatchKey supplementKey2 = mock(DispatchKey.class);
+    private final DispatchKey supplementKey3 = mock(DispatchKey.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
     private final ObserverManager manager = new ObserverManager();
@@ -93,7 +93,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         });
     }
 
-    private FileKey key(final Path pRoot, final Path pFile) {
+    private DispatchKey key(final Path pRoot, final Path pFile) {
         return keyFactory.newKey(DIRECTORY_KEY, pRoot.relativize(pFile));
     }
 
@@ -257,7 +257,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         when(update.hasChanged()).thenReturn(true);
         informDiscard(subdir_111_path);
 
-        final FileKey key = key(subdir_111_path, testfile_1111_txt_path);
+        final DispatchKey key = key(subdir_111_path, testfile_1111_txt_path);
         diff.supplement(key, supplementKey1);
         diff.supplement(key, supplementKey2);
         diff.supplement(key, supplementKey3);

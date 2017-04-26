@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Resource;
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -94,18 +94,18 @@ public abstract class Directory {
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
-     * Creates a new collection of {@link FileKey} objects. Therefore, the directory-key of every watched-directory
+     * Creates a new collection of {@link DispatchKey} objects. Therefore, the directory-key of every watched-directory
      * returned by {@link #getWatchedDirectories()} will be combined with the relative path of the
      * file specified. If a watched-directory does blacklist the file specified, no key for that directory will be
      * generated. The relative path is the relativization between the root-directory and
      * the file specified (see {@link #relativizeAgainstRoot(WatchedDirectory, Path)}).
      *
      * @param pFile File to relativize against {@link #getPath()}, must not be {@code null}
-     * @return New collection of {@link FileKey} objects, never {@code null}
+     * @return New collection of {@link DispatchKey} objects, never {@code null}
      */
-    private Collection<FileKey> createKeys(final Path pFile) {
+    private Collection<DispatchKey> createKeys(final Path pFile) {
         final Collection<WatchedDirectory> watchedDirectories = getWatchedDirectories();
-        final List<FileKey> keys = new ArrayList<>(watchedDirectories.size());
+        final List<DispatchKey> keys = new ArrayList<>(watchedDirectories.size());
         for (final WatchedDirectory watchedDirectory : watchedDirectories) {
             final Path relativePath = relativizeAgainstRoot(watchedDirectory, pFile);
 
@@ -137,8 +137,8 @@ public abstract class Directory {
 
     /**
      * <p>Adds the watched-directory specified to this directory instance. When a change is detected, a
-     * {@link FileKey} will be generated for every {@link WatchedDirectory#getKey()}/relative-path combination.
-     * This {@link FileKey} instance will then be delivered (along with the readable file path)
+     * {@link DispatchKey} will be generated for every {@link WatchedDirectory#getKey()}/relative-path combination.
+     * This {@link DispatchKey} instance will then be delivered (along with the readable file path)
      * to the {@link FileObserver} objects which should be informed.</p>
      * <p>
      * <p>Note: The object returned by {@link WatchedDirectory#getKey()} should be <em>immutable</em>,
@@ -163,7 +163,7 @@ public abstract class Directory {
 
     /**
      * Removes the watched-directory specified from this directory instance and informs
-     * the observers specified through their {@link FileObserver#discard(FileKey)}. If no such
+     * the observers specified through their {@link FileObserver#discard(DispatchKey)}. If no such
      * watched-directory is registered nothing happens.
      *
      * @param pWatchedDirectory Directory-key to be removed, must be not {@code null}
@@ -176,7 +176,7 @@ public abstract class Directory {
 
         // Now, the key can be safely removed
         if (remove(pWatchedDirectory) && pDispatcher.hasObservers()) {
-            final FileKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
+            final DispatchKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
             pDispatcher.discard(key);
         }
     }
@@ -196,7 +196,7 @@ public abstract class Directory {
     /**
      * Iterates over the files contained by this directory and creates tasks which will be executed
      * sometime in the future. Such a task will inform the observer specified through its
-     * {@link FileObserver#modified(FileKey, Path)} method. Note: only direct children will be
+     * {@link FileObserver#modified(DispatchKey, Path)} method. Note: only direct children will be
      * considered, sub-directories and non-regular files will be ignored.
      */
     public void forceInform(final EventDispatcher pDispatcher) {
@@ -214,7 +214,7 @@ public abstract class Directory {
 
     /**
      * Iterates over the observers specified and informs them that the file specified has
-     * been discarded through their {@link FileObserver#discard(FileKey)} method. The observers
+     * been discarded through their {@link FileObserver#discard(DispatchKey)} method. The observers
      * will be called asynchronously sometime in the future.
      *
      * @param pFile Discarded file, must be {@code null}
@@ -243,7 +243,7 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link FileObserver#modified(FileKey, Path)} on all observers specified if the
+     * Triggers the {@link FileObserver#modified(DispatchKey, Path)} on all observers specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
@@ -257,7 +257,7 @@ public abstract class Directory {
                             if (update.hasChanged()) {
                                 // If the modification is requested because a new root-directory has been registered, we
                                 // need to inform the observers about supplement keys.
-                                final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
+                                final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
                                         emptyList() : pNewRootOrNull.createKeys(pFile);
 
                                 createKeys(pFile).forEach(k -> pDispatcher.modified(k, pFile, supplementKeys));
@@ -270,7 +270,7 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link FileObserver#modified(FileKey, Path)} on all observers specified if the
+     * Triggers the {@link FileObserver#modified(DispatchKey, Path)} on all observers specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *

@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Resource;
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,7 +46,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         root_dir.addWatchedDirectory(watchedRootDir);
     }
 
-    private FileKey toKey(final Path pBasePath, final Path pPath) {
+    private DispatchKey toKey(final Path pBasePath, final Path pPath) {
         return argThat(k -> pBasePath.relativize(pPath).equals(k.getRelativePath()));
     }
 

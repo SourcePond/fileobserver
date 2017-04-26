@@ -11,18 +11,16 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.filekey;
+package ch.sourcepond.io.fileobserver.impl.dispatch;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
-
-import java.nio.file.Path;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
+import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 
 /**
  *
  */
-public class DefaultFileKeyFactory {
+@FunctionalInterface
+public interface KeyDeliveryConsumer {
 
-    public FileKey newKey(final Object pKey, final Path pRelativePath) {
-        return new DefaultFileKey(pKey, pRelativePath);
-    }
+    void consume(KeyDeliveryHook pHook, DispatchKey pKey);
 }

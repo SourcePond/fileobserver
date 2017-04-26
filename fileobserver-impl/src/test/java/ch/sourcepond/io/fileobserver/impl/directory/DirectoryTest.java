@@ -17,7 +17,7 @@ import ch.sourcepond.io.checksum.api.*;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
@@ -53,7 +53,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
     final Executor directoryWalkerExecutor = directExecutor();
     final ExecutorService observerExecutor = newSingleThreadExecutor();
-    final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
+    final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
     final ObserverManager manager = new ObserverManager();
     final EventDispatcher dispatcher = manager.getDefaultDispatcher();
     final DirectoryFactory factory = new DirectoryFactory(

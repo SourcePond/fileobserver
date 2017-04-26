@@ -29,19 +29,19 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class FileKeyTest {
+public class DispatchKeyTest {
     private static final String ANY_NAME = "anyName";
     private static final String DIRECTORY_KEY_1 = "directoryKey1";
     private static final String DIRECTORY_KEY_2 = "directoryKey2";
     private final Path path = mock(Path.class, withSettings().name("root"));
     private Path otherPath = mock(Path.class);
     private final Path fileName = mock(Path.class, withSettings().name(ANY_NAME));
-    private final FileKey key1 = mock(FileKey.class);
-    private final FileKey key2 = mock(FileKey.class);
-    private final FileKey key3 = mock(FileKey.class);
-    private final FileKey key4 = mock(FileKey.class);
+    private final DispatchKey key1 = mock(DispatchKey.class);
+    private final DispatchKey key2 = mock(DispatchKey.class);
+    private final DispatchKey key3 = mock(DispatchKey.class);
+    private final DispatchKey key4 = mock(DispatchKey.class);
 
-    private void setup(final FileKey pKey, final String pDirectoryKey, final Path pPath) {
+    private void setup(final DispatchKey pKey, final String pDirectoryKey, final Path pPath) {
         doCallRealMethod().when(pKey).isSubKeyOf(any());
         doCallRealMethod().when(pKey).isParentKeyOf(any());
         doCallRealMethod().when(pKey).findSubKeys(any());
@@ -88,7 +88,7 @@ public class FileKeyTest {
     @Test
     public void findSubKeys() {
         when(otherPath.startsWith(path)).thenReturn(true);
-        final Collection<FileKey> subKeys = key1.findSubKeys(asList(key2, key3, key4));
+        final Collection<DispatchKey> subKeys = key1.findSubKeys(asList(key2, key3, key4));
         assertEquals(1, subKeys.size());
         assertSame(key3, subKeys.iterator().next());
     }
@@ -96,13 +96,13 @@ public class FileKeyTest {
     @Test
     public void removeKeys() {
         when(otherPath.startsWith(path)).thenReturn(true);
-        final List<FileKey> keys = new LinkedList<>();
+        final List<DispatchKey> keys = new LinkedList<>();
         keys.add(key2);
         keys.add(key3);
         keys.add(key4);
         key1.removeSubKeys(keys);
         assertEquals(2, keys.size());
-        final Iterator<FileKey> it = keys.iterator();
+        final Iterator<DispatchKey> it = keys.iterator();
         assertSame(key2, it.next());
         assertSame(key4, it.next());
     }

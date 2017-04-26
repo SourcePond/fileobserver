@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -85,11 +85,11 @@ public class FileObserverTest {
         };
     }
 
-    private static FileKey key(final DirectoryKey pKey, final Path pRelativePath) {
-        return argThat(new ArgumentMatcher<FileKey>() {
+    private static DispatchKey key(final DirectoryKey pKey, final Path pRelativePath) {
+        return argThat(new ArgumentMatcher<DispatchKey>() {
             @Override
-            public boolean matches(final FileKey fileKey) {
-                return pKey.equals(fileKey.getDirectoryKey()) && fileKey.getRelativePath().equals(pRelativePath);
+            public boolean matches(final DispatchKey dispatchKey) {
+                return pKey.equals(dispatchKey.getDirectoryKey()) && dispatchKey.getRelativePath().equals(pRelativePath);
             }
 
             @Override

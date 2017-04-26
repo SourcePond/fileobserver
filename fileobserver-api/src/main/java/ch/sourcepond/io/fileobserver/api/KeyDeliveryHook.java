@@ -20,27 +20,27 @@ import java.nio.file.Path;
  */
 public interface KeyDeliveryHook {
 
-    default void before(final FileKey pKey) {
+    default void before(final DispatchKey pKey) {
         // noop by default
     }
 
-    default void after(final FileKey pKey) {
+    default void after(final DispatchKey pKey) {
         // noop by default
     }
 
-    default void beforeModify(final FileKey pKey, Path pFile) {
+    default void beforeModify(final DispatchKey pKey, Path pFile) {
         before(pKey);
     }
 
-    default void beforeDiscard(final FileKey pKey) {
+    default void beforeDiscard(final DispatchKey pKey) {
         before(pKey);
     }
 
-    default void afterModify(final FileKey pKey, Path pFile) {
+    default void afterModify(final DispatchKey pKey, Path pFile) {
         after(pKey);
     }
 
-    default void afterDiscard(final FileKey pKey) {
+    default void afterDiscard(final DispatchKey pKey) {
         after(pKey);
     }
 }

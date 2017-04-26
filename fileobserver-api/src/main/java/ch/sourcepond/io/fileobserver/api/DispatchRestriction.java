@@ -25,7 +25,7 @@ package ch.sourcepond.io.fileobserver.api;
  * <li>When none of the {@code add*} methods has been called during the observer setup, any path modification or discard
  * will be delivered if it it has an accepted directory-key.</li>
  * <li>When one of the {@code add*} methods has been called at least once, a path modification or discard will only be
- * delivered it it has an accepted directory-key, and, {@link FileKey#getRelativePath()} matches at least one added
+ * delivered it it has an accepted directory-key, and, {@link DispatchKey#getRelativePath()} matches at least one added
  * rule.</li>
  * </ul>
  * It is optional to restrict the file-observer so that it receives certain events only.
@@ -35,8 +35,8 @@ public interface DispatchRestriction extends SimpleDispatchRestriction {
 
     /**
      * <p>Determines, which directory-keys should be accepted by the {@link FileObserver}. This means, that a path
-     * modification or discard is only delivered to the observer, if the directory-key of the associated {@link FileKey}
-     * is contained in the keys specified, see {@link FileKey#getDirectoryKey()}.</p>
+     * modification or discard is only delivered to the observer, if the directory-key of the associated {@link DispatchKey}
+     * is contained in the keys specified, see {@link DispatchKey#getDirectoryKey()}.</p>
      *
      * @param pDirectoryKeys Directory-keys to be accepted by the file-observer, must not be {@code null}
      * @throws NullPointerException Thrown, if a key is {@code null}

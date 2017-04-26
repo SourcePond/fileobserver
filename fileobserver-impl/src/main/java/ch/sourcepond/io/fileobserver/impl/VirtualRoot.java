@@ -18,7 +18,7 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.filekey.DefaultFileKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
@@ -68,7 +68,7 @@ public class VirtualRoot implements RelocationObserver {
     // Constructor for BundleActivator
     public VirtualRoot() {
         manager = new ObserverManager();
-        final DefaultFileKeyFactory keyFactory = new DefaultFileKeyFactory();
+        final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
                 manager);

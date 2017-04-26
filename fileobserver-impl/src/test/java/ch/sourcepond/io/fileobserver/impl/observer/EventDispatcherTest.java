@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.FileKey;
+import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.FileObserver;
 import org.junit.Test;
 
@@ -35,9 +35,9 @@ public class EventDispatcherTest {
     private final ObserverManager manager = mock(ObserverManager.class);
     private final FileObserver observer = mock(FileObserver.class);
     private final Collection<FileObserver> observers = asList(observer);
-    private final FileKey key = mock(FileKey.class);
-    private final Collection<FileKey> keys = asList(key);
-    private final Collection<FileKey> parentKeys = mock(Collection.class);
+    private final DispatchKey key = mock(DispatchKey.class);
+    private final Collection<DispatchKey> keys = asList(key);
+    private final Collection<DispatchKey> parentKeys = mock(Collection.class);
     private final Path file = mock(Path.class);
     private EventDispatcher dispatcher = new EventDispatcher(manager, observers);
 
