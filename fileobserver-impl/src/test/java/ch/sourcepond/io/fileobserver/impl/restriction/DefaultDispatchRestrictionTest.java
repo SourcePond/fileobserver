@@ -34,15 +34,15 @@ import static org.mockito.Mockito.when;
 public abstract class DefaultDispatchRestrictionTest extends CopyResourcesTest {
     private static final Object ANY_ACCEPTED_DIRECTORY_KEY = new Object();
     private static final Object ANY_IGNORED_DIRECTORY_KEY = new Object();
-    protected FileKey<Object> testfile_1111_txt_key = mock(FileKey.class);
-    protected FileKey<Object> testfile_111_txt_key = mock(FileKey.class);
-    protected FileKey<Object> testfile_121_txt_key = mock(FileKey.class);
-    protected FileKey<Object> testfile_11_xml_key = mock(FileKey.class);
-    protected FileKey<Object> testfile_2111_txt_key = mock(FileKey.class);
-    protected FileKey<Object> testfile_211_txt_key = mock(FileKey.class);
-    protected FileKey<Object> testfile_221_txt_key = mock(FileKey.class);
-    protected FileKey<Object> testfile_21_xml_key = mock(FileKey.class);
-    protected FileKey<Object> testfile_txt_key = mock(FileKey.class);
+    protected FileKey testfile_1111_txt_key = mock(FileKey.class);
+    protected FileKey testfile_111_txt_key = mock(FileKey.class);
+    protected FileKey testfile_121_txt_key = mock(FileKey.class);
+    protected FileKey testfile_11_xml_key = mock(FileKey.class);
+    protected FileKey testfile_2111_txt_key = mock(FileKey.class);
+    protected FileKey testfile_211_txt_key = mock(FileKey.class);
+    protected FileKey testfile_221_txt_key = mock(FileKey.class);
+    protected FileKey testfile_21_xml_key = mock(FileKey.class);
+    protected FileKey testfile_txt_key = mock(FileKey.class);
     private final DefaultDispatchRestriction restriction = new DefaultDispatchRestrictionFactory().createRestriction(root_dir_path.getFileSystem());
 
     @Override

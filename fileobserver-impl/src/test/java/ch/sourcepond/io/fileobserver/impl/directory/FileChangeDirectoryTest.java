@@ -46,7 +46,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         root_dir.addWatchedDirectory(watchedRootDir);
     }
 
-    private FileKey<?> toKey(final Path pBasePath, final Path pPath) {
+    private FileKey toKey(final Path pBasePath, final Path pPath) {
         return argThat(k -> pBasePath.relativize(pPath).equals(k.getRelativePath()));
     }
 

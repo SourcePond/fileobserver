@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
  *
  */
 public class KeyDeliveryHookTest {
-    private final FileKey<?> key = mock(FileKey.class);
+    private final FileKey key = mock(FileKey.class);
     private final Path file = mock(Path.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
 

@@ -40,12 +40,12 @@ class DispatcherTask implements Runnable {
     private final Consumer<FileObserver> fireEventConsumer;
     private final KeyDeliveryConsumer beforeConsumer;
     private final KeyDeliveryConsumer afterConsumer;
-    private final FileKey<?> key;
+    private final FileKey key;
 
     DispatcherTask(final ExecutorService pObserverExecutor,
                    final Collection<KeyDeliveryHook> pHooks,
                    final Collection<FileObserver> pObservers,
-                   final FileKey<?> pKey,
+                   final FileKey pKey,
                    final Consumer<FileObserver> pFireEventConsumer,
                    final KeyDeliveryConsumer pBeforeConsumer,
                    final KeyDeliveryConsumer pAfterConsumer) {

@@ -30,10 +30,10 @@ public class DefaultFileKeyTest {
     private static final String DIRECTORY_KEY_2 = "directoryKey2";
     private final Path path = mock(Path.class, withSettings().name("root"));
     private Path otherPath = mock(Path.class);
-    private final FileKey<Object> key1 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
-    private final FileKey<Object> key2 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
-    private final FileKey<Object> key3 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, otherPath);
-    private FileKey<?> key4 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
+    private final FileKey key1 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
+    private final FileKey key2 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, path);
+    private final FileKey key3 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_1, otherPath);
+    private FileKey key4 = new DefaultFileKeyFactory().newKey(DIRECTORY_KEY_2, otherPath);
 
     @Test
     public void key() {

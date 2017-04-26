@@ -59,7 +59,7 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
         existing_root_12 = existing_root_12.rebase(new_root);
     }
 
-    private FileKey<?> toKey(final Object pDirectoryKey, final Path pBasePath, final Path pPath) {
+    private FileKey toKey(final Object pDirectoryKey, final Path pBasePath, final Path pPath) {
         return argThat(k -> pDirectoryKey.equals(k.getDirectoryKey()) && pBasePath.relativize(pPath).equals(k.getRelativePath()));
     }
 

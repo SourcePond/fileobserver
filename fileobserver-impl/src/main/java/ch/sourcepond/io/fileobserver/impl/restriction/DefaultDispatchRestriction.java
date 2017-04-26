@@ -76,7 +76,7 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
         return new DefaultPathMatcherBuilder(matcherFactory, this, fs).andWith(pMatcher);
     }
 
-    public boolean isAccepted(final FileKey<?> pFileKey) {
+    public boolean isAccepted(final FileKey pFileKey) {
         final Object directoryKey = pFileKey.getDirectoryKey();
         final Path relativePath = pFileKey.getRelativePath();
         final List<PathMatcher> m = matchers;

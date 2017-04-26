@@ -103,9 +103,9 @@ public abstract class Directory {
      * @param pFile File to relativize against {@link #getPath()}, must not be {@code null}
      * @return New collection of {@link FileKey} objects, never {@code null}
      */
-    private Collection<FileKey<?>> createKeys(final Path pFile) {
+    private Collection<FileKey> createKeys(final Path pFile) {
         final Collection<WatchedDirectory> watchedDirectories = getWatchedDirectories();
-        final List<FileKey<?>> keys = new ArrayList<>(watchedDirectories.size());
+        final List<FileKey> keys = new ArrayList<>(watchedDirectories.size());
         for (final WatchedDirectory watchedDirectory : watchedDirectories) {
             final Path relativePath = relativizeAgainstRoot(watchedDirectory, pFile);
 
@@ -257,7 +257,7 @@ public abstract class Directory {
                             if (update.hasChanged()) {
                                 // If the modification is requested because a new root-directory has been registered, we
                                 // need to inform the observers about supplement keys.
-                                final Collection<FileKey<?>> supplementKeys = pNewRootOrNull == null ?
+                                final Collection<FileKey> supplementKeys = pNewRootOrNull == null ?
                                         emptyList() : pNewRootOrNull.createKeys(pFile);
 
                                 createKeys(pFile).forEach(k -> pDispatcher.modified(k, pFile, supplementKeys));

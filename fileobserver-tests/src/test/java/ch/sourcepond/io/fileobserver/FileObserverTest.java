@@ -85,10 +85,10 @@ public class FileObserverTest {
         };
     }
 
-    private static FileKey<?> key(final DirectoryKey pKey, final Path pRelativePath) {
-        return argThat(new ArgumentMatcher<FileKey<?>>() {
+    private static FileKey key(final DirectoryKey pKey, final Path pRelativePath) {
+        return argThat(new ArgumentMatcher<FileKey>() {
             @Override
-            public boolean matches(final FileKey<?> fileKey) {
+            public boolean matches(final FileKey fileKey) {
                 return pKey.equals(fileKey.getDirectoryKey()) && fileKey.getRelativePath().equals(pRelativePath);
             }
 

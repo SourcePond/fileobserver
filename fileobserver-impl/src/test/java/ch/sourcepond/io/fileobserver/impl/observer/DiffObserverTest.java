@@ -63,9 +63,9 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Directory subdir_21 = mock(Directory.class);
     private final Directory subdir_211 = mock(Directory.class);
     private final Directory subdir_22 = mock(Directory.class);
-    private final FileKey<?> supplementKey1 = mock(FileKey.class);
-    private final FileKey<?> supplementKey2 = mock(FileKey.class);
-    private final FileKey<?> supplementKey3 = mock(FileKey.class);
+    private final FileKey supplementKey1 = mock(FileKey.class);
+    private final FileKey supplementKey2 = mock(FileKey.class);
+    private final FileKey supplementKey3 = mock(FileKey.class);
     private final Resource resource = mock(Resource.class);
     private final Update update = mock(Update.class);
     private final ObserverManager manager = new ObserverManager();
@@ -93,7 +93,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         });
     }
 
-    private FileKey<?> key(final Path pRoot, final Path pFile) {
+    private FileKey key(final Path pRoot, final Path pFile) {
         return keyFactory.newKey(DIRECTORY_KEY, pRoot.relativize(pFile));
     }
 
@@ -257,7 +257,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         when(update.hasChanged()).thenReturn(true);
         informDiscard(subdir_111_path);
 
-        final FileKey<?> key = key(subdir_111_path, testfile_1111_txt_path);
+        final FileKey key = key(subdir_111_path, testfile_1111_txt_path);
         diff.supplement(key, supplementKey1);
         diff.supplement(key, supplementKey2);
         diff.supplement(key, supplementKey3);

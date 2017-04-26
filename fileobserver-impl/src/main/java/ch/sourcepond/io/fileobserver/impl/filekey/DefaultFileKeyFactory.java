@@ -22,7 +22,7 @@ import java.nio.file.Path;
  */
 public class DefaultFileKeyFactory {
 
-    public FileKey<Object> newKey(final Object pKey, final Path pRelativePath) {
+    public FileKey newKey(final Object pKey, final Path pRelativePath) {
         return new DefaultFileKey(pKey, pRelativePath);
     }
 }

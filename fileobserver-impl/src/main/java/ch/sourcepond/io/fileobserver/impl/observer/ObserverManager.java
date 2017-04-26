@@ -101,11 +101,11 @@ public class ObserverManager {
     }
 
     private static void fireModification(final FileObserver pObserver,
-                                         final FileKey<?> pKey,
+                                         final FileKey pKey,
                                          final Path pFile,
-                                         final Collection<FileKey<?>> pParentKeys) {
+                                         final Collection<FileKey> pParentKeys) {
         if (!pParentKeys.isEmpty()) {
-            for (final FileKey<?> parentKey : pParentKeys) {
+            for (final FileKey parentKey : pParentKeys) {
                 /*
                  * Suppose:
                  * Parent /A [dirKey:K2] -> Has been added as new root
@@ -133,7 +133,7 @@ public class ObserverManager {
         return restriction;
     }
 
-    private boolean isAccepted(final FileObserver pObserver, final FileKey<?> pFileKey) {
+    private boolean isAccepted(final FileObserver pObserver, final FileKey pFileKey) {
         final FileSystem fs = pFileKey.getRelativePath().getFileSystem();
         return observers.computeIfAbsent(
                 pObserver, o -> new ConcurrentHashMap<>()).
@@ -141,7 +141,7 @@ public class ObserverManager {
     }
 
     private void submitTask(final Collection<FileObserver> pObservers,
-                            final FileKey<?> pKey,
+                            final FileKey pKey,
                             final Consumer<FileObserver> pFireEventConsumer,
                             final KeyDeliveryConsumer pBeforeConsumer,
                             final KeyDeliveryConsumer pAfterConsumer) {
@@ -160,11 +160,11 @@ public class ObserverManager {
         }
     }
 
-    void modified(final Collection<FileObserver> pObservers, final Collection<FileKey<?>> pKeys, final Path pFile, final Collection<FileKey<?>> pParentKeys) {
+    void modified(final Collection<FileObserver> pObservers, final Collection<FileKey> pKeys, final Path pFile, final Collection<FileKey> pParentKeys) {
         pKeys.forEach(key -> modified(pObservers, key, pFile, pParentKeys));
     }
 
-    void modified(final Collection<FileObserver> pObservers, final FileKey<?> pKey, final Path pFile, final Collection<FileKey<?>> pParentKeys) {
+    void modified(final Collection<FileObserver> pObservers, final FileKey pKey, final Path pFile, final Collection<FileKey> pParentKeys) {
         submitTask(
                 pObservers,
                 pKey,
@@ -174,7 +174,7 @@ public class ObserverManager {
         );
     }
 
-    void discard(final Collection<FileObserver> pObservers, final FileKey<?> pKey) {
+    void discard(final Collection<FileObserver> pObservers, final FileKey pKey) {
         submitTask(
                 pObservers,
                 pKey,

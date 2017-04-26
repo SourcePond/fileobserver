@@ -46,9 +46,9 @@ public class ObserverManagerTest {
     private final DefaultDispatchRestrictionFactory restrictionFactory = mock(DefaultDispatchRestrictionFactory.class);
     private final DefaultDispatchRestriction restriction = mock(DefaultDispatchRestriction.class);
     private final ObserverManager manager = new ObserverManager(restrictionFactory);
-    private final FileKey<Object> parentKey = mock(FileKey.class);
-    private final Collection<FileKey<?>> parentKeys = asList(parentKey);
-    private final FileKey<Object> fileKey = mock(FileKey.class);
+    private final FileKey parentKey = mock(FileKey.class);
+    private final Collection<FileKey> parentKeys = asList(parentKey);
+    private final FileKey fileKey = mock(FileKey.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path file = mock(Path.class);
     private final FileObserver observer = mock(FileObserver.class);

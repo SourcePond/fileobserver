@@ -23,7 +23,7 @@ import static java.lang.String.format;
 /**
  *
  */
-final class DefaultFileKey implements FileKey<Object> {
+final class DefaultFileKey implements FileKey {
     private final Object directoryKey;
     private final Path relativePath;
 

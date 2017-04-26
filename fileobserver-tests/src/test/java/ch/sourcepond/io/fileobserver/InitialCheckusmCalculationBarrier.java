@@ -29,13 +29,13 @@ final class InitialCheckusmCalculationBarrier implements FileObserver {
     }
 
     @Override
-    public synchronized void modified(final FileKey<?> pKey, final Path pFile) throws IOException {
+    public synchronized void modified(final FileKey pKey, final Path pFile) throws IOException {
         expectedFiles.remove(pFile);
         notifyAll();
     }
 
     @Override
-    public void discard(final FileKey<?> pKey) {
+    public void discard(final FileKey pKey) {
         // noop
     }
 
