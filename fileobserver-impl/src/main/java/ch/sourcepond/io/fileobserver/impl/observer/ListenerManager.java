@@ -77,7 +77,7 @@ public class ListenerManager implements ReplayDispatcher {
         return defaultDispatcher;
     }
 
-    Collection<PathChangeListener> getObservers() {
+    Collection<PathChangeListener> getListeners() {
         return observers.keySet();
     }
 

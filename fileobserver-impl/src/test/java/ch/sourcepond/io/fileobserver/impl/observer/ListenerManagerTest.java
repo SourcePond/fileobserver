@@ -81,7 +81,7 @@ public class ListenerManagerTest {
     @Test
     public void modifiedCurrentlyNoObserversAvailable() {
         manager.removeObserver(observer);
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         verifyZeroInteractions(observer);
     }
 
@@ -98,35 +98,35 @@ public class ListenerManagerTest {
 
     @Test
     public void removeFileSystem() throws IOException {
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         manager.removeFileSystem(fs);
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         verify(restrictionFactory, times(2)).createRestriction(fs);
     }
 
     @Test
     public void modifiedWithKeyCollection() throws IOException {
-        manager.modified(manager.getObservers(), asList(dispatchKey), file, parentKeys);
+        manager.modified(manager.getListeners(), asList(dispatchKey), file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modified() throws IOException {
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modifiedNotAccepted() throws IOException {
         when(restriction.isAccepted(dispatchKey)).thenReturn(false);
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         verifyZeroInteractions(hook);
     }
 
     @Test
     public void modifiedCurrentlyNoHookAvailable() throws Exception {
         manager.removeHook(hook);
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         final InOrder order = inOrder(hook, observer);
         order.verify(observer, timeout(1000)).supplement(dispatchKey, parentKey);
         order.verify(observer, timeout(1000)).modified(dispatchEvent);
@@ -136,14 +136,14 @@ public class ListenerManagerTest {
     @Test
     public void modifiedBeforeModifiedFailed() throws IOException {
         doThrow(RuntimeException.class).when(hook).beforeModify(dispatchKey, file);
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modifiedObserverFailed() throws IOException {
         doThrow(IOException.class).when(observer).modified(dispatchEvent);
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
@@ -155,24 +155,23 @@ public class ListenerManagerTest {
         }).when(hook).beforeModify(dispatchKey, file);
         doThrow(RuntimeException.class).when(hook).beforeModify(dispatchKey, file);
         sleep(200);
-        manager.modified(manager.getObservers(), dispatchKey, file, parentKeys);
+        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         assertTrue(dispatcherExecutor.shutdownNow().isEmpty());
         verify(observer).restrict(restriction);
         verifyNoMoreInteractions(observer);
     }
 
-
     @Test
     public void discardCurrentlyNoObserversAvailable() {
         manager.removeObserver(observer);
-        manager.discard(manager.getObservers(), dispatchKey);
+        manager.discard(manager.getListeners(), dispatchKey);
         verifyZeroInteractions(observer);
     }
 
     @Test
     public void discardCurrentlyNoHookAvailable() {
         manager.removeHook(hook);
-        manager.discard(manager.getObservers(), dispatchKey);
+        manager.discard(manager.getListeners(), dispatchKey);
         final InOrder order = inOrder(hook, observer);
         order.verify(observer, timeout(1000)).discard(dispatchKey);
         order.verifyNoMoreInteractions();
@@ -180,7 +179,7 @@ public class ListenerManagerTest {
 
     @Test
     public void discard() {
-        manager.discard(manager.getObservers(), dispatchKey);
+        manager.discard(manager.getListeners(), dispatchKey);
         final InOrder order = inOrder(hook, observer);
         order.verify(hook, timeout(1000)).beforeDiscard(dispatchKey);
         order.verify(observer, timeout(1000)).discard(dispatchKey);
