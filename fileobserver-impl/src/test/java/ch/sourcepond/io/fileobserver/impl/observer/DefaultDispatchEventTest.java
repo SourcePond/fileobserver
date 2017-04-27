@@ -55,4 +55,9 @@ public class DefaultDispatchEventTest {
         assertEquals(2, event.getNumReplays());
         verify(replayDispatcher, times(2)).replay(listener, event, parentKeys);
     }
+
+    @Test
+    public void verifyToString() {
+        assertEquals("DispatchEvent[key: " + key + ", numReplays: 0, file: " + file + "]", event.toString());
+    }
 }

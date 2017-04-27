@@ -63,4 +63,9 @@ class DefaultDispatchEvent implements DispatchEvent {
         numReplays++;
         replayDispatcher.replay(listener, this, parentKeys);
     }
+
+    @Override
+    public String toString() {
+        return "DispatchEvent[key: " + key + ", numReplays: " + numReplays + ", file: " + file + "]";
+    }
 }
