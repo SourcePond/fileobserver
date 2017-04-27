@@ -13,9 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.restriction;
 
-import ch.sourcepond.io.fileobserver.api.DispatchRestriction;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.PathMatcherBuilder;
+import ch.sourcepond.io.fileobserver.api.DispatchRestriction;
 import ch.sourcepond.io.fileobserver.api.SimpleDispatchRestriction;
 
 import java.nio.file.FileSystem;
@@ -33,24 +32,13 @@ import static java.util.Objects.requireNonNull;
  */
 public class DefaultDispatchRestriction implements DispatchRestriction {
     private static final Object ACCEPT_ALL = new Object();
-    private final CompoundPathMatcherFactory matcherFactory;
     private final Set<Object> acceptedDirectoryKeys = new CopyOnWriteArraySet<>();
     private final List<PathMatcher> matchers = new CopyOnWriteArrayList<>();
     private final FileSystem fs;
 
     // Constructor for activator
     DefaultDispatchRestriction(final FileSystem pFs) {
-        this(pFs, new CompoundPathMatcherFactory());
-    }
-
-    // Constructor for testing
-    DefaultDispatchRestriction(final FileSystem pFs, final CompoundPathMatcherFactory pMatcherFactory) {
-        matcherFactory = pMatcherFactory;
         fs = pFs;
-    }
-
-    void addMatchers(final CompoundPathMatcher pCompoundMatcher) {
-        matchers.add(pCompoundMatcher);
     }
 
     private void validateInitialState() {
@@ -79,13 +67,15 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
     }
 
     @Override
-    public PathMatcherBuilder whenPathMatches(final String pSyntaxAndPattern) {
-        return new DefaultPathMatcherBuilder(matcherFactory, this, fs).and(pSyntaxAndPattern);
+    public SimpleDispatchRestriction addPathMatcher(final String pSyntaxAndPattern) {
+        matchers.add(fs.getPathMatcher(pSyntaxAndPattern));
+        return this;
     }
 
     @Override
-    public PathMatcherBuilder whenPathMatches(final PathMatcher pMatcher) {
-        return new DefaultPathMatcherBuilder(matcherFactory, this, fs).and(pMatcher);
+    public SimpleDispatchRestriction addPathMatcher(final PathMatcher pCustomMatcher) {
+        matchers.add(pCustomMatcher);
+        return this;
     }
 
     public boolean isAccepted(final DispatchKey pDispatchKey) {

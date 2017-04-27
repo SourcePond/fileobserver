@@ -16,17 +16,17 @@ package ch.sourcepond.io.fileobserver.api;
 import java.io.IOException;
 
 /**
- * <p>Listener to receive notifications about changes on files
- * within a watched directory and its sub-directories.</p>
- * <p><em>Implementations of this interface must be thread-safe.</em></p>
+ * <p>Listener to receive notifications about changes on files within a watched directory and its sub-directories.</p>
+ * <p>Note: implementations of this interface must be <em>thread-safe</em>.</p>
+ *
  */
 public interface PathChangeListener {
 
     /**
      * <p>Setups the restriction object. That object will always be checked before any event is delivered to
      * {@link #modified(PathChangeEvent)}, {@link #supplement(DispatchKey, DispatchKey)}, or
-     * {@link #discard(DispatchKey)}. This method is will be called once during this observer instance
-     * is being registered.</p>
+     * {@link #discard(DispatchKey)}. This method will be called asynchronously for every detected
+     * {@link java.nio.file.FileSystem}.</p>
      * <p>Note: Implementing this method is optional; the default method tells the restriction object to accept
      * anything.</p>
      *

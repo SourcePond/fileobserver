@@ -21,21 +21,20 @@ import java.nio.file.PathMatcher;
 public interface SimpleDispatchRestriction {
 
     /**
-     * Adds a new {@link PathMatcher}, which matches the pattern specified, to the compound matcher being
-     * constructed, see {@link PathMatcherBuilder#and(String)}.
+     * <p>Adds a new {@link PathMatcher}, which matches the pattern specified to this restriction.
+     * For instance, pattern "glob:&lowast;&lowast;/&lowast;.jpg" would match any path ending with
+     * "jpg", see {@link java.nio.file.FileSystem#getPathMatcher(String)} for further information.</p>
      *
      * @param pSyntaxAndPattern The syntax and the pattern, must not be {@code null}
-     * @return Associated builder, never {@code null}
+     * @return This object, never {@code null}
      */
-    PathMatcherBuilder whenPathMatches(String pSyntaxAndPattern);
-
+    SimpleDispatchRestriction addPathMatcher(String pSyntaxAndPattern);
 
     /**
-     * Adds the custom {@link PathMatcher} specified to the compound matcher being constructed, see
-     * {@link PathMatcherBuilder#and(PathMatcher)}.
+     * Adds the custom {@link PathMatcher} specified to this restriction.
      *
-     * @param pMatcher A custom matcher, must not be {@code null}
-     * @return Associated builder, never {@code null}
+     * @param pCustomMatcher A custom matcher, must not be {@code null}
+     * @return This object, never {@code null}
      */
-    PathMatcherBuilder whenPathMatches(PathMatcher pMatcher);
+    SimpleDispatchRestriction addPathMatcher(PathMatcher pCustomMatcher);
 }
