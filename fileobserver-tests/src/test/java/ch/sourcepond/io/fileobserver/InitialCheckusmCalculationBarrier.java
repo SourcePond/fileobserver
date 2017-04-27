@@ -1,6 +1,6 @@
 package ch.sourcepond.io.fileobserver;
 
-import ch.sourcepond.io.fileobserver.api.DispatchEvent;
+import ch.sourcepond.io.fileobserver.api.ChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 
@@ -30,7 +30,7 @@ final class InitialCheckusmCalculationBarrier implements PathChangeListener {
     }
 
     @Override
-    public synchronized void modified(final DispatchEvent pEvent) throws IOException {
+    public synchronized void modified(final ChangeEvent pEvent) throws IOException {
         expectedFiles.remove(pEvent.getFile());
         notifyAll();
     }

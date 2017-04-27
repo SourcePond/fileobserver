@@ -24,7 +24,7 @@ public interface PathChangeListener {
 
     /**
      * <p>Setups the restriction object. That object will always be checked before any event is delivered to
-     * {@link #modified(DispatchEvent)}, {@link #supplement(DispatchKey, DispatchKey)}, or
+     * {@link #modified(ChangeEvent)}, {@link #supplement(DispatchKey, DispatchKey)}, or
      * {@link #discard(DispatchKey)}. This method is will be called once during this observer instance
      * is being registered.</p>
      * <p>Note: Implementing this method is optional; the default method tells the restriction object to accept
@@ -43,7 +43,7 @@ public interface PathChangeListener {
      * @param pEvent Event which represents the creation or update of a file, never {@code null}
      * @throws IOException Thrown, if processing of the modified file failed for some reason.
      */
-    void modified(DispatchEvent pEvent) throws IOException;
+    void modified(ChangeEvent pEvent) throws IOException;
 
     /**
      * <p>Indicates, that the file or directory with the {@link DispatchKey} specified has been discarded for some reason
@@ -70,7 +70,7 @@ public interface PathChangeListener {
 
     /**
      * <p>Informs this observer that the known key specified is being supplemented with the additional key
-     * specified. It is guaranteed that this method is executed <em>before</em> {@link #modified(DispatchEvent)} is
+     * specified. It is guaranteed that this method is executed <em>before</em> {@link #modified(ChangeEvent)} is
      * entered with the additional key specified.</p>
      *
      * <p>Explanation: bundle A registers a watched directory with path "/A/B/C". Later, bundle B registers a watched directory

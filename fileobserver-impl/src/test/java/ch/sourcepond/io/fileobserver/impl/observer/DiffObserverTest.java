@@ -16,7 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.checksum.api.UpdateObserver;
-import ch.sourcepond.io.fileobserver.api.DispatchEvent;
+import ch.sourcepond.io.fileobserver.api.ChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
@@ -97,11 +97,11 @@ public class DiffObserverTest extends CopyResourcesTest {
         });
     }
 
-    private DispatchEvent event(final Path pRoot, final Path pFile) {
-        return new DefaultDispatchEvent(observer, key(pRoot, pFile), pFile, emptyList(), replayDispatcher);
+    private ChangeEvent event(final Path pRoot, final Path pFile) {
+        return new DefaultChangeEvent(observer, key(pRoot, pFile), pFile, emptyList(), replayDispatcher);
     }
 
-    private DispatchEvent eventThat(final Path pRoot, final Path pFile) {
+    private ChangeEvent eventThat(final Path pRoot, final Path pFile) {
         return argThat(inv -> inv.getKey().equals(key(pRoot, pFile)));
     }
 

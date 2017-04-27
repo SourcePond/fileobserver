@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.fileobserver.api.ChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
@@ -36,7 +37,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * <p>Walks through a directory structure. For each detected file, the listeners specified
- * will be informed through their {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)}. Each detected
+ * will be informed through their {@link PathChangeListener#modified(ChangeEvent)}. Each detected
  * directory will be registered with the {@link WatchServiceWrapper}, and, be stored in the
  * directory-map specified.</p>
  * <p>
@@ -91,7 +92,7 @@ class DirectoryRegistrationWalker {
 
     /**
      * Registers the directory specified and all its sub-directories with the watch-service held by this object.
-     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the listeners
+     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ChangeEvent)} to the listeners
      * specified.
      *
      * @param pDirectory Newly created directory, must not be {@code null}
@@ -102,7 +103,7 @@ class DirectoryRegistrationWalker {
 
     /**
      * Registers the directory specified and all its sub-directories with the watch-service held by this object.
-     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the listeners
+     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ChangeEvent)} to the listeners
      * specified.
      *
      * @param pNewRoot Newly created directory, must not be {@code null}
@@ -113,7 +114,7 @@ class DirectoryRegistrationWalker {
 
     /**
      * Registers the directory specified and all its sub-directories with the watch-service held by this object.
-     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the listeners
+     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ChangeEvent)} to the listeners
      * specified.
      *
      * @param pNewRootOrNull New root-directory which causes a rebase, or, {@code null}

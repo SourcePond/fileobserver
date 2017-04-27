@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.DispatchEvent;
+import ch.sourcepond.io.fileobserver.api.ChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
@@ -106,7 +106,7 @@ public class ListenerManager implements ReplayDispatcher {
     }
 
     private static void fireModification(final PathChangeListener pObserver,
-                                         final DispatchEvent pEvent,
+                                         final ChangeEvent pEvent,
                                          final Collection<DispatchKey> pParentKeys) {
         final DispatchKey key = pEvent.getKey();
         if (!pParentKeys.isEmpty()) {
@@ -189,7 +189,7 @@ public class ListenerManager implements ReplayDispatcher {
 
     @Override
     public void replay(PathChangeListener pListener,
-                       DispatchEvent pEvent,
+                       ChangeEvent pEvent,
                        Collection<DispatchKey> pParentKeys) {
         submitTask(asList(pListener),
                 pEvent,

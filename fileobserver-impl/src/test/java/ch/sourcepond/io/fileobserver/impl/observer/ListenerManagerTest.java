@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.DispatchEvent;
+import ch.sourcepond.io.fileobserver.api.ChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
@@ -49,20 +49,20 @@ public class ListenerManagerTest {
     private final DispatchEventFactory dispatchEventFactory = mock(DispatchEventFactory.class);
     private final DispatchKey parentKey = mock(DispatchKey.class);
     private final Collection<DispatchKey> parentKeys = asList(parentKey);
-    private final DispatchEvent dispatchEvent = mock(DispatchEvent.class);
+    private final ChangeEvent changeEvent = mock(ChangeEvent.class);
     private final DispatchKey dispatchKey = mock(DispatchKey.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Path file = mock(Path.class);
     private final PathChangeListener listener = mock(PathChangeListener.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
-    private volatile DispatchEvent realEvent;
+    private volatile ChangeEvent realEvent;
     private ListenerManager manager = new ListenerManager(restrictionFactory, dispatchEventFactory);
 
     @Before
     public void setup() {
-        when(dispatchEventFactory.create(listener, dispatchKey, file, parentKeys, manager)).thenReturn(dispatchEvent);
+        when(dispatchEventFactory.create(listener, dispatchKey, file, parentKeys, manager)).thenReturn(changeEvent);
         when(file.getFileSystem()).thenReturn(fs);
-        when(dispatchEvent.getKey()).thenReturn(dispatchKey);
+        when(changeEvent.getKey()).thenReturn(dispatchKey);
         when(dispatchKey.getRelativePath()).thenReturn(file);
         when(restrictionFactory.createRestriction(fs)).thenReturn(restriction);
         when(restriction.isAccepted(dispatchKey)).thenReturn(true);
@@ -96,7 +96,7 @@ public class ListenerManagerTest {
         order.verify(restriction).isAccepted(dispatchKey);
         order.verify(hook, timeout(1000)).beforeModify(dispatchKey, file);
         order.verify(listener, timeout(1000)).supplement(dispatchKey, parentKey);
-        order.verify(listener, timeout(1000)).modified(dispatchEvent);
+        order.verify(listener, timeout(1000)).modified(changeEvent);
         order.verify(hook, timeout(1000)).afterModify(dispatchKey, file);
         order.verifyNoMoreInteractions();
     }
@@ -134,7 +134,7 @@ public class ListenerManagerTest {
         manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         final InOrder order = inOrder(hook, listener);
         order.verify(listener, timeout(1000)).supplement(dispatchKey, parentKey);
-        order.verify(listener, timeout(1000)).modified(dispatchEvent);
+        order.verify(listener, timeout(1000)).modified(changeEvent);
         order.verifyNoMoreInteractions();
     }
 
@@ -147,7 +147,7 @@ public class ListenerManagerTest {
 
     @Test
     public void modifiedObserverFailed() throws IOException {
-        doThrow(IOException.class).when(listener).modified(dispatchEvent);
+        doThrow(IOException.class).when(listener).modified(changeEvent);
         manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
@@ -171,7 +171,7 @@ public class ListenerManagerTest {
         manager = new ListenerManager();
         doCallRealMethod().when(listener).restrict(notNull());
         doAnswer(inv -> {
-            final DispatchEvent event = inv.getArgument(0);
+            final ChangeEvent event = inv.getArgument(0);
             if (realEvent == null) {
                 realEvent = event;
             }
