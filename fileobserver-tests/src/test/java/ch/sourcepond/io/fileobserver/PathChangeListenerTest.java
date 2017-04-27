@@ -139,8 +139,8 @@ public class PathChangeListenerTest {
 
     @Before
     public void setup() throws Exception {
-        doCallRealMethod().when(listener).restrict(notNull());
-        doCallRealMethod().when(secondListener).restrict(notNull());
+        doCallRealMethod().when(listener).restrict(notNull(), same(R.getFileSystem()));
+        doCallRealMethod().when(secondListener).restrict(notNull(), same(R.getFileSystem()));
 
         // Step 1: make fileobserver bundle watching R by
         // registering an appropriate service.

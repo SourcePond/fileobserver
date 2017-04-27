@@ -76,7 +76,7 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
     public void forceInformModifiedAfterRebase() throws Exception {
         existing_root_11.informIfChanged(dispatcher, new_root, testfile_111_txt_path);
         existing_root_12.informIfChanged(dispatcher, new_root, testfile_121_txt_path);
-        verify(listener).restrict(notNull());
+        verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
         verify(listener, timeout(500)).modified(toEvent(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path));
         verify(listener, timeout(500)).modified(toEvent(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path));
         verify(listener, timeout(500)).modified(toEvent(SUB_DIR_KEY1, subdir_11_path, testfile_111_txt_path));

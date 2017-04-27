@@ -143,7 +143,7 @@ public class ListenerManager implements ReplayDispatcher {
 
     private DefaultDispatchRestriction createRestriction(final PathChangeListener pObserver, final FileSystem pFs) {
         final DefaultDispatchRestriction restriction = restrictionFactory.createRestriction(pFs);
-        pObserver.restrict(restriction);
+        pObserver.restrict(restriction, pFs);
         return restriction;
     }
 

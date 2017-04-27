@@ -26,15 +26,15 @@ public interface SimpleDispatchRestriction {
      * "jpg", see {@link java.nio.file.FileSystem#getPathMatcher(String)} for further information.</p>
      *
      * @param pSyntaxAndPattern The syntax and the pattern, must not be {@code null}
-     * @return This object, never {@code null}
+     * @return The newly created {@link PathMatcher}, never {@code null}
      */
-    SimpleDispatchRestriction addPathMatcher(String pSyntaxAndPattern);
+    PathMatcher addPathMatcher(String pSyntaxAndPattern);
 
     /**
      * Adds the custom {@link PathMatcher} specified to this restriction.
      *
      * @param pCustomMatcher A custom matcher, must not be {@code null}
-     * @return This object, never {@code null}
+     * @return The matcher passed as argument, never {@code null}
      */
-    SimpleDispatchRestriction addPathMatcher(PathMatcher pCustomMatcher);
+    PathMatcher addPathMatcher(PathMatcher pCustomMatcher);
 }

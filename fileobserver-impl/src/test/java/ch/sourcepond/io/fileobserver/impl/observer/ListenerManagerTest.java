@@ -92,7 +92,7 @@ public class ListenerManagerTest {
 
     private void verifyHookObserverFlow() throws IOException {
         final InOrder order = inOrder(listener, restriction, hook);
-        order.verify(listener).restrict(restriction);
+        order.verify(listener).restrict(restriction, fs);
         order.verify(restriction).isAccepted(dispatchKey);
         order.verify(hook, timeout(1000)).beforeModify(dispatchKey, file);
         order.verify(listener, timeout(1000)).supplement(dispatchKey, parentKey);
@@ -162,14 +162,14 @@ public class ListenerManagerTest {
         sleep(200);
         manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
         assertTrue(dispatcherExecutor.shutdownNow().isEmpty());
-        verify(listener).restrict(restriction);
+        verify(listener).restrict(restriction, fs);
         verifyNoMoreInteractions(listener);
     }
 
     @Test(timeout = 10000)
     public void clientWantsToReplayEvent() throws Exception {
         manager = new ListenerManager();
-        doCallRealMethod().when(listener).restrict(notNull());
+        doCallRealMethod().when(listener).restrict(notNull(), same(fs));
         doAnswer(inv -> {
             final PathChangeEvent event = inv.getArgument(0);
             if (realEvent == null) {

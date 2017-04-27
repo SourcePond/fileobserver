@@ -67,15 +67,14 @@ public class DefaultDispatchRestriction implements DispatchRestriction {
     }
 
     @Override
-    public SimpleDispatchRestriction addPathMatcher(final String pSyntaxAndPattern) {
-        matchers.add(fs.getPathMatcher(pSyntaxAndPattern));
-        return this;
+    public PathMatcher addPathMatcher(final String pSyntaxAndPattern) {
+        return addPathMatcher(fs.getPathMatcher(pSyntaxAndPattern));
     }
 
     @Override
-    public SimpleDispatchRestriction addPathMatcher(final PathMatcher pCustomMatcher) {
+    public PathMatcher addPathMatcher(final PathMatcher pCustomMatcher) {
         matchers.add(pCustomMatcher);
-        return this;
+        return pCustomMatcher;
     }
 
     public boolean isAccepted(final DispatchKey pDispatchKey) {

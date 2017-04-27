@@ -14,11 +14,11 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.api;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 
 /**
  * <p>Listener to receive notifications about changes on files within a watched directory and its sub-directories.</p>
  * <p>Note: implementations of this interface must be <em>thread-safe</em>.</p>
- *
  */
 public interface PathChangeListener {
 
@@ -31,8 +31,9 @@ public interface PathChangeListener {
      * anything.</p>
      *
      * @param pRestriction Restriction object, never {@code null}.
+     * @param pFileSystem  The file-system for which this restriction applies, never {@code null}
      */
-    default void restrict(final DispatchRestriction pRestriction) {
+    default void restrict(final DispatchRestriction pRestriction, final FileSystem pFileSystem) {
         pRestriction.acceptAll();
     }
 
@@ -52,7 +53,7 @@ public interface PathChangeListener {
      * systems with a native {@link java.nio.file.WatchService} implementation you will probably get a {@link DispatchKey}
      * instance for every deleted path. On other systems which work with the default polling watch-service you
      * likely only get the file key of the deleted base directory.</p>
-     *
+     * <p>
      * <p>If you work with cached objects and you want to avoid different behaviour on varying operating systems,
      * resource discarding can be safely implemented as follows:
      * <pre>
@@ -72,7 +73,7 @@ public interface PathChangeListener {
      * <p>Informs this observer that the known key specified is being supplemented with the additional key
      * specified. It is guaranteed that this method is executed <em>before</em> {@link #modified(PathChangeEvent)} is
      * entered with the additional key specified.</p>
-     *
+     * <p>
      * <p>Explanation: bundle A registers a watched directory with path "/A/B/C". Later, bundle B registers a watched directory
      * with path "/A". Both of this directories are located in the same file-system. This means, when absolute
      * path /A/B/C/foo/bar.txt had been changed, the observers would be informed twice, one time with relative path

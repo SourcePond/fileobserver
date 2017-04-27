@@ -17,7 +17,7 @@ import java.nio.file.PathMatcher;
 
 /**
  * A {@link PathChangeListener} is able to specify which file changes should be observed. To do the necessary restrict,
- * an object implementing this interface is passed to the {@link PathChangeListener#restrict(DispatchRestriction)} method
+ * an object implementing this interface is passed to the {@link PathChangeListener#restrict(DispatchRestriction, java.nio.file.FileSystem)} method
  * of a listener when it is being registered. Note:
  * <ul>
  * <li>If neither {@link #accept(Object...)} nor {@link #acceptAll()} has ever been called during the listener registration, the

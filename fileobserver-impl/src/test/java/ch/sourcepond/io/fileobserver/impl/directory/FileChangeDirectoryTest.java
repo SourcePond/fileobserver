@@ -14,8 +14,8 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Resource;
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -78,7 +78,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         root_dir.informIfChanged(dispatcher, testfile_txt_path);
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_txt_path));
         sleep(500);
-        verify(listener).restrict(notNull());
+        verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
         verifyNoMoreInteractions(listener);
     }
 
@@ -112,7 +112,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         subdir_1.informIfChanged(dispatcher, testfile_11_xml_path);
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_11_xml_path));
         sleep(500);
-        verify(listener).restrict(notNull());
+        verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
         verifyNoMoreInteractions(listener);
     }
 
@@ -138,7 +138,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_11_xml_path));
         verify(listener, timeout(500)).modified(toEvent(subdir_1_path, testfile_11_xml_path));
         sleep(500);
-        verify(listener).restrict(notNull());
+        verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
         verifyNoMoreInteractions(listener);
     }
 
@@ -171,7 +171,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
 
         // This should have no effect
         root_dir.removeWatchedDirectory(dispatcher, watchedRootDir);
-        verify(listener).restrict(notNull());
+        verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
         verifyNoMoreInteractions(listener);
     }
 
@@ -180,7 +180,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         root_dir.forceInform(dispatcher);
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_txt_path));
         sleep(500);
-        verify(listener).restrict(notNull());
+        verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
         verifyNoMoreInteractions(listener);
     }
 

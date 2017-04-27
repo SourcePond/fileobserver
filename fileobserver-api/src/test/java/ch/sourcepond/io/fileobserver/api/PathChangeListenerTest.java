@@ -15,6 +15,8 @@ package ch.sourcepond.io.fileobserver.api;
 
 import org.junit.Test;
 
+import java.nio.file.FileSystem;
+
 import static org.mockito.Mockito.*;
 
 /**
@@ -22,14 +24,16 @@ import static org.mockito.Mockito.*;
  */
 public class PathChangeListenerTest {
     private final DispatchRestriction restriction = mock(DispatchRestriction.class);
+    private final FileSystem fs = mock(FileSystem.class);
     private final DispatchKey key = mock(DispatchKey.class);
     private final PathChangeListener listener = mock(PathChangeListener.class);
 
     @Test
     public void setup() {
-        doCallRealMethod().when(listener).restrict(restriction);
-        listener.restrict(restriction);
+        doCallRealMethod().when(listener).restrict(restriction, fs);
+        listener.restrict(restriction, fs);
         verify(restriction).acceptAll();
+        verifyZeroInteractions(fs);
     }
 
     @Test
