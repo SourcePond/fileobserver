@@ -14,7 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Resource;
-import ch.sourcepond.io.fileobserver.api.ChangeEvent;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         return argThat(k -> isKeyEqual(k, pBasePath, pPath));
     }
 
-    private ChangeEvent toEvent(final Path pBasePath, final Path pPath) {
+    private PathChangeEvent toEvent(final Path pBasePath, final Path pPath) {
         return argThat(e -> isKeyEqual(e.getKey(), pBasePath, pPath));
     }
 

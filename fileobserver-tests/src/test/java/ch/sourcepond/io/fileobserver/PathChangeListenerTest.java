@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
-import ch.sourcepond.io.fileobserver.api.ChangeEvent;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
@@ -104,10 +104,10 @@ public class PathChangeListenerTest {
         });
     }
 
-    private static ChangeEvent event(final DirectoryKey pKey, final Path pRelativePath) {
-        return argThat(new ArgumentMatcher<ChangeEvent>() {
+    private static PathChangeEvent event(final DirectoryKey pKey, final Path pRelativePath) {
+        return argThat(new ArgumentMatcher<PathChangeEvent>() {
             @Override
-            public boolean matches(final ChangeEvent event) {
+            public boolean matches(final PathChangeEvent event) {
                 return isKeyEqual(event.getKey(), pKey, pRelativePath);
             }
 

@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.ChangeEvent;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 
@@ -25,11 +25,11 @@ import java.util.Collection;
  */
 class DispatchEventFactory {
 
-    ChangeEvent create(final PathChangeListener pListener,
-                       final DispatchKey pKey,
-                       final Path pFile,
-                       final Collection<DispatchKey> pParentKeys,
-                       final ReplayDispatcher pReplayDispatcher) {
-        return new DefaultChangeEvent(pListener, pKey, pFile, pParentKeys, pReplayDispatcher);
+    PathChangeEvent create(final PathChangeListener pListener,
+                           final DispatchKey pKey,
+                           final Path pFile,
+                           final Collection<DispatchKey> pParentKeys,
+                           final ReplayDispatcher pReplayDispatcher) {
+        return new DefaultPathChangeEvent(pListener, pKey, pFile, pParentKeys, pReplayDispatcher);
     }
 }

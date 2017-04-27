@@ -28,13 +28,13 @@ import static org.mockito.Mockito.verify;
 /**
  *
  */
-public class DefaultChangeEventTest {
+public class DefaultPathChangeEventTest {
     private final PathChangeListener listener = mock(PathChangeListener.class);
     private final Path file = mock(Path.class);
     private final Collection<DispatchKey> parentKeys = mock(Collection.class);
     private final DispatchKey key = mock(DispatchKey.class);
     private final ReplayDispatcher replayDispatcher = mock(ReplayDispatcher.class);
-    private final DefaultChangeEvent event = new DefaultChangeEvent(listener, key, file, parentKeys, replayDispatcher);
+    private final DefaultPathChangeEvent event = new DefaultPathChangeEvent(listener, key, file, parentKeys, replayDispatcher);
 
     @Test
     public void getKey() {
@@ -58,6 +58,6 @@ public class DefaultChangeEventTest {
 
     @Test
     public void verifyToString() {
-        assertEquals("ChangeEvent[key: " + key + ", numReplays: 0, file: " + file + "]", event.toString());
+        assertEquals("PathChangeEvent[key: " + key + ", numReplays: 0, file: " + file + "]", event.toString());
     }
 }

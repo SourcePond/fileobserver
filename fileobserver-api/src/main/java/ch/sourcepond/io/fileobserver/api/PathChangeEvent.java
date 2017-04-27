@@ -19,7 +19,7 @@ import java.nio.file.Path;
  * A change event encapsulates all information about a file modification. Additionally it provides the
  * ability to re-dispatch this event (see {@link #replay()}).
  */
-public interface ChangeEvent {
+public interface PathChangeEvent {
 
     /**
      * Returns the key which uniquely identifies the file returned by {@link #getFile()}. Always use this key
@@ -53,7 +53,7 @@ public interface ChangeEvent {
      * a client can stop processing the file and schedule its dispatch to a later point in time. It's possible to
      * query how may times this event has been rescheduled through {@link #getNumReplays()}.</p>
      *
-     * <p>Attention: it's possible to produce an infinite loop if the {@link PathChangeListener#modified(ChangeEvent)}
+     * <p>Attention: it's possible to produce an infinite loop if the {@link PathChangeListener#modified(PathChangeEvent)}
      * implementation does always call this method for some reason! So implementors should take care that this
      * method is guarded by an appropriate condition.</p>
      */

@@ -23,7 +23,7 @@ import java.nio.file.PathMatcher;
  * <li>If neither {@link #accept(Object...)} nor {@link #acceptAll()} has ever been called during the listener registration, the
  * listener will not receive any events at all!</li>
  * <li>If {@link #accept(Object...)} has been called, the listener will only accept events when their
- * {@link ChangeEvent#getKey()} method returns an accepted value.</li>
+ * {@link PathChangeEvent#getKey()} method returns an accepted value.</li>
  * <li>When none of the {@code add*} methods has been called during the listener registration, any dispatch event or
  * file/directory discard will be delivered, if the directory-key is accepted.</li>
  * <li>When one of the {@code add*} methods has been called at least once, a dispatch event or file/directory

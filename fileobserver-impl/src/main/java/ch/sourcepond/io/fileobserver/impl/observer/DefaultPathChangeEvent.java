@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.ChangeEvent;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 
@@ -23,7 +23,7 @@ import java.util.Collection;
 /**
  *
  */
-class DefaultChangeEvent implements ChangeEvent {
+class DefaultPathChangeEvent implements PathChangeEvent {
     private final DispatchKey key;
     private final Path file;
     private final Collection<DispatchKey> parentKeys;
@@ -31,11 +31,11 @@ class DefaultChangeEvent implements ChangeEvent {
     private final ReplayDispatcher replayDispatcher;
     private volatile int numReplays;
 
-    DefaultChangeEvent(final PathChangeListener pListener,
-                       final DispatchKey pKey,
-                       final Path pFile,
-                       final Collection<DispatchKey> pParentKeys,
-                       final ReplayDispatcher pReplayDispatcher) {
+    DefaultPathChangeEvent(final PathChangeListener pListener,
+                           final DispatchKey pKey,
+                           final Path pFile,
+                           final Collection<DispatchKey> pParentKeys,
+                           final ReplayDispatcher pReplayDispatcher) {
         listener = pListener;
         key = pKey;
         file = pFile;
@@ -66,6 +66,6 @@ class DefaultChangeEvent implements ChangeEvent {
 
     @Override
     public String toString() {
-        return "ChangeEvent[key: " + key + ", numReplays: " + numReplays + ", file: " + file + "]";
+        return "PathChangeEvent[key: " + key + ", numReplays: " + numReplays + ", file: " + file + "]";
     }
 }
