@@ -52,7 +52,7 @@ public abstract class Directory {
 
     /**
      * Iterates over all files contained by this directory and informs for each entry
-     * the currently focused observer. Only direct children will be considered,
+     * the currently focused listener. Only direct children will be considered,
      * sub-directories and non-regular files will be ignored.
      */
     private void streamDirectoryAndForceInform(final EventDispatcher pDispatcher) {
@@ -61,7 +61,7 @@ public abstract class Directory {
                     createKeys(p).forEach(k ->
                             pDispatcher.modified(k, p, emptyList())));
         } catch (final IOException e) {
-            LOG.warn("Exception occurred while trying to inform single observers!", e);
+            LOG.warn("Exception occurred while trying to inform single listeners!", e);
         }
     }
 
@@ -163,7 +163,7 @@ public abstract class Directory {
 
     /**
      * Removes the watched-directory specified from this directory instance and informs
-     * the observers specified through their {@link PathChangeListener#discard(DispatchKey)}. If no such
+     * the listeners specified through their {@link PathChangeListener#discard(DispatchKey)}. If no such
      * watched-directory is registered nothing happens.
      *
      * @param pWatchedDirectory Directory-key to be removed, must be not {@code null}
@@ -175,7 +175,7 @@ public abstract class Directory {
         final Path relativePath = relativizeAgainstRoot(pWatchedDirectory, getPath());
 
         // Now, the key can be safely removed
-        if (remove(pWatchedDirectory) && pDispatcher.hasObservers()) {
+        if (remove(pWatchedDirectory) && pDispatcher.hasListeners()) {
             final DispatchKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
             pDispatcher.discard(key);
         }
@@ -195,8 +195,8 @@ public abstract class Directory {
 
     /**
      * Iterates over the files contained by this directory and creates tasks which will be executed
-     * sometime in the future. Such a task will inform the observer specified through its
-     * {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} method. Note: only direct children will be
+     * sometime in the future. Such a task will inform the listener specified through its
+     * {@link PathChangeListener#modified(ch.sourcepond.io.filelistener.api.DispatchEvent)} method. Note: only direct children will be
      * considered, sub-directories and non-regular files will be ignored.
      */
     public void forceInform(final EventDispatcher pDispatcher) {
@@ -213,8 +213,8 @@ public abstract class Directory {
     }
 
     /**
-     * Iterates over the observers specified and informs them that the file specified has
-     * been discarded through their {@link PathChangeListener#discard(DispatchKey)} method. The observers
+     * Iterates over the listeners specified and informs them that the file specified has
+     * been discarded through their {@link PathChangeListener#discard(DispatchKey)} method. The listeners
      * will be called asynchronously sometime in the future.
      *
      * @param pFile Discarded file, must be {@code null}
@@ -223,7 +223,7 @@ public abstract class Directory {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
-        if (pDispatcher.hasObservers()) {
+        if (pDispatcher.hasListeners()) {
             createKeys(pFile).forEach(pDispatcher::discard);
         }
     }
@@ -243,20 +243,20 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} on all observers specified if the
+     * Triggers the {@link PathChangeListener#modified(ch.sourcepond.io.filelistener.api.DispatchEvent)} on all listeners specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
      * @param pFile File which potentially has changed, must not be {@code null}
      */
     public void informIfChanged(final EventDispatcher pDispatcher, final Directory pNewRootOrNull, final Path pFile) {
-        if (pDispatcher.hasObservers()) {
+        if (pDispatcher.hasListeners()) {
             try {
                 getResource(pFile).update(getTimeout(),
                         update -> {
                             if (update.hasChanged()) {
                                 // If the modification is requested because a new root-directory has been registered, we
-                                // need to inform the observers about supplement keys.
+                                // need to inform the listeners about supplement keys.
                                 final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
                                         emptyList() : pNewRootOrNull.createKeys(pFile);
 
@@ -270,7 +270,7 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} on all observers specified if the
+     * Triggers the {@link PathChangeListener#modified(ch.sourcepond.io.filelistener.api.DispatchEvent)} on all listeners specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *

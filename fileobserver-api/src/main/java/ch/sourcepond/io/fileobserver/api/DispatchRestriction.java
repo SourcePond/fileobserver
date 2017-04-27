@@ -18,13 +18,13 @@ import java.nio.file.PathMatcher;
 /**
  * A {@link PathChangeListener} is able to specify which file changes should be observed. To do the necessary restrict,
  * an object implementing this interface is passed to the {@link PathChangeListener#restrict(DispatchRestriction)} method
- * of a file-observer when it is being registered. Note:
+ * of a listener when it is being registered. Note:
  * <ul>
- * <li>If neither {@link #accept(Object...)} nor {@link #acceptAll()} has ever been called during the observer restrict, the
+ * <li>If neither {@link #accept(Object...)} nor {@link #acceptAll()} has ever been called during the listener registration, the
  * listener will not receive any events at all!</li>
- * <li>If {@link #accept(Object...)} has been called, the observer will only accept events when their
+ * <li>If {@link #accept(Object...)} has been called, the listener will only accept events when their
  * {@link DispatchEvent#getKey()} method returns an accepted value.</li>
- * <li>When none of the {@code add*} methods has been called during the observer restrict, any dispatch event or
+ * <li>When none of the {@code add*} methods has been called during the listener registration, any dispatch event or
  * file/directory discard will be delivered, if the directory-key is accepted.</li>
  * <li>When one of the {@code add*} methods has been called at least once, a dispatch event or file/directory
  * discard will only be delivered, if {@link DispatchKey#getRelativePath()} matches one of the compound
@@ -38,7 +38,7 @@ public interface DispatchRestriction extends SimpleDispatchRestriction {
      * dispatch events or a file/directory discards are pre-filtered before any added compound path-matcher applies (if
      * any, see {@link #whenPathMatches(String)} and {@link #whenPathMatches(PathMatcher)}).</p>
      *
-     * @param pDirectoryKeys Directory-keys which are accepted by the file-observer, must not be {@code null}
+     * @param pDirectoryKeys Directory-keys which are accepted by the listener, must not be {@code null}
      * @throws NullPointerException Thrown, if a key is {@code null}.
      * @throws IllegalArgumentException Thrown, if no keys are specified, i.e. the vararg is empty.
      * @throws IllegalStateException Thrown, if either this method or {@link #acceptAll()} has already been called.

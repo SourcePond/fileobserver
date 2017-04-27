@@ -72,7 +72,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Resource resource = mock(Resource.class);
     private final ReplayDispatcher replayDispatcher = mock(ReplayDispatcher.class);
     private final Update update = mock(Update.class);
-    private final ObserverManager manager = new ObserverManager();
+    private final ListenerManager manager = new ListenerManager();
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {
@@ -145,9 +145,9 @@ public class DiffObserverTest extends CopyResourcesTest {
         when(subdir_22.getResource(notNull())).thenReturn(resource);
 
         manager.setDispatcherExecutor(dispatcherExecutor);
-        manager.setObserverExecutor(observerExecutor);
+        manager.setListenerExecutor(observerExecutor);
         manager.setConfig(config);
-        manager.addObserver(observer);
+        manager.addListener(observer);
         diff = manager.openDiff(fs).getDiffObserver();
     }
 

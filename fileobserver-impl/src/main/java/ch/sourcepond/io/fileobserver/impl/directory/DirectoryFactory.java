@@ -36,7 +36,7 @@ public class DirectoryFactory {
     private volatile Executor directoryWalkerExecutor;
 
     // Injected by SCR
-    private volatile Executor observerExecutor;
+    private volatile Executor listenerExecutor;
     // Injected by SCR
     private volatile ResourcesFactory resourcesFactory;
 
@@ -53,8 +53,8 @@ public class DirectoryFactory {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
-    public void setObserverExecutor(final Executor pObserverExecutor) {
-        observerExecutor = pObserverExecutor;
+    public void setListenerExecutor(final Executor pListenerExecutor) {
+        listenerExecutor = pListenerExecutor;
     }
 
     public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
@@ -104,7 +104,7 @@ public class DirectoryFactory {
      * @param pTask Task to be executed, must not be {@code null}
      */
     void executeObserverTask(final Runnable pTask) {
-        observerExecutor.execute(pTask);
+        listenerExecutor.execute(pTask);
     }
 
     /**

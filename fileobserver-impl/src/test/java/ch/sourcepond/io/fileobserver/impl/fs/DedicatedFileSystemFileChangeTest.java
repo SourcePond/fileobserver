@@ -17,7 +17,7 @@ import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
+import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +47,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
-    private final ObserverManager manager = mock(ObserverManager.class);
+    private final ListenerManager manager = mock(ListenerManager.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private DedicatedFileSystem child;

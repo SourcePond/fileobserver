@@ -20,7 +20,7 @@ import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
+import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -52,30 +52,30 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
     final Executor directoryWalkerExecutor = directExecutor();
-    final ExecutorService observerExecutor = newSingleThreadExecutor();
+    final ExecutorService listenerExecutor = newSingleThreadExecutor();
     final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
-    final ObserverManager manager = new ObserverManager();
+    final ListenerManager manager = new ListenerManager();
     final EventDispatcher dispatcher = manager.getDefaultDispatcher();
     final DirectoryFactory factory = new DirectoryFactory(
             keyFactory);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
-    final PathChangeListener observer = mock(PathChangeListener.class);
+    final PathChangeListener listener = mock(PathChangeListener.class);
     WatchServiceWrapper wrapper;
 
     @Before
     public void setupFactories() throws IOException {
-        doCallRealMethod().when(observer).restrict(any());
+        doCallRealMethod().when(listener).restrict(any());
         when(watchedRootDir.getKey()).thenReturn(ROOT_DIR_KEY);
         when(watchedSubDir1.getKey()).thenReturn(SUB_DIR_KEY1);
         when(watchedSubDir2.getKey()).thenReturn(SUB_DIR_KEY2);
         when(config.timeout()).thenReturn(TIMEOUT);
-        manager.addObserver(observer);
+        manager.addListener(listener);
         manager.setDispatcherExecutor(dispatcherExecutor);
-        manager.setObserverExecutor(observerExecutor);
+        manager.setListenerExecutor(listenerExecutor);
         wrapper = new WatchServiceWrapper(getDefault());
         factory.setConfig(config);
-        factory.setObserverExecutor(observerExecutor);
+        factory.setListenerExecutor(listenerExecutor);
         factory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
         factory.setResourcesFactory(resourcesFactory);
     }
@@ -84,7 +84,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     public void shutdownExecutor() {
         wrapper.close();
         dispatcherExecutor.shutdown();
-        observerExecutor.shutdown();
+        listenerExecutor.shutdown();
     }
 
     @Test

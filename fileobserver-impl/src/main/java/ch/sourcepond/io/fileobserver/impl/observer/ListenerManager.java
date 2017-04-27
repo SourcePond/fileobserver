@@ -41,8 +41,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * This class handles everything necessary to inform registered {@link PathChangeListener} and
  * {@link KeyDeliveryHook} instances.
  */
-public class ObserverManager implements ReplayDispatcher {
-    private static final Logger LOG = getLogger(ObserverManager.class);
+public class ListenerManager implements ReplayDispatcher {
+    private static final Logger LOG = getLogger(ListenerManager.class);
     private final DefaultDispatchRestrictionFactory restrictionFactory;
     private final DispatchEventFactory dispatchEventFactory;
     private final Set<KeyDeliveryHook> hooks = new CopyOnWriteArraySet<>();
@@ -53,18 +53,18 @@ public class ObserverManager implements ReplayDispatcher {
     private volatile Config config;
 
     // Constructor for activator
-    public ObserverManager() {
+    public ListenerManager() {
         this(new DefaultDispatchRestrictionFactory(), new DispatchEventFactory());
     }
 
     // Constructor for testing
-    ObserverManager(final DefaultDispatchRestrictionFactory pRestrictionFactory,
+    ListenerManager(final DefaultDispatchRestrictionFactory pRestrictionFactory,
                     final DispatchEventFactory pDispatchEventFactory) {
         restrictionFactory = pRestrictionFactory;
         dispatchEventFactory = pDispatchEventFactory;
     }
 
-    public EventDispatcher addObserver(final PathChangeListener pObserver) {
+    public EventDispatcher addListener(final PathChangeListener pObserver) {
         observers.computeIfAbsent(pObserver, o -> new ConcurrentHashMap<>());
         return new EventDispatcher(this, pObserver);
     }
@@ -89,7 +89,7 @@ public class ObserverManager implements ReplayDispatcher {
         dispatcherExecutor = pDispatcherExecutor;
     }
 
-    public void setObserverExecutor(final ExecutorService pObserverExecutor) {
+    public void setListenerExecutor(final ExecutorService pObserverExecutor) {
         observerExecutor = pObserverExecutor;
     }
 

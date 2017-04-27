@@ -23,18 +23,18 @@ import static org.mockito.Mockito.*;
 public class PathChangeListenerTest {
     private final DispatchRestriction restriction = mock(DispatchRestriction.class);
     private final DispatchKey key = mock(DispatchKey.class);
-    private final PathChangeListener observer = mock(PathChangeListener.class);
+    private final PathChangeListener listener = mock(PathChangeListener.class);
 
     @Test
     public void setup() {
-        doCallRealMethod().when(observer).restrict(restriction);
-        observer.restrict(restriction);
+        doCallRealMethod().when(listener).restrict(restriction);
+        listener.restrict(restriction);
         verify(restriction).acceptAll();
     }
 
     @Test
     public void supplement() {
-        doCallRealMethod().when(observer).supplement(key, key);
+        doCallRealMethod().when(listener).supplement(key, key);
         verifyZeroInteractions(key);
     }
 }

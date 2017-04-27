@@ -18,7 +18,7 @@ import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
+import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -33,20 +33,20 @@ import java.util.concurrent.ExecutorService;
  */
 public class DedicatedFileSystemFactory {
     private final DirectoryFactory directoryFactory;
-    private final ObserverManager dispatcher;
+    private final ListenerManager dispatcher;
 
     // Injected by SCR
     private Executor directoryWalkerExecutor;
 
     // Constructor for BundleActivator
-    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ObserverManager pDispatcher) {
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ListenerManager pDispatcher) {
         directoryFactory = pDirectoryFactory;
         dispatcher = pDispatcher;
     }
 
     // Constructor for testing
     public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
-                                      final ObserverManager pDispatcher,
+                                      final ListenerManager pDispatcher,
                                       final ExecutorService pDirectoryWalkerExecutor) {
         directoryFactory = pDirectoryFactory;
         dispatcher = pDispatcher;
@@ -81,8 +81,8 @@ public class DedicatedFileSystemFactory {
         return fs;
     }
 
-    public void setObserverExecutor(final ExecutorService pExecutor) {
-        directoryFactory.setObserverExecutor(pExecutor);
+    public void setListenerExecutor(final ExecutorService pExecutor) {
+        directoryFactory.setListenerExecutor(pExecutor);
     }
 
     public void setConfig(final Config pConfig) {

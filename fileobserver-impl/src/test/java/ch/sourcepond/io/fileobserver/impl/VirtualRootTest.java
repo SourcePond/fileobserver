@@ -21,7 +21,7 @@ import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
+import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,23 +53,23 @@ public class VirtualRootTest {
     private final Path directory = mock(Path.class);
     private final BasicFileAttributes modifiedPathAttrs = mock(BasicFileAttributes.class);
     private final Path modifiedPath = mock(Path.class);
-    private final PathChangeListener observer = mock(PathChangeListener.class);
+    private final PathChangeListener listener = mock(PathChangeListener.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final DedicatedFileSystem dedicatedFs = mock(DedicatedFileSystem.class);
     private final DedicatedFileSystemFactory dedicatedFsFactory = mock(DedicatedFileSystemFactory.class);
     private final SmartSwitchBuilderFactory ssbFactory = mock(SmartSwitchBuilderFactory.class);
     private final SmartSwitchBuilder<ExecutorService> executorBuilder = mock(SmartSwitchBuilder.class);
-    private final ObserverManager manager = mock(ObserverManager.class);
+    private final ListenerManager manager = mock(ListenerManager.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private ExecutorService dispatcherExecutor;
-    private ExecutorService observerExecutor;
+    private ExecutorService listenerExecutor;
     private ExecutorService directoryWalkerExecutor;
     private VirtualRoot virtualRoot = new VirtualRoot(dedicatedFsFactory, manager);
 
     @Before
     public void setup() throws IOException {
-        when(manager.addObserver(observer)).thenReturn(dispatcher);
+        when(manager.addListener(listener)).thenReturn(dispatcher);
         when(modifiedPath.getFileSystem()).thenReturn(fs);
         when(provider.readAttributes(modifiedPath, BasicFileAttributes.class)).thenReturn(modifiedPathAttrs);
 
@@ -83,7 +83,7 @@ public class VirtualRootTest {
         when(dedicatedFsFactory.openFileSystem(virtualRoot, fs)).thenReturn(dedicatedFs);
 
         virtualRoot.addRoot(watchedDir);
-        virtualRoot.addObserver(observer);
+        virtualRoot.addListener(listener);
         virtualRoot.activate(config);
     }
 
@@ -115,12 +115,12 @@ public class VirtualRootTest {
             assertNotNull(dispatcherExecutor);
             return dispatcherExecutor;
         });
-        final SmartSwitchBuilder<ExecutorService> observerExecutorBuilder = mock(SmartSwitchBuilder.class);
-        setupDefaultExecutor("(sourcepond.io.fileobserver.observerexecutor=*)", observerExecutorBuilder, inv -> {
+        final SmartSwitchBuilder<ExecutorService> listenerExecutorBuilder = mock(SmartSwitchBuilder.class);
+        setupDefaultExecutor("(sourcepond.io.fileobserver.listenerexecutor=*)", listenerExecutorBuilder, inv -> {
             final Supplier<ExecutorService> s = inv.getArgument(0);
-            observerExecutor = s.get();
-            assertNotNull(observerExecutor);
-            return observerExecutor;
+            listenerExecutor = s.get();
+            assertNotNull(listenerExecutor);
+            return listenerExecutor;
         });
         final SmartSwitchBuilder<ExecutorService> directoryWalkerExecutorBuilder = mock(SmartSwitchBuilder.class);
         setupDefaultExecutor("(sourcepond.io.fileobserver.directorywalkerexecutor=*)", directoryWalkerExecutorBuilder, inv -> {
@@ -130,9 +130,9 @@ public class VirtualRootTest {
             return directoryWalkerExecutor;
         });
         virtualRoot.initExecutors(ssbFactory);
-        verify(manager).setObserverExecutor(observerExecutor);
+        verify(manager).setListenerExecutor(listenerExecutor);
         verify(manager).setDispatcherExecutor(dispatcherExecutor);
-        verify(dedicatedFsFactory).setObserverExecutor(observerExecutor);
+        verify(dedicatedFsFactory).setListenerExecutor(listenerExecutor);
         verify(dedicatedFsFactory).setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
@@ -174,8 +174,8 @@ public class VirtualRootTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void addObserverIsNull() {
-        virtualRoot.addObserver(null);
+    public void addListenerIsNull() {
+        virtualRoot.addListener(null);
     }
 
     @Test
@@ -191,16 +191,16 @@ public class VirtualRootTest {
     }
 
     @Test
-    public void addObserver() {
-        virtualRoot.removeObserver(observer);
+    public void addListener() {
+        virtualRoot.removeListener(listener);
         verify(dedicatedFs).forceInform(dispatcher);
     }
 
     @Test
-    public void removeObserver() throws IOException {
+    public void removeListener() throws IOException {
         reset(dedicatedFs);
         when(watchedDir.getKey()).thenReturn(OTHER_KEY);
-        virtualRoot.removeObserver(observer);
+        virtualRoot.removeListener(listener);
         virtualRoot.addRoot(watchedDir);
         verify(dedicatedFs).registerRootDirectory(same(watchedDir));
     }
@@ -256,18 +256,18 @@ public class VirtualRootTest {
     public void stop() {
         virtualRoot.stop();
         verify(dedicatedFs).close();
-        final PathChangeListener otherObserver = mock(PathChangeListener.class);
-        virtualRoot.addObserver(otherObserver);
-        verifyZeroInteractions(otherObserver);
+        final PathChangeListener otherListener = mock(PathChangeListener.class);
+        virtualRoot.addListener(otherListener);
+        verifyZeroInteractions(otherListener);
     }
 
     @Test
     public void removeFileSystem() {
         virtualRoot.removeFileSystem(dedicatedFs);
-        final PathChangeListener otherObserver = mock(PathChangeListener.class);
+        final PathChangeListener otherListener = mock(PathChangeListener.class);
         verify(manager).removeFileSystem(fs);
-        virtualRoot.addObserver(otherObserver);
-        verifyZeroInteractions(otherObserver);
+        virtualRoot.addListener(otherListener);
+        verifyZeroInteractions(otherListener);
     }
 
     @Test(expected = NullPointerException.class)

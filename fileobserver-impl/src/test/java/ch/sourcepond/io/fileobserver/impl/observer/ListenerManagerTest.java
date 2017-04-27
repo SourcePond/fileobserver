@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class ObserverManagerTest {
+public class ListenerManagerTest {
     private static final Object PARENT_DIR_KEY = new Object();
     private static final Object DIR_KEY = new Object();
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
@@ -47,7 +47,7 @@ public class ObserverManagerTest {
     private final DefaultDispatchRestrictionFactory restrictionFactory = mock(DefaultDispatchRestrictionFactory.class);
     private final DefaultDispatchRestriction restriction = mock(DefaultDispatchRestriction.class);
     private final DispatchEventFactory dispatchEventFactory = mock(DispatchEventFactory.class);
-    private final ObserverManager manager = new ObserverManager(restrictionFactory, dispatchEventFactory);
+    private final ListenerManager manager = new ListenerManager(restrictionFactory, dispatchEventFactory);
     private final DispatchKey parentKey = mock(DispatchKey.class);
     private final Collection<DispatchKey> parentKeys = asList(parentKey);
     private final DispatchEvent dispatchEvent = mock(DispatchEvent.class);
@@ -68,8 +68,8 @@ public class ObserverManagerTest {
         when(parentKey.getDirectoryKey()).thenReturn(PARENT_DIR_KEY);
         when(dispatchKey.getDirectoryKey()).thenReturn(DIR_KEY);
         manager.setDispatcherExecutor(dispatcherExecutor);
-        manager.setObserverExecutor(observerExecutor);
-        manager.addObserver(observer);
+        manager.setListenerExecutor(observerExecutor);
+        manager.addListener(observer);
         manager.addHook(hook);
     }
 

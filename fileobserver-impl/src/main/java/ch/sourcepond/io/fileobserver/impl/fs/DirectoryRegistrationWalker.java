@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * <p>Walks through a directory structure. For each detected file, the observers specified
+ * <p>Walks through a directory structure. For each detected file, the listeners specified
  * will be informed through their {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)}. Each detected
  * directory will be registered with the {@link WatchServiceWrapper}, and, be stored in the
  * directory-map specified.</p>
@@ -91,7 +91,7 @@ class DirectoryRegistrationWalker {
 
     /**
      * Registers the directory specified and all its sub-directories with the watch-service held by this object.
-     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the observers
+     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the listeners
      * specified.
      *
      * @param pDirectory Newly created directory, must not be {@code null}
@@ -102,7 +102,7 @@ class DirectoryRegistrationWalker {
 
     /**
      * Registers the directory specified and all its sub-directories with the watch-service held by this object.
-     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the observers
+     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the listeners
      * specified.
      *
      * @param pNewRoot Newly created directory, must not be {@code null}
@@ -113,7 +113,7 @@ class DirectoryRegistrationWalker {
 
     /**
      * Registers the directory specified and all its sub-directories with the watch-service held by this object.
-     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the observers
+     * Additionally, it passes any detected file to {@link PathChangeListener#modified(ch.sourcepond.io.fileobserver.api.DispatchEvent)} to the listeners
      * specified.
      *
      * @param pNewRootOrNull New root-directory which causes a rebase, or, {@code null}
@@ -123,7 +123,7 @@ class DirectoryRegistrationWalker {
                                   final Directory pNewRootOrNull,
                                   final Path pDirectory) {
         // Asynchronously register all sub-directories with the watch-service, and,
-        // inform the registered FileObservers
+        // inform the registered PathChangeListener
         directoryWalkerExecutor.execute(() -> {
             try {
                 walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pDispatcher, pNewRootOrNull));
@@ -138,7 +138,7 @@ class DirectoryRegistrationWalker {
     /**
      * This visitor is used to walk through a directory structure which needs to be registered
      * with the enclosing {@link DedicatedFileSystem} instance. If a file is detected, the
-     * observers specified through the constructor of this class will be informed. If a directory is
+     * listeners specified through the constructor of this class will be informed. If a directory is
      * detected, a new directory object will be created and registered with the enclosing instance.
      */
     private class DirectoryInitializerFileVisitor extends SimpleFileVisitor<Path> {
@@ -155,7 +155,7 @@ class DirectoryRegistrationWalker {
 
         @Override
         public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
-            // It's important here to only trigger the observers if the file has changed.
+            // It's important here to only trigger the listeners if the file has changed.
             // This is most certainly the case, but, there is an exception: because we already
             // registered the parent directory of the file with the watch-service there's a small
             // chance that the file had already been modified before we got here.

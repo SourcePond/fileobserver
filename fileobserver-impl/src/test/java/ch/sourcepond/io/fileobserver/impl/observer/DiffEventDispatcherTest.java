@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
  *
  */
 public class DiffEventDispatcherTest {
-    private final ObserverManager manager = mock(ObserverManager.class);
+    private final ListenerManager manager = mock(ListenerManager.class);
     private final DiffObserver observer = mock(DiffObserver.class);
     private final DiffEventDispatcher dispatcher = new DiffEventDispatcher(manager, observer);
 

@@ -25,33 +25,33 @@ import static java.util.Arrays.asList;
  *
  */
 public class EventDispatcher {
-    private final ObserverManager dispatcher;
-    private final Collection<PathChangeListener> observers;
+    private final ListenerManager dispatcher;
+    private final Collection<PathChangeListener> listeners;
 
-    EventDispatcher(final ObserverManager pManager,
-                    final PathChangeListener pAddedObserver) {
-        this(pManager, asList(pAddedObserver));
+    EventDispatcher(final ListenerManager pManager,
+                    final PathChangeListener pAddedListener) {
+        this(pManager, asList(pAddedListener));
     }
 
-    EventDispatcher(final ObserverManager pManager,
-                    final Collection<PathChangeListener> pObservers) {
+    EventDispatcher(final ListenerManager pManager,
+                    final Collection<PathChangeListener> pListeners) {
         dispatcher = pManager;
-        observers = pObservers;
+        listeners = pListeners;
     }
 
-    public boolean hasObservers() {
-        return !observers.isEmpty();
+    public boolean hasListeners() {
+        return !listeners.isEmpty();
     }
 
     public void modified(final Collection<DispatchKey> pKeys, final Path pFile, final Collection<DispatchKey> pParentKeys) {
-        dispatcher.modified(observers, pKeys, pFile, pParentKeys);
+        dispatcher.modified(listeners, pKeys, pFile, pParentKeys);
     }
 
     public void modified(final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
-        dispatcher.modified(observers, pKey, pFile, pParentKeys);
+        dispatcher.modified(listeners, pKey, pFile, pParentKeys);
     }
 
     public void discard(final DispatchKey pKey) {
-        dispatcher.discard(observers, pKey);
+        dispatcher.discard(listeners, pKey);
     }
 }

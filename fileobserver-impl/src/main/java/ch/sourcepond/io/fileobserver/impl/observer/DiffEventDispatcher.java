@@ -21,7 +21,7 @@ import java.io.Closeable;
 public class DiffEventDispatcher extends EventDispatcher implements Closeable {
     private final DiffObserver diffObserver;
 
-    DiffEventDispatcher(final ObserverManager pDispatcher, final DiffObserver pDiffObserver) {
+    DiffEventDispatcher(final ListenerManager pDispatcher, final DiffObserver pDiffObserver) {
         super(pDispatcher, pDiffObserver);
         diffObserver = pDiffObserver;
     }

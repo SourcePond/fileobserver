@@ -18,7 +18,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.DiffEventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
+import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -50,13 +50,13 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
-    private final ObserverManager manager;
+    private final ListenerManager manager;
     private final PathChangeHandler pathChangeHandler;
 
     DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
-                        final ObserverManager pManager,
+                        final ListenerManager pManager,
                         final PathChangeHandler pPathChangeHandler,
                         final ConcurrentMap<Path, Directory> pDirs) {
         pathChangeHandler = pPathChangeHandler;

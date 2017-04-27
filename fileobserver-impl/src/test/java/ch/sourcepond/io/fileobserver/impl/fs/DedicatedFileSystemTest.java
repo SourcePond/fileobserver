@@ -19,7 +19,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.impl.observer.DiffEventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
+import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +43,7 @@ public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
-    private final ObserverManager manager = mock(ObserverManager.class);
+    private final ListenerManager manager = mock(ListenerManager.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private final EventDispatcher defaultDispatcher = mock(EventDispatcher.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -61,7 +61,7 @@ public class DedicatedFileSystemTest {
 
     @Before
     public void setup() throws IOException {
-        when(manager.addObserver(observer)).thenReturn(dispatcher);
+        when(manager.addListener(observer)).thenReturn(dispatcher);
         when(manager.getDefaultDispatcher()).thenReturn(defaultDispatcher);
 
         // Setup watched-rootDirPath1

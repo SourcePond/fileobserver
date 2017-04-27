@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
  *
  */
 public class EventDispatcherTest {
-    private final ObserverManager manager = mock(ObserverManager.class);
+    private final ListenerManager manager = mock(ListenerManager.class);
     private final PathChangeListener observer = mock(PathChangeListener.class);
     private final Collection<PathChangeListener> observers = asList(observer);
     private final DispatchKey key = mock(DispatchKey.class);
@@ -43,9 +43,9 @@ public class EventDispatcherTest {
 
     @Test
     public void hasObservers() {
-        assertTrue(dispatcher.hasObservers());
+        assertTrue(dispatcher.hasListeners());
         dispatcher = new EventDispatcher(manager, new ArrayList<>());
-        assertFalse(dispatcher.hasObservers());
+        assertFalse(dispatcher.hasListeners());
     }
 
     @Test

@@ -72,7 +72,7 @@ public class PathChangeListenerTest {
 
     @Configuration
     public Option[] config() {
-        MavenUrlReference fileObserverRepo = maven()
+        MavenUrlReference listenerRepo = maven()
                 .groupId("ch.sourcepond.io")
                 .artifactId("fileobserver-feature")
                 .classifier("features")
@@ -82,7 +82,7 @@ public class PathChangeListenerTest {
         return new Option[]{
                 mavenBundle().groupId("ch.sourcepond.testing").artifactId("bundle-test-support").versionAsInProject(),
                 mockitoBundles(),
-                karafContainer(features(fileObserverRepo, "fileobserver-feature"))
+                karafContainer(features(listenerRepo, "fileobserver-feature"))
         };
     }
 
@@ -128,46 +128,46 @@ public class PathChangeListenerTest {
     @Inject
     private BundleContext context;
 
-    private final PathChangeListener observer = mock(PathChangeListener.class, withSettings().name("observer"));
-    private final PathChangeListener secondObserver = mock(PathChangeListener.class, withSettings().name("secondObserver"));
+    private final PathChangeListener listener = mock(PathChangeListener.class, withSettings().name("listener"));
+    private final PathChangeListener secondListener = mock(PathChangeListener.class, withSettings().name("secondListener"));
     private ServiceRegistration<WatchedDirectory> watchedDirectoryRegistration;
-    private ServiceRegistration<PathChangeListener> fileObserverRegistration;
-    private ServiceRegistration<PathChangeListener> secondObserverRegistration;
+    private ServiceRegistration<PathChangeListener> listenerRegistration;
+    private ServiceRegistration<PathChangeListener> secondListenerRegistration;
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private ServiceRegistration<KeyDeliveryHook> hookRegistration;
     private WatchedDirectory watchedDirectory;
 
     @Before
     public void setup() throws Exception {
-        doCallRealMethod().when(observer).restrict(notNull());
-        doCallRealMethod().when(secondObserver).restrict(notNull());
+        doCallRealMethod().when(listener).restrict(notNull());
+        doCallRealMethod().when(secondListener).restrict(notNull());
 
         // Step 1: make fileobserver bundle watching R by
         // registering an appropriate service.
         final InitialCheckusmCalculationBarrier wait = new InitialCheckusmCalculationBarrier();
-        fileObserverRegistration = context.registerService(PathChangeListener.class, wait, null);
+        listenerRegistration = context.registerService(PathChangeListener.class, wait, null);
         watchedDirectory = create(ROOT, R);
         watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
         wait.waitUntilChecksumsCalculated();
-        fileObserverRegistration.unregister();
+        listenerRegistration.unregister();
 
         // Step 2: register PathChangeListener
-        fileObserverRegistration = context.registerService(PathChangeListener.class, observer, null);
-        verifyForceInform(observer);
-        reset(observer);
+        listenerRegistration = context.registerService(PathChangeListener.class, listener, null);
+        verifyForceInform(listener);
+        reset(listener);
 
         // Step 3: register key-hook
         hookRegistration = context.registerService(KeyDeliveryHook.class, hook, null);
     }
 
-    private void verifyForceInform(final PathChangeListener pObserver) throws Exception {
-        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(E11)));
-        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(E12)));
-        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(E2)));
-        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(H11)));
-        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(H12)));
-        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(H2)));
-        verify(pObserver, timeout(5000)).modified(event(ROOT, R.relativize(C)));
+    private void verifyForceInform(final PathChangeListener pListener) throws Exception {
+        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(E11)));
+        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(E12)));
+        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(E2)));
+        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(H11)));
+        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(H12)));
+        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(H2)));
+        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(C)));
     }
 
     private void unregisterService(final ServiceRegistration<?> pRegistration) {
@@ -183,24 +183,24 @@ public class PathChangeListenerTest {
     @After
     public void tearDown() throws InterruptedException {
         unregisterService(watchedDirectoryRegistration);
-        unregisterService(fileObserverRegistration);
-        unregisterService(secondObserverRegistration);
+        unregisterService(listenerRegistration);
+        unregisterService(secondListenerRegistration);
         unregisterService(hookRegistration);
     }
 
     @Test
-    public void doExlusivelyInformNewlyRegisteredObserver() throws Exception {
-        secondObserverRegistration = context.registerService(PathChangeListener.class, secondObserver, null);
-        verifyForceInform(secondObserver);
-        verifyZeroInteractions(observer);
+    public void doExlusivelyInformNewlyRegisteredListener() throws Exception {
+        secondListenerRegistration = context.registerService(PathChangeListener.class, secondListener, null);
+        verifyForceInform(secondListener);
+        verifyZeroInteractions(listener);
     }
 
     /**
      *
      */
     @Test
-    public void insureNoInteractionWithUnregisteredFileObserver() throws Exception {
-        fileObserverRegistration.unregister();
+    public void insureNoInteractionWithUnregisteredFileListener() throws Exception {
+        listenerRegistration.unregister();
 
         delete(E11);
         delete(E12);
@@ -211,7 +211,7 @@ public class PathChangeListenerTest {
         delete(C);
 
         sleep(6000);
-        verifyNoMoreInteractions(observer);
+        verifyNoMoreInteractions(listener);
     }
 
     /**
@@ -219,28 +219,28 @@ public class PathChangeListenerTest {
      */
     @Test
     public void unregisterAndRegisterAdditionalWatchedDirectory() throws Exception {
-        // Insure observer gets informed about unregistration
+        // Insure listener gets informed about unregistration
         watchedDirectoryRegistration.unregister();
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(R)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(R)));
 
-        // Now, observer should be informed about newly registered root
+        // Now, listener should be informed about newly registered root
         watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
 
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(E11)));
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(E2)));
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(H11)));
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(H2)));
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(C)));
-        verifyNoMoreInteractions(observer);
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E11)));
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E2)));
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(H11)));
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(H2)));
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(C)));
+        verifyNoMoreInteractions(listener);
     }
 
     /**
      *
      */
     @Test
-    public void observerShouldBeInformedAboutFileDeletion() throws IOException {
+    public void listenerShouldBeInformedAboutFileDeletion() throws IOException {
         delete(E11);
         delete(E12);
         delete(E2);
@@ -248,65 +248,65 @@ public class PathChangeListenerTest {
         delete(H12);
         delete(H2);
         delete(C);
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E2)));
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H2)));
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(C)));
-        verifyNoMoreInteractions(observer);
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E2)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H2)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(C)));
+        verifyNoMoreInteractions(listener);
     }
 
     /**
      *
      */
     @Test
-    public void observerShouldBeInformedAboutDirectoryDeletion() throws IOException {
+    public void listenerShouldBeInformedAboutDirectoryDeletion() throws IOException {
         deleteDirectory(E1);
         deleteDirectory(H1);
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E1)));
-        verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H1)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E1)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H1)));
 
         // See PathChangeListener::discard for explanation; the following works not for MacOS X
         if ("Linux".equals(System.getProperty("os.name"))) {
-            verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
-            verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
-            verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
-            verify(observer, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
+            verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
+            verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
+            verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
+            verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
         }
 
-        verifyNoMoreInteractions(observer);
+        verifyNoMoreInteractions(listener);
     }
 
     /**
      *
      */
     @Test
-    public void observerShouldBeInformedAboutFileChange() throws IOException {
+    public void listenerShouldBeInformedAboutFileChange() throws IOException {
         writeArbitraryContent(E12);
         writeArbitraryContent(H12);
         writeArbitraryContent(C);
 
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
-        verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(C)));
-        verifyNoMoreInteractions(observer);
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
+        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(C)));
+        verifyNoMoreInteractions(listener);
     }
 
     /**
      *
      */
     @Test
-    public void observerShouldBeInformedAboutFileCreation() throws IOException {
+    public void listenerShouldBeInformedAboutFileCreation() throws IOException {
         final Path newFile = E1.resolve("newFile.txt");
         writeArbitraryContent(newFile);
 
-        final InOrder order = inOrder(hook, observer);
+        final InOrder order = inOrder(hook, listener);
         order.verify(hook, timeout(15000)).beforeModify(key(ROOT, R.relativize(newFile)), eq(newFile));
-        order.verify(observer, timeout(15000)).modified(event(ROOT, R.relativize(newFile)));
+        order.verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(newFile)));
         order.verify(hook, timeout(15000)).afterModify(key(ROOT, R.relativize(newFile)), eq(newFile));
 
-        verifyNoMoreInteractions(observer);
+        verifyNoMoreInteractions(listener);
     }
 }

@@ -22,7 +22,7 @@ import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
-import ch.sourcepond.io.fileobserver.impl.observer.ObserverManager;
+import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.osgi.service.component.annotations.Activate;
@@ -57,7 +57,7 @@ public class VirtualRoot implements RelocationObserver {
     private static final String KEY_IS_NULL = "Key is null";
     private static final String DIRECTORY_IS_NULL = "Directory is null";
     private static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
-    private final ObserverManager manager;
+    private final ListenerManager manager;
     private final InitSwitch<WatchedDirectory> rootInitSwitch = new InitSwitch<>(this::doAddRoot);
     private final InitSwitch<PathChangeListener> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
@@ -67,7 +67,7 @@ public class VirtualRoot implements RelocationObserver {
 
     // Constructor for BundleActivator
     public VirtualRoot() {
-        manager = new ObserverManager();
+        manager = new ListenerManager();
         final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
@@ -76,7 +76,7 @@ public class VirtualRoot implements RelocationObserver {
 
     // Constructor for testing
     public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory,
-                       final ObserverManager pManager) {
+                       final ListenerManager pManager) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
         manager = pManager;
     }
@@ -109,11 +109,11 @@ public class VirtualRoot implements RelocationObserver {
         manager.setDispatcherExecutor(dispatcherExecutor);
 
         final ExecutorService observerExecutor = pFactory.newBuilder(ExecutorService.class).
-                setFilter("(sourcepond.io.fileobserver.observerexecutor=*)").
+                setFilter("(sourcepond.io.fileobserver.listenerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
-        dedicatedFileSystemFactory.setObserverExecutor(observerExecutor);
-        manager.setObserverExecutor(observerExecutor);
+        dedicatedFileSystemFactory.setListenerExecutor(observerExecutor);
+        manager.setListenerExecutor(observerExecutor);
         final Executor directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
@@ -121,8 +121,8 @@ public class VirtualRoot implements RelocationObserver {
         dedicatedFileSystemFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
-    private void doAddObserver(final PathChangeListener pObserver) {
-        final EventDispatcher session = manager.addObserver(pObserver);
+    private void doAddObserver(final PathChangeListener pListener) {
+        final EventDispatcher session = manager.addListener(pListener);
         children.values().forEach(dfs -> dfs.forceInform(session));
     }
 
@@ -130,12 +130,12 @@ public class VirtualRoot implements RelocationObserver {
      * Whiteboard bind-method for {@link PathChangeListener} services exported by any client bundle. This
      * method is called when a client exports a service which implements the {@link PathChangeListener} interface.
      *
-     * @param pObserver File observer service to be registered.
+     * @param pListener File observer service to be registered.
      */
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
-    public void addObserver(final PathChangeListener pObserver) {
-        requireNonNull(pObserver, "Observer is null");
-        observerInitSwitch.add(pObserver);
+    public void addListener(final PathChangeListener pListener) {
+        requireNonNull(pListener, "Observer is null");
+        observerInitSwitch.add(pListener);
     }
 
     /**
@@ -144,7 +144,7 @@ public class VirtualRoot implements RelocationObserver {
      *
      * @param pObserver File observer service to be unregistered.
      */
-    public void removeObserver(final PathChangeListener pObserver) {
+    public void removeListener(final PathChangeListener pObserver) {
         requireNonNull(pObserver, "Observer is null");
         manager.removeObserver(pObserver);
     }

@@ -46,7 +46,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private final WatchServiceWrapper wrapper = mock(WatchServiceWrapper.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
-    private final Collection<PathChangeListener> observers = mock(Collection.class);
+    private final Collection<PathChangeListener> listeners = mock(Collection.class);
     private final WatchKey subdir_1_watchKey = mock(WatchKey.class);
     private final WatchKey subdir_11_watchKey = mock(WatchKey.class);
     private final WatchKey subdir_111_watchKey = mock(WatchKey.class);
