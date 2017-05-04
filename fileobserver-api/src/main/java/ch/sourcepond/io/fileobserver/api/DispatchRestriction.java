@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.api;
 
-import java.nio.file.PathMatcher;
 
 /**
  * A {@link PathChangeListener} is able to specify which file changes should be observed. To do the necessary restrict,
@@ -36,7 +35,7 @@ public interface DispatchRestriction extends SimpleDispatchRestriction {
     /**
      * <p>Specifies, which directory-keys should be accepted by the {@link PathChangeListener}. This means, that
      * dispatch events or a file/directory discards are pre-filtered before any added path-matcher applies (if
-     * any, see {@link #addPathMatcher(String)} and {@link #addPathMatcher(PathMatcher)}).</p>
+     * any, see {@link #addPathMatcher(String)} and {@link #addPathMatcher(java.nio.file.PathMatcher)}).</p>
      *
      * @param pDirectoryKeys Directory-keys which are accepted by the listener, must not be {@code null}
      * @throws NullPointerException Thrown, if a key is {@code null}.
@@ -48,7 +47,7 @@ public interface DispatchRestriction extends SimpleDispatchRestriction {
     /**
      * <p>Specifies, that all directory-keys should be accepted by the {@link PathChangeListener}. This means, that
      * any dispatch event or a file/directory discard is directly matched against the registered compound path-matcher
-     * (if any, see {@link #addPathMatcher(String)} and {@link #addPathMatcher(PathMatcher)}).</p>
+     * (if any, see {@link #addPathMatcher(String)} and {@link #addPathMatcher(java.nio.file.PathMatcher)}).</p>
      *
      * @throws IllegalStateException Thrown, if either this method or {@link #accept(Object...)} has already been called.
      */
