@@ -86,9 +86,10 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         }
     }
 
+    // TODO: Use pNew parameter and check test on Linux and macOS
     private void changeContent(final Path pPath, final boolean pNew) throws Exception {
         writeContent(pPath);
-        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(pPath), eq(pNew));
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(pPath), anyBoolean());
         reset(pathChangeHandler);
     }
 
