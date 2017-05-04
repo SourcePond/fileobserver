@@ -19,12 +19,12 @@ import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
+import static java.nio.file.Files.isDirectory;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -58,10 +58,9 @@ class PathChangeHandler {
     }
 
     void pathModified(final EventDispatcher pDispatcher,
-                      final BasicFileAttributes pAttrs,
                       final Path pPath,
                       boolean pIsNew) {
-        if (pAttrs.isDirectory()) {
+        if (isDirectory(pPath)) {
             walker.directoryCreated(pDispatcher, pPath);
         } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),

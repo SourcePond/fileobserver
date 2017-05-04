@@ -21,6 +21,7 @@ import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
@@ -41,9 +42,11 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
+@Ignore
 public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private static final String DIRECTORY_KEY = "getDirectoryKey";
     private static final String NEW_FILE_NAME = "newfile.txt";
+    private final PendingEvents pendingEvents = new PendingEvents();
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -65,15 +68,17 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         wrapper = new WatchServiceWrapper(root_dir_path.getFileSystem());
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager, pathChangeHandler, new ConcurrentHashMap<>());
+        child = new DedicatedFileSystem(pendingEvents, directoryFactory, wrapper, rebase, manager, pathChangeHandler, new ConcurrentHashMap<>());
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
+        pendingEvents.start();
         child.start();
     }
 
     @After
     public void tearDown() throws IOException {
+        pendingEvents.stop();
         child.close();
     }
 
@@ -89,15 +94,15 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     // TODO: Use pNew parameter and check test on Linux and macOS
     private void changeContent(final Path pPath, final boolean pNew) throws Exception {
         writeContent(pPath);
-        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(pPath), anyBoolean());
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(pPath), anyBoolean());
         reset(pathChangeHandler);
     }
 
     @Test
     public void verifyThreadNotKillWhenRuntimeExceptionOccurs() throws Exception {
-        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), notNull(), eq(file), eq(false));
+        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), eq(file), eq(false));
         writeContent(file);
-        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(file), eq(true));
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(file), eq(true));
         assertNull(threadKiller);
     }
 

@@ -62,7 +62,7 @@ public class DedicatedFileSystemFactory {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
-    public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs) throws IOException {
+    public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs, final PendingEvents pPendingEvents) throws IOException {
         final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
         final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs);
         final DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
@@ -71,6 +71,7 @@ public class DedicatedFileSystemFactory {
                 directoryWalkerExecutor,
                 dirs);
         DedicatedFileSystem fs = new DedicatedFileSystem(
+                pPendingEvents,
                 directoryFactory,
                 wrapper,
                 new DirectoryRebase(directoryFactory, wrapper, dirs),

@@ -29,14 +29,10 @@ import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
-import static java.nio.file.Files.readAttributes;
 import static java.nio.file.StandardWatchEventKinds.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -45,7 +41,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable, Runnable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
-    private final ConcurrentMap<Path, FileTime> timestamps = new ConcurrentHashMap<>();
+    private final PendingEvents pendingEvents;
     private final ConcurrentMap<Path, Directory> dirs;
     private final Thread thread;
     private final DirectoryFactory directoryFactory;
@@ -54,12 +50,14 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final ListenerManager manager;
     private final PathChangeHandler pathChangeHandler;
 
-    DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
+    DedicatedFileSystem(final PendingEvents pPendingEvents,
+                        final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final ListenerManager pManager,
                         final PathChangeHandler pPathChangeHandler,
                         final ConcurrentMap<Path, Directory> pDirs) {
+        pendingEvents = pPendingEvents;
         pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
@@ -73,7 +71,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * <p>Iterates through all registered directories and passes all their files to the
      * {@link PathChangeListener#modified(PathChangeEvent)} of the observer specified. This is necessary for newly registered
      * observers who need to know about all watched files. See {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and
-     * {@link PathChangeHandler#pathModified(EventDispatcher, BasicFileAttributes, Path, boolean)} to get an idea how directories are registered with this object.
+     * {@link PathChangeHandler#pathModified(EventDispatcher, Path, boolean)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      */
@@ -184,7 +182,6 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                     wrapper.close();
                 } finally {
                     dirs.clear();
-                    timestamps.clear();
                     pathChangeHandler.removeFileSystem(this);
                 }
             }
@@ -209,39 +206,17 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         LOG.info("Ready for receiving events");
     }
 
-    private boolean hasChanged(final Path pPath, final BasicFileAttributes pCurrentAttrs) {
-        final FileTime current = pCurrentAttrs.lastModifiedTime();
-        final FileTime cachedOrNull = timestamps.putIfAbsent(pPath, current);
-        final boolean changed = !current.equals(cachedOrNull);
-
-        if (cachedOrNull != null && changed) {
-            timestamps.replace(pPath, cachedOrNull, current);
-        }
-        return changed;
-    }
-
     private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
         LOG.debug("Received event of kind {} for path {}", pKind, child);
         try {
             if (ENTRY_CREATE == pKind) {
-                final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
-                if (currentAttrs.size() > 0 && hasChanged(child, currentAttrs)) {
-                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), currentAttrs, child, true);
-                }
-            } else if (ENTRY_MODIFY == pKind) {
-                final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
-                if (hasChanged(child, currentAttrs)) {
-                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), currentAttrs, child, false);
-                }
+                pendingEvents.createEventReceived(child);
+                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, true);
+            } else if (ENTRY_MODIFY == pKind && pendingEvents.isModificationAllowed(child)) {
+                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, false);
             } else if (ENTRY_DELETE == pKind) {
-                try {
-                    pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);
-                } finally {
-                    timestamps.remove(child);
-                }
+                pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);
             }
-        } catch (final IOException e) {
-            LOG.warn(format("FileAttributes could not be read for %s", child), e);
         } catch (final RuntimeException e) {
             LOG.error(e.getMessage(), e);
         }

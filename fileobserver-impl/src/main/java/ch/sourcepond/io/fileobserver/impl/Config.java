@@ -23,6 +23,12 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 public @interface Config {
 
     @AttributeDefinition(
+            name="Pending duration",
+            description = "Duration while no modification event is processed after a create event has been received"
+    )
+    long pendingDuration() default 500L;
+
+    @AttributeDefinition(
             name="Timeout",
             description = "Duration to wait until a file is considered to be completely written"
     )

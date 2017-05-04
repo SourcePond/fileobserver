@@ -33,6 +33,7 @@ import static org.mockito.Mockito.*;
  *
  */
 public class DedicatedFileSystemFactoryTest {
+    private final PendingEvents pendingEvents = mock(PendingEvents.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Config config = mock(Config.class);
@@ -82,7 +83,7 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void newFs() throws IOException {
-        final DedicatedFileSystem dfs = factory.openFileSystem(virtualRoot, fs);
+        final DedicatedFileSystem dfs = factory.openFileSystem(virtualRoot, fs, pendingEvents);
         dfs.close();
         verify(watchService).close();
     }

@@ -20,6 +20,7 @@ import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.PendingEvents;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
@@ -62,10 +63,11 @@ public class VirtualRootTest {
     private final SmartSwitchBuilder<ExecutorService> executorBuilder = mock(SmartSwitchBuilder.class);
     private final ListenerManager manager = mock(ListenerManager.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
+    private final PendingEvents pendingEvents = mock(PendingEvents.class);
     private ExecutorService dispatcherExecutor;
     private ExecutorService listenerExecutor;
     private ExecutorService directoryWalkerExecutor;
-    private VirtualRoot virtualRoot = new VirtualRoot(dedicatedFsFactory, manager);
+    private VirtualRoot virtualRoot = new VirtualRoot(dedicatedFsFactory, manager, pendingEvents);
 
     @Before
     public void setup() throws IOException {
@@ -80,7 +82,7 @@ public class VirtualRootTest {
 
         when(watchedDir.getKey()).thenReturn(ROOT_KEY);
         when(watchedDir.getDirectory()).thenReturn(directory);
-        when(dedicatedFsFactory.openFileSystem(virtualRoot, fs)).thenReturn(dedicatedFs);
+        when(dedicatedFsFactory.openFileSystem(virtualRoot, fs, pendingEvents)).thenReturn(dedicatedFs);
 
         virtualRoot.addRoot(watchedDir);
         virtualRoot.addListener(listener);
@@ -166,8 +168,8 @@ public class VirtualRootTest {
 
     @Test
     public void addRootDirectoriesCouldNotBeCreated() throws IOException {
-        virtualRoot = new VirtualRoot(dedicatedFsFactory, manager);
-        doThrow(IOException.class).when(dedicatedFsFactory).openFileSystem(virtualRoot, fs);
+        virtualRoot = new VirtualRoot(dedicatedFsFactory, manager, pendingEvents);
+        doThrow(IOException.class).when(dedicatedFsFactory).openFileSystem(virtualRoot, fs, pendingEvents);
 
         // This should not cause an exception
         virtualRoot.addRoot(watchedDir);
@@ -236,7 +238,7 @@ public class VirtualRootTest {
 
     @Test
     public void removeRootNoSuchDirectoryRegistered() throws IOException {
-        virtualRoot = new VirtualRoot(dedicatedFsFactory, manager);
+        virtualRoot = new VirtualRoot(dedicatedFsFactory, manager, pendingEvents);
 
         // This should not cause an exception
         virtualRoot.removeRoot(watchedDir);
@@ -253,8 +255,8 @@ public class VirtualRootTest {
     }
 
     @Test
-    public void stop() {
-        virtualRoot.stop();
+    public void deactivate() {
+        virtualRoot.deactivate();
         verify(dedicatedFs).close();
         final PathChangeListener otherListener = mock(PathChangeListener.class);
         virtualRoot.addListener(otherListener);

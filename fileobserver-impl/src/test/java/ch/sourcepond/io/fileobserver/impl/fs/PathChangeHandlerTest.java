@@ -20,8 +20,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -36,6 +39,8 @@ public class PathChangeHandlerTest {
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
+    private final FileSystem fs = mock(FileSystem.class);
+    private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final BasicFileAttributes attrs = mock(BasicFileAttributes.class);
     private final Directory directory = mock(Directory.class);
     private final Directory subDirectory = mock(Directory.class);
@@ -45,7 +50,10 @@ public class PathChangeHandlerTest {
     private final PathChangeHandler handler = new PathChangeHandler(virtualRoot, walker, dirs);
 
     @Before
-    public void setup() {
+    public void setup() throws IOException {
+        when(fs.provider()).thenReturn(provider);
+        when(path.getFileSystem()).thenReturn(fs);
+        when(provider.readAttributes(path, BasicFileAttributes.class)).thenReturn(attrs);
         when(path.getParent()).thenReturn(parent);
     }
 
@@ -65,20 +73,20 @@ public class PathChangeHandlerTest {
     @Test
     public void directoryModified() {
         when(attrs.isDirectory()).thenReturn(true);
-        handler.pathModified(dispatcher, attrs, path, false);
+        handler.pathModified(dispatcher, path, false);
         verify(walker).directoryCreated(dispatcher, path);
     }
 
     @Test
     public void fileModifed() {
         dirs.put(parent, directory);
-        handler.pathModified(dispatcher, attrs, path, true);
+        handler.pathModified(dispatcher, path, true);
         verify(directory).informIfChanged(dispatcher, path, true);
     }
 
     @Test(expected = NullPointerException.class)
     public void fileModifedNoParentRegistered() {
-        handler.pathModified(dispatcher, attrs, path, false);
+        handler.pathModified(dispatcher, path, false);
     }
 
     @Test

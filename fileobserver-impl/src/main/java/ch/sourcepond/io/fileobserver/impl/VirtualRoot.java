@@ -21,14 +21,12 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.PendingEvents;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Modified;
-import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.*;
 import org.osgi.service.metatype.annotations.Designate;
 import org.slf4j.Logger;
 
@@ -63,6 +61,7 @@ public class VirtualRoot implements RelocationObserver {
     private final InitSwitch<KeyDeliveryHook> hooksInitSwitch = new InitSwitch<>(this::doAddHook);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
+    private final PendingEvents pendingEvents;
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
 
 
@@ -70,6 +69,7 @@ public class VirtualRoot implements RelocationObserver {
     public VirtualRoot() {
         manager = new ListenerManager();
         final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
+        pendingEvents = new PendingEvents();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
                 manager);
@@ -77,9 +77,11 @@ public class VirtualRoot implements RelocationObserver {
 
     // Constructor for testing
     public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory,
-                       final ListenerManager pManager) {
+                       final ListenerManager pManager,
+                       final PendingEvents pPendingEvents) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
         manager = pManager;
+        pendingEvents = pPendingEvents;
     }
 
     @Activate
@@ -88,13 +90,23 @@ public class VirtualRoot implements RelocationObserver {
         rootInitSwitch.init();
         observerInitSwitch.init();
         hooksInitSwitch.init();
+        pendingEvents.start();
         LOG.info("Virtual-root activated");
+    }
+
+    @Deactivate
+    public void deactivate() {
+        children.values().forEach(DedicatedFileSystem::close);
+        children.clear();
+        pendingEvents.stop();
+        LOG.info("Virtual-root deactivated");
     }
 
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
         manager.setConfig(pConfig);
+        pendingEvents.setTimoutInMilliseconds(pConfig.pendingDuration());
     }
 
     @Reference
@@ -153,7 +165,7 @@ public class VirtualRoot implements RelocationObserver {
 
     private DedicatedFileSystem newDedicatedFileSystem(final FileSystem pFs) {
         try {
-            return dedicatedFileSystemFactory.openFileSystem(this, pFs);
+            return dedicatedFileSystemFactory.openFileSystem(this, pFs, pendingEvents);
         } catch (final IOException e) {
             throw new UncheckedIOException(e.getMessage(), e);
         }
@@ -267,18 +279,6 @@ public class VirtualRoot implements RelocationObserver {
             throw new IllegalStateException(format("No appropriate root-directory found for %s", pPath));
         }
         return fsdirs;
-    }
-
-    /**
-     * <p>Closes all active dedicated files systems and removes them.</p>
-     * <p>This must be named "destroy" in order to be called from Felix DM (see
-     * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-dependency-manager/reference/components.html">Dependency Manager - Components</a>)</p>
-     */
-    // Lifecycle method for Felix DM
-    public void stop() {
-        children.values().forEach(DedicatedFileSystem::close);
-        children.clear();
-        LOG.info("Timestamp cleaner stopped");
     }
 
     /**
