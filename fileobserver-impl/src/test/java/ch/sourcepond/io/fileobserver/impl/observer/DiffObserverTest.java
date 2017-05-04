@@ -309,17 +309,6 @@ public class DiffObserverTest extends CopyResourcesTest {
     }
 
     @Test
-    public void ioExceptionDuringUpdateShouldBeCaught() throws Exception {
-        doThrow(IOException.class).when(resource).update(eq(TIMEOUT), notNull());
-
-        informDiscard(root_dir_path);
-        informModified(root_dir_path);
-
-        // This should not cause an exception
-        diff.close();
-    }
-
-    @Test
     public void ioExceptionDuringObserverCallShouldBeCaught() throws Exception {
         doThrow(IOException.class).when(observer).modified(notNull());
 

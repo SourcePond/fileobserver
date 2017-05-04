@@ -15,8 +15,8 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
@@ -70,11 +70,7 @@ class DiffObserver implements PathChangeListener, Closeable {
     private void updateResource(final DispatchKey pKey, final Path pFile) {
         final Resource resource = getResource(pFile);
         if (resource != null) {
-            try {
-                resource.update(config.timeout(), u -> informModified(u, pKey, pFile));
-            } catch (final IOException e) {
-                LOG.warn(e.getMessage(), e);
-            }
+            resource.update(config.timeout(), u -> informModified(u, pKey, pFile));
         }
     }
 

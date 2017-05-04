@@ -41,7 +41,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * stores the checksums of changed files.
  */
 public abstract class Directory {
-    private static final Logger LOG = getLogger(SubDirectory.class);
+    private static final Logger LOG = getLogger(Directory.class);
     private final ConcurrentMap<Path, Resource> resources = new ConcurrentHashMap<>();
     private final WatchKey watchKey;
 
@@ -249,24 +249,27 @@ public abstract class Directory {
      *
      * @param pFile File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final EventDispatcher pDispatcher, final Directory pNewRootOrNull, final Path pFile) {
+    public void informIfChanged(final EventDispatcher pDispatcher, final Directory pNewRootOrNull, final Path pFile, boolean pIgnoreChecksumUpdateStatus) {
         if (pDispatcher.hasListeners()) {
-            try {
-                getResource(pFile).update(getTimeout(),
-                        update -> {
-                            if (update.hasChanged()) {
-                                // If the modification is requested because a new root-directory has been registered, we
-                                // need to inform the listeners about supplement keys.
-                                final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
-                                        emptyList() : pNewRootOrNull.createKeys(pFile);
+            getResource(pFile).update(getTimeout(),
+                    update -> {
+                        if (pIgnoreChecksumUpdateStatus || update.hasChanged()) {
+                            LOG.debug("Processing {} because {} has been changed", update, pFile);
+                            // If the modification is requested because a new root-directory has been registered, we
+                            // need to inform the listeners about supplement keys.
+                            final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
+                                    emptyList() : pNewRootOrNull.createKeys(pFile);
 
-                                createKeys(pFile).forEach(k -> pDispatcher.modified(k, pFile, supplementKeys));
-                            }
-                        });
-            } catch (final IOException e) {
-                LOG.warn(e.getMessage(), e);
-            }
+                            createKeys(pFile).forEach(k -> pDispatcher.modified(k, pFile, supplementKeys));
+                        } else {
+                            LOG.debug("Ignored {} because {} has not been changed", update, pFile);
+                        }
+                    });
         }
+    }
+
+    public void informIfChanged(final EventDispatcher pDispatcher, final Directory pNewRootOrNull, final Path pFile) {
+        informIfChanged(pDispatcher, pNewRootOrNull, pFile, false);
     }
 
     /**
@@ -276,8 +279,8 @@ public abstract class Directory {
      *
      * @param pFile File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final EventDispatcher pDispatcher, final Path pFile) {
-        informIfChanged(pDispatcher, null, pFile);
+    public void informIfChanged(final EventDispatcher pDispatcher, final Path pFile, final boolean pIsNew) {
+        informIfChanged(pDispatcher, null, pFile, pIsNew);
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);

@@ -98,7 +98,7 @@ class DirectoryRegistrationWalker {
      * @param pDirectory Newly created directory, must not be {@code null}
      */
     void directoryCreated(final EventDispatcher pDispatcher, final Path pDirectory) {
-        directoryCreated(pDispatcher,null, pDirectory);
+        directoryCreated(pDispatcher,null, pDirectory, false);
     }
 
     /**
@@ -109,7 +109,7 @@ class DirectoryRegistrationWalker {
      * @param pNewRoot Newly created directory, must not be {@code null}
      */
     void rootAdded(final EventDispatcher pDispatcher, final Directory pNewRoot) {
-        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath());
+        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath(), true);
     }
 
     /**
@@ -122,12 +122,14 @@ class DirectoryRegistrationWalker {
      */
     private void directoryCreated(final EventDispatcher pDispatcher,
                                   final Directory pNewRootOrNull,
-                                  final Path pDirectory) {
+                                  final Path pDirectory,
+                                  final boolean pIgnoreChecksumUpdateStatus) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered PathChangeListener
         directoryWalkerExecutor.execute(() -> {
             try {
-                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(pDispatcher, pNewRootOrNull));
+                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(
+                        pDispatcher, pNewRootOrNull, pIgnoreChecksumUpdateStatus));
             } catch (final IOException e) {
                 logger.warn(e.getMessage(), e);
             } catch (final RuntimeException e) {
@@ -145,13 +147,17 @@ class DirectoryRegistrationWalker {
     private class DirectoryInitializerFileVisitor extends SimpleFileVisitor<Path> {
         private final EventDispatcher session;
         private final Directory newRootOrNull;
+        private final boolean ignoreChecksumUpdateStatus;
 
         /**
          * Creates a new instance of this class.
          */
-        public DirectoryInitializerFileVisitor(final EventDispatcher pDispatcher, final Directory pNewRootOrNull) {
+        public DirectoryInitializerFileVisitor(final EventDispatcher pDispatcher,
+                                               final Directory pNewRootOrNull,
+                                               final boolean pIgnoreChecksumUpdateStatus) {
             session = pDispatcher;
             newRootOrNull = pNewRootOrNull;
+            ignoreChecksumUpdateStatus = pIgnoreChecksumUpdateStatus;
         }
 
         @Override
@@ -160,7 +166,7 @@ class DirectoryRegistrationWalker {
             // This is most certainly the case, but, there is an exception: because we already
             // registered the parent directory of the file with the watch-service there's a small
             // chance that the file had already been modified before we got here.
-            dirs.get(file.getParent()).informIfChanged(session, newRootOrNull, file);
+            dirs.get(file.getParent()).informIfChanged(session, newRootOrNull, file, ignoreChecksumUpdateStatus);
             return CONTINUE;
         }
 

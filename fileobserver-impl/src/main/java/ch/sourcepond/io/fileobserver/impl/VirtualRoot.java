@@ -60,6 +60,7 @@ public class VirtualRoot implements RelocationObserver {
     private final ListenerManager manager;
     private final InitSwitch<WatchedDirectory> rootInitSwitch = new InitSwitch<>(this::doAddRoot);
     private final InitSwitch<PathChangeListener> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
+    private final InitSwitch<KeyDeliveryHook> hooksInitSwitch = new InitSwitch<>(this::doAddHook);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
@@ -86,6 +87,7 @@ public class VirtualRoot implements RelocationObserver {
         setConfig(pConfig);
         rootInitSwitch.init();
         observerInitSwitch.init();
+        hooksInitSwitch.init();
         LOG.info("Virtual-root activated");
     }
 
@@ -157,9 +159,14 @@ public class VirtualRoot implements RelocationObserver {
         }
     }
 
+    private void doAddHook(final KeyDeliveryHook pHook) {
+        manager.addHook(pHook);
+    }
+
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
     public void addHook(final KeyDeliveryHook pHook) {
-        manager.addHook(pHook);
+        requireNonNull(pHook, "Hook is null");
+        hooksInitSwitch.add(pHook);
     }
 
     public void removeHook(final KeyDeliveryHook pHook) {

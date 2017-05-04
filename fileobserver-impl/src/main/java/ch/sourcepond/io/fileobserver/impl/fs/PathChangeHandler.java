@@ -57,13 +57,16 @@ class PathChangeHandler {
         return dirs.get(pPath);
     }
 
-    void pathModified(final EventDispatcher pDispatcher, final BasicFileAttributes pAttrs, final Path pPath) {
+    void pathModified(final EventDispatcher pDispatcher,
+                      final BasicFileAttributes pAttrs,
+                      final Path pPath,
+                      boolean pIsNew) {
         if (pAttrs.isDirectory()) {
             walker.directoryCreated(pDispatcher, pPath);
         } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
-            dir.informIfChanged(pDispatcher, pPath);
+            dir.informIfChanged(pDispatcher, pPath, pIsNew);
         }
     }
 

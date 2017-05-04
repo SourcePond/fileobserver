@@ -35,6 +35,7 @@ import static java.nio.file.Files.newBufferedWriter;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.util.UUID.randomUUID;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -85,33 +86,33 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         }
     }
 
-    private void changeContent(final Path pPath) throws Exception {
+    private void changeContent(final Path pPath, final boolean pNew) throws Exception {
         writeContent(pPath);
-        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(pPath));
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(pPath), eq(pNew));
         reset(pathChangeHandler);
     }
 
     @Test
     public void verifyThreadNotKillWhenRuntimeExceptionOccurs() throws Exception {
-        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), notNull(), eq(file));
+        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), notNull(), eq(file), eq(false));
         writeContent(file);
-        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(file));
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), notNull(), eq(file), eq(true));
         assertNull(threadKiller);
     }
 
     @Test
     public void entryCreate() throws Exception {
-        changeContent(file);
+        changeContent(file, true);
     }
 
     @Test
     public void entryModify() throws Exception {
-        changeContent(testfile_txt_path);
+        changeContent(testfile_txt_path, false);
     }
 
     @Test
     public void entryDelete() throws Exception {
-        changeContent(file);
+        changeContent(file, true);
         delete(file);
         verify(pathChangeHandler, timeout(15000)).pathDiscarded(dispatcher, file);
     }

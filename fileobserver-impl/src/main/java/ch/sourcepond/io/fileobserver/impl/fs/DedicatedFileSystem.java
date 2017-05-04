@@ -73,7 +73,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * <p>Iterates through all registered directories and passes all their files to the
      * {@link PathChangeListener#modified(PathChangeEvent)} of the observer specified. This is necessary for newly registered
      * observers who need to know about all watched files. See {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and
-     * {@link PathChangeHandler#pathModified(EventDispatcher, BasicFileAttributes, Path)} to get an idea how directories are registered with this object.
+     * {@link PathChangeHandler#pathModified(EventDispatcher, BasicFileAttributes, Path, boolean)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      */
@@ -221,16 +221,17 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     }
 
     private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
+        LOG.debug("Received event of kind {} for path {}", pKind, child);
         try {
             if (ENTRY_CREATE == pKind) {
                 final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
                 if (currentAttrs.size() > 0 && hasChanged(child, currentAttrs)) {
-                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), currentAttrs, child);
+                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), currentAttrs, child, true);
                 }
             } else if (ENTRY_MODIFY == pKind) {
                 final BasicFileAttributes currentAttrs = readAttributes(child, BasicFileAttributes.class);
                 if (hasChanged(child, currentAttrs)) {
-                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), currentAttrs, child);
+                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), currentAttrs, child, false);
                 }
             } else if (ENTRY_DELETE == pKind) {
                 try {

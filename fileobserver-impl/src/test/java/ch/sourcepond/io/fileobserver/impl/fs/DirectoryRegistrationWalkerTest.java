@@ -96,16 +96,16 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         when(directoryFactory.newBranch(subdir_2, subdir_22_watchKey)).thenReturn(subdir_22);
     }
 
-    private void verifyDirectoryWalk(final Directory pNewRootOrNull) throws IOException {
-        verify(subdir_111, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_1111_txt_path);
-        verify(subdir_11, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_111_txt_path);
-        verify(subdir_12, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_121_txt_path);
-        verify(subdir_1, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_11_xml_path);
-        verify(subdir_211, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_2111_txt_path);
-        verify(subdir_21, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_211_txt_path);
-        verify(subdir_22, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_221_txt_path);
-        verify(subdir_2, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_21_xml_path);
-        verify(root_dir, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_txt_path);
+    private void verifyDirectoryWalk(final Directory pNewRootOrNull, boolean pIgnoreChecksumUpdate) throws IOException {
+        verify(subdir_111, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_1111_txt_path, pIgnoreChecksumUpdate);
+        verify(subdir_11, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_111_txt_path, pIgnoreChecksumUpdate);
+        verify(subdir_12, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_121_txt_path, pIgnoreChecksumUpdate);
+        verify(subdir_1, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_11_xml_path, pIgnoreChecksumUpdate);
+        verify(subdir_211, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_2111_txt_path, pIgnoreChecksumUpdate);
+        verify(subdir_21, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_211_txt_path, pIgnoreChecksumUpdate);
+        verify(subdir_22, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_221_txt_path, pIgnoreChecksumUpdate);
+        verify(subdir_2, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_21_xml_path, pIgnoreChecksumUpdate);
+        verify(root_dir, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_txt_path, pIgnoreChecksumUpdate);
         verifyNoMoreInteractions(subdir_111,
                 subdir_11, subdir_12, subdir_1,
                 subdir_211, subdir_21, subdir_22,
@@ -134,7 +134,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     @Test
     public void directoryCreated() throws IOException {
         walker.directoryCreated(dispatcher, root_dir_path);
-        verifyDirectoryWalk(null);
+        verifyDirectoryWalk(null, false);
     }
 
     @Test
@@ -142,7 +142,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         final Directory newRoot = mock(Directory.class);
         when(newRoot.getPath()).thenReturn(root_dir_path);
         walker.rootAdded(dispatcher, newRoot);
-        verifyDirectoryWalk(newRoot);
+        verifyDirectoryWalk(newRoot, true);
     }
 
     @Test
