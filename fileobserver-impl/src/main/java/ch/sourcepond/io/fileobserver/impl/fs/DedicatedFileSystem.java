@@ -41,7 +41,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable, Runnable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
-    private final PendingEvents pendingEvents;
+    private final PendingEventRegistry pendingEventRegistry;
     private final ConcurrentMap<Path, Directory> dirs;
     private final Thread thread;
     private final DirectoryFactory directoryFactory;
@@ -50,14 +50,14 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final ListenerManager manager;
     private final PathChangeHandler pathChangeHandler;
 
-    DedicatedFileSystem(final PendingEvents pPendingEvents,
+    DedicatedFileSystem(final PendingEventRegistry pPendingEventRegistry,
                         final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final ListenerManager pManager,
                         final PathChangeHandler pPathChangeHandler,
                         final ConcurrentMap<Path, Directory> pDirs) {
-        pendingEvents = pPendingEvents;
+        pendingEventRegistry = pPendingEventRegistry;
         pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
@@ -210,9 +210,9 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         LOG.debug("Received event of kind {} for path {}", pKind, child);
         try {
             if (ENTRY_CREATE == pKind) {
-                pendingEvents.createEventReceived(child);
+                pendingEventRegistry.registerCreateEvent(child);
                 pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, true);
-            } else if (ENTRY_MODIFY == pKind && pendingEvents.isModificationAllowed(child)) {
+            } else if (ENTRY_MODIFY == pKind && pendingEventRegistry.isModificationAllowed(child)) {
                 pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, false);
             } else if (ENTRY_DELETE == pKind) {
                 pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);

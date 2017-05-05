@@ -57,7 +57,7 @@ public class DedicatedFileSystemTest {
     private final Path rootDirPath2 = mock(Path.class);
     private final WatchKey rootWatchKey1 = mock(WatchKey.class);
     private final WatchServiceWrapper wrapper = mock(WatchServiceWrapper.class);
-    private final PendingEvents pendingEvents = mock(PendingEvents.class);
+    private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
     private DedicatedFileSystem fs;
 
     @Before
@@ -86,7 +86,7 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(pendingEvents, directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs);
+        fs = new DedicatedFileSystem(pendingEventRegistry, directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs);
     }
 
     @Test

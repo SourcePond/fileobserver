@@ -13,56 +13,25 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.checksum.api.UpdateObserver;
+
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.DelayQueue;
-import java.util.concurrent.Delayed;
-import java.util.concurrent.TimeUnit;
 
 import static java.lang.Thread.currentThread;
-import static java.time.Instant.now;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
+ * <p>This class solves the <a href="http://stackoverflow.com/questions/16777869/java-7-watchservice-ignoring-multiple-occurrences-of-the-same-event">"2 events in short time"</a> issue
+ * experienced on different platform. If a create event is detected, it can be registered
+ * with an object of class this class through {@link #registerCreateEvent(Path)}. After that, it's not allowed to
+ * process a modification event during the specified timeout (see {@link #isModificationAllowed(Path)} and {@link #setTimoutInMilliseconds(long)}).</p>
+ * <p>Together with {@link ch.sourcepond.io.checksum.api.Resource#update(long, UpdateObserver)} it's guaranteed
+ * that no content change is missed.</p>
  *
  */
-public class PendingEvents implements Runnable {
-
-    private class PendingEvent implements Delayed {
-        private final Instant creationTime = now();
-        private final Instant threshold;
-        private final Path path;
-
-        PendingEvent(final Path pPath, final long pTimeoutInMilliseconds) {
-            path = pPath;
-            threshold = creationTime.plusMillis(pTimeoutInMilliseconds);
-        }
-
-        @Override
-        public long getDelay(final TimeUnit unit) {
-            return unit.convert(threshold.minusMillis(now().toEpochMilli()).toEpochMilli(), MILLISECONDS);
-        }
-
-        @Override
-        public int compareTo(final Delayed o) {
-            final long t = getDelay(MILLISECONDS);
-            final long ot = o.getDelay(MILLISECONDS);
-
-            if (t > ot) {
-                return 1;
-            }
-            if (t < ot) {
-                return -1;
-            }
-            return 0;
-        }
-
-        Path getPath() {
-            return path;
-        }
-    }
+public class PendingEventRegistry implements Runnable {
 
     private final DelayQueue<PendingEvent> queue = new DelayQueue<>();
     private final Set<Path> pending =  newKeySet();
@@ -82,7 +51,10 @@ public class PendingEvents implements Runnable {
         timoutInMilliseconds = pTimeoutInMilliseconds;
     }
 
-    void createEventReceived(final Path pPath) {
+    void registerCreateEvent(final Path pPath) {
+        if (!thread.isAlive()) {
+            throw new IllegalStateException("Thread not alive");
+        }
         if (pending.add(pPath)) {
             queue.offer(new PendingEvent(pPath, timoutInMilliseconds));
         }

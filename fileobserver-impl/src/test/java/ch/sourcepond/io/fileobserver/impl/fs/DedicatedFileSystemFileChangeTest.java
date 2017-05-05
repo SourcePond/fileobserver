@@ -46,7 +46,7 @@ import static org.mockito.Mockito.*;
 public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private static final String DIRECTORY_KEY = "getDirectoryKey";
     private static final String NEW_FILE_NAME = "newfile.txt";
-    private final PendingEvents pendingEvents = new PendingEvents();
+    private final PendingEventRegistry pendingEventRegistry = new PendingEventRegistry();
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -68,17 +68,17 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         wrapper = new WatchServiceWrapper(root_dir_path.getFileSystem());
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        child = new DedicatedFileSystem(pendingEvents, directoryFactory, wrapper, rebase, manager, pathChangeHandler, new ConcurrentHashMap<>());
+        child = new DedicatedFileSystem(pendingEventRegistry, directoryFactory, wrapper, rebase, manager, pathChangeHandler, new ConcurrentHashMap<>());
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
-        pendingEvents.start();
+        pendingEventRegistry.start();
         child.start();
     }
 
     @After
     public void tearDown() throws IOException {
-        pendingEvents.stop();
+        pendingEventRegistry.stop();
         child.close();
     }
 

@@ -21,7 +21,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEvents;
+import ch.sourcepond.io.fileobserver.impl.fs.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
@@ -61,7 +61,7 @@ public class VirtualRoot implements RelocationObserver {
     private final InitSwitch<KeyDeliveryHook> hooksInitSwitch = new InitSwitch<>(this::doAddHook);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
-    private final PendingEvents pendingEvents;
+    private final PendingEventRegistry pendingEventRegistry;
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
 
 
@@ -69,7 +69,7 @@ public class VirtualRoot implements RelocationObserver {
     public VirtualRoot() {
         manager = new ListenerManager();
         final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
-        pendingEvents = new PendingEvents();
+        pendingEventRegistry = new PendingEventRegistry();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
                 manager);
@@ -78,10 +78,10 @@ public class VirtualRoot implements RelocationObserver {
     // Constructor for testing
     public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory,
                        final ListenerManager pManager,
-                       final PendingEvents pPendingEvents) {
+                       final PendingEventRegistry pPendingEventRegistry) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
         manager = pManager;
-        pendingEvents = pPendingEvents;
+        pendingEventRegistry = pPendingEventRegistry;
     }
 
     @Activate
@@ -90,7 +90,7 @@ public class VirtualRoot implements RelocationObserver {
         rootInitSwitch.init();
         observerInitSwitch.init();
         hooksInitSwitch.init();
-        pendingEvents.start();
+        pendingEventRegistry.start();
         LOG.info("Virtual-root activated");
     }
 
@@ -98,7 +98,7 @@ public class VirtualRoot implements RelocationObserver {
     public void deactivate() {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
-        pendingEvents.stop();
+        pendingEventRegistry.stop();
         LOG.info("Virtual-root deactivated");
     }
 
@@ -106,7 +106,7 @@ public class VirtualRoot implements RelocationObserver {
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
         manager.setConfig(pConfig);
-        pendingEvents.setTimoutInMilliseconds(pConfig.pendingDuration());
+        pendingEventRegistry.setTimoutInMilliseconds(pConfig.pendingDuration());
     }
 
     @Reference
@@ -165,7 +165,7 @@ public class VirtualRoot implements RelocationObserver {
 
     private DedicatedFileSystem newDedicatedFileSystem(final FileSystem pFs) {
         try {
-            return dedicatedFileSystemFactory.openFileSystem(this, pFs, pendingEvents);
+            return dedicatedFileSystemFactory.openFileSystem(this, pFs, pendingEventRegistry);
         } catch (final IOException e) {
             throw new UncheckedIOException(e.getMessage(), e);
         }
