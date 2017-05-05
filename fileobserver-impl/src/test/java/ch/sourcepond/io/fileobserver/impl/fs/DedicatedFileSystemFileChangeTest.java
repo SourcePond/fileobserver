@@ -21,7 +21,6 @@ import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
@@ -42,7 +41,6 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-@Ignore
 public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private static final String DIRECTORY_KEY = "getDirectoryKey";
     private static final String NEW_FILE_NAME = "newfile.txt";
@@ -94,7 +92,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     // TODO: Use pNew parameter and check test on Linux and macOS
     private void changeContent(final Path pPath, final boolean pNew) throws Exception {
         writeContent(pPath);
-        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(pPath), anyBoolean());
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(pPath), eq(pNew));
         reset(pathChangeHandler);
     }
 
