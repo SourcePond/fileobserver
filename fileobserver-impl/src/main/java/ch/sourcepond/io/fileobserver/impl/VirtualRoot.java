@@ -48,7 +48,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-@Component(service = {})
+@Component(service = {}, immediate = true)
 @Designate(ocd = Config.class)
 public class VirtualRoot implements RelocationObserver {
     private static final Logger LOG = getLogger(VirtualRoot.class);
@@ -56,9 +56,6 @@ public class VirtualRoot implements RelocationObserver {
     private static final String DIRECTORY_IS_NULL = "Directory is null";
     private static final String WATCHED_DIRECTORY_IS_NULL = "Watched directory is null";
     private final ListenerManager manager;
-    private final InitSwitch<WatchedDirectory> rootInitSwitch = new InitSwitch<>(this::doAddRoot);
-    private final InitSwitch<PathChangeListener> observerInitSwitch = new InitSwitch<>(this::doAddObserver);
-    private final InitSwitch<KeyDeliveryHook> hooksInitSwitch = new InitSwitch<>(this::doAddHook);
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final PendingEventRegistry pendingEventRegistry;
@@ -87,9 +84,6 @@ public class VirtualRoot implements RelocationObserver {
     @Activate
     public void activate(final Config pConfig) {
         setConfig(pConfig);
-        rootInitSwitch.init();
-        observerInitSwitch.init();
-        hooksInitSwitch.init();
         pendingEventRegistry.start();
         LOG.info("Virtual-root activated");
     }
@@ -135,11 +129,6 @@ public class VirtualRoot implements RelocationObserver {
         dedicatedFileSystemFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
-    private void doAddObserver(final PathChangeListener pListener) {
-        final EventDispatcher session = manager.addListener(pListener);
-        children.values().forEach(dfs -> dfs.forceInform(session));
-    }
-
     /**
      * Whiteboard bind-method for {@link PathChangeListener} services exported by any client bundle. This
      * method is called when a client exports a service which implements the {@link PathChangeListener} interface.
@@ -149,7 +138,8 @@ public class VirtualRoot implements RelocationObserver {
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
     public void addListener(final PathChangeListener pListener) {
         requireNonNull(pListener, "Observer is null");
-        observerInitSwitch.add(pListener);
+        final EventDispatcher dispatcher = manager.addListener(pListener);
+        children.values().forEach(dfs -> dfs.forceInform(dispatcher));
     }
 
     /**
@@ -171,23 +161,27 @@ public class VirtualRoot implements RelocationObserver {
         }
     }
 
-    private void doAddHook(final KeyDeliveryHook pHook) {
-        manager.addHook(pHook);
-    }
-
     @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
     public void addHook(final KeyDeliveryHook pHook) {
         requireNonNull(pHook, "Hook is null");
-        hooksInitSwitch.add(pHook);
+        manager.addHook(pHook);
     }
 
     public void removeHook(final KeyDeliveryHook pHook) {
         manager.removeHook(pHook);
     }
 
+    /**
+     * Whiteboard bind-method for {@link WatchedDirectory} services exported by any client bundle. This
+     * method is called when a client exports a service which implements the {@link WatchedDirectory} interface.
+     *
+     * @param pWatchedDirectory Watched-directory service to be registered.
+     */
     // This method must be synchronized because all sub-directories need to be
     // registered before another WatchedDirectory is being registered.
-    private synchronized void doAddRoot(final WatchedDirectory pWatchedDirectory) {
+    @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
+    public synchronized void addRoot(final WatchedDirectory pWatchedDirectory) {
+        requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
         final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
@@ -209,18 +203,6 @@ public class VirtualRoot implements RelocationObserver {
         } catch (final IOException | UncheckedIOException e) {
             LOG.warn(e.getMessage(), e);
         }
-    }
-
-    /**
-     * Whiteboard bind-method for {@link WatchedDirectory} services exported by any client bundle. This
-     * method is called when a client exports a service which implements the {@link WatchedDirectory} interface.
-     *
-     * @param pWatchedDirectory Watched-directory service to be registered.
-     */
-    @Reference(policy = DYNAMIC, cardinality = MULTIPLE)
-    public void addRoot(final WatchedDirectory pWatchedDirectory) {
-        requireNonNull(pWatchedDirectory, WATCHED_DIRECTORY_IS_NULL);
-        rootInitSwitch.add(pWatchedDirectory);
     }
 
     /**
