@@ -37,7 +37,7 @@ public class DedicatedFileSystemFactory {
     private final ListenerManager dispatcher;
 
     // Injected by SCR
-    private Executor directoryWalkerExecutor;
+    private volatile Executor directoryWalkerExecutor;
 
     // Constructor for BundleActivator
     public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ListenerManager pDispatcher) {
