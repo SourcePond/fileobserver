@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.observer;
+package ch.sourcepond.io.fileobserver.impl.listener;
 
 import java.io.Closeable;
 
@@ -19,19 +19,19 @@ import java.io.Closeable;
  *
  */
 public class DiffEventDispatcher extends EventDispatcher implements Closeable {
-    private final DiffObserver diffObserver;
+    private final DiffListener diffListener;
 
-    DiffEventDispatcher(final ListenerManager pDispatcher, final DiffObserver pDiffObserver) {
-        super(pDispatcher, pDiffObserver);
-        diffObserver = pDiffObserver;
+    DiffEventDispatcher(final ListenerManager pDispatcher, final DiffListener pDiffListener) {
+        super(pDispatcher, pDiffListener);
+        diffListener = pDiffListener;
     }
 
-    DiffObserver getDiffObserver() {
-        return diffObserver;
+    DiffListener getDiffListener() {
+        return diffListener;
     }
 
     @Override
     public void close() {
-        diffObserver.close();
+        diffListener.close();
     }
 }

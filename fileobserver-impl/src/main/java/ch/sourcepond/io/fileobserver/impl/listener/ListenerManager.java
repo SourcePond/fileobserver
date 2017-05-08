@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.observer;
+package ch.sourcepond.io.fileobserver.impl.listener;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
@@ -47,10 +47,10 @@ public class ListenerManager implements ReplayDispatcher {
     private final DefaultDispatchRestrictionFactory restrictionFactory;
     private final DispatchEventFactory dispatchEventFactory;
     private final Set<KeyDeliveryHook> hooks = new CopyOnWriteArraySet<>();
-    private final ConcurrentMap<PathChangeListener, Map<FileSystem, DefaultDispatchRestriction>> observers = new ConcurrentHashMap<>();
-    private final EventDispatcher defaultDispatcher = new EventDispatcher(this, observers.keySet());
+    private final ConcurrentMap<PathChangeListener, Map<FileSystem, DefaultDispatchRestriction>> listeners = new ConcurrentHashMap<>();
+    private final EventDispatcher defaultDispatcher = new EventDispatcher(this, listeners.keySet());
     private volatile Executor dispatcherExecutor;
-    private volatile ExecutorService observerExecutor;
+    private volatile ExecutorService listenerExecutor;
     private volatile Config config;
 
     // Constructor for activator
@@ -66,12 +66,12 @@ public class ListenerManager implements ReplayDispatcher {
     }
 
     public EventDispatcher addListener(final PathChangeListener pObserver) {
-        observers.computeIfAbsent(pObserver, o -> new ConcurrentHashMap<>());
+        listeners.computeIfAbsent(pObserver, o -> new ConcurrentHashMap<>());
         return new EventDispatcher(this, pObserver);
     }
 
     public DiffEventDispatcher openDiff(final DedicatedFileSystem pFs) {
-        return new DiffEventDispatcher(this, new DiffObserver(pFs, defaultDispatcher, config));
+        return new DiffEventDispatcher(this, new DiffListener(pFs, defaultDispatcher, config));
     }
 
     public EventDispatcher getDefaultDispatcher() {
@@ -79,7 +79,7 @@ public class ListenerManager implements ReplayDispatcher {
     }
 
     Collection<PathChangeListener> getListeners() {
-        return observers.keySet();
+        return listeners.keySet();
     }
 
     public void setConfig(final Config pConfig) {
@@ -90,8 +90,8 @@ public class ListenerManager implements ReplayDispatcher {
         dispatcherExecutor = pDispatcherExecutor;
     }
 
-    public void setListenerExecutor(final ExecutorService pObserverExecutor) {
-        observerExecutor = pObserverExecutor;
+    public void setListenerExecutor(final ExecutorService pListenerExecutor) {
+        listenerExecutor = pListenerExecutor;
     }
 
     public void addHook(final KeyDeliveryHook pHook) {
@@ -99,7 +99,7 @@ public class ListenerManager implements ReplayDispatcher {
     }
 
     public void removeObserver(final PathChangeListener pObserver) {
-        observers.remove(pObserver);
+        listeners.remove(pObserver);
     }
 
     public void removeHook(final KeyDeliveryHook pHook) {
@@ -150,7 +150,7 @@ public class ListenerManager implements ReplayDispatcher {
 
     private boolean isAccepted(final PathChangeListener pObserver, final DispatchKey pDispatchKey) {
         final FileSystem fs = pDispatchKey.getRelativePath().getFileSystem();
-        return observers.computeIfAbsent(
+        return listeners.computeIfAbsent(
                 pObserver, o -> new ConcurrentHashMap<>()).
                 computeIfAbsent(fs, f -> createRestriction(pObserver, f)).isAccepted(pDispatchKey);
     }
@@ -162,7 +162,7 @@ public class ListenerManager implements ReplayDispatcher {
                                 final KeyDeliveryConsumer<T> pBeforeConsumer,
                                 final KeyDeliveryConsumer<T> pAfterConsumer) {
         dispatcherExecutor.execute(new DispatcherTask(
-                observerExecutor,
+                listenerExecutor,
                 hooks,
                 pListeners,
                 pKeyOrEvent,
@@ -229,6 +229,6 @@ public class ListenerManager implements ReplayDispatcher {
     }
 
     public void removeFileSystem(final FileSystem pFs) {
-        observers.values().forEach(m -> m.remove(pFs));
+        listeners.values().forEach(m -> m.remove(pFs));
     }
 }

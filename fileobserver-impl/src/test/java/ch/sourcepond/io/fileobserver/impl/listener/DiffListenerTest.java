@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.observer;
+package ch.sourcepond.io.fileobserver.impl.listener;
 
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class DiffObserverTest extends CopyResourcesTest {
+public class DiffListenerTest extends CopyResourcesTest {
     private static final long TIMEOUT = 2000;
     private static final Object DIRECTORY_KEY = "getDirectoryKey";
     private final Config config = mock(Config.class);
@@ -75,7 +75,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Update update = mock(Update.class);
     private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
     private final ListenerManager manager = new ListenerManager();
-    private DiffObserver diff;
+    private DiffListener diff;
 
     private void informModified(final Path pPath) throws Exception {
         walkFileTree(pPath, new SimpleFileVisitor<Path>() {
@@ -150,7 +150,7 @@ public class DiffObserverTest extends CopyResourcesTest {
         manager.setListenerExecutor(observerExecutor);
         manager.setConfig(config);
         manager.addListener(observer);
-        diff = manager.openDiff(fs).getDiffObserver();
+        diff = manager.openDiff(fs).getDiffListener();
     }
 
     @Test

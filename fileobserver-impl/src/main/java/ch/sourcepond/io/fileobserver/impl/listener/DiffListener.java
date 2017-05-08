@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.observer;
+package ch.sourcepond.io.fileobserver.impl.listener;
 
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
@@ -35,8 +35,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-class DiffObserver implements PathChangeListener, Closeable {
-    private static final Logger LOG = getLogger(DiffObserver.class);
+class DiffListener implements PathChangeListener, Closeable {
+    private static final Logger LOG = getLogger(DiffListener.class);
     private final Map<DispatchKey, Path> modifiedKeys = new HashMap<>();
     private final Set<DispatchKey> discardedKeys = new HashSet<>();
     private final Map<DispatchKey, Collection<DispatchKey>> supplementKeys = new HashMap<>();
@@ -44,7 +44,7 @@ class DiffObserver implements PathChangeListener, Closeable {
     private final EventDispatcher dispatcher;
     private final Config config;
 
-    DiffObserver(final DedicatedFileSystem pFs,
+    DiffListener(final DedicatedFileSystem pFs,
                  final EventDispatcher pDispatcher,
                  final Config pConfig) {
         fs = pFs;
