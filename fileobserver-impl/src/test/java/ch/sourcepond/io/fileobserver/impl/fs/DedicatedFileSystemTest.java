@@ -20,6 +20,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.impl.observer.DiffEventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;

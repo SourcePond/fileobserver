@@ -24,6 +24,7 @@ import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -72,7 +73,8 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final Resource resource = mock(Resource.class);
     private final ReplayDispatcher replayDispatcher = mock(ReplayDispatcher.class);
     private final Update update = mock(Update.class);
-    private final ListenerManager manager = new ListenerManager();
+    private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
+    private final ListenerManager manager = new ListenerManager(pendingEventRegistry);
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {

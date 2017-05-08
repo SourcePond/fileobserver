@@ -13,13 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
 import org.slf4j.Logger;
@@ -45,6 +47,7 @@ public class ListenerManager implements ReplayDispatcher {
     private static final Logger LOG = getLogger(ListenerManager.class);
     private final DefaultDispatchRestrictionFactory restrictionFactory;
     private final DispatchEventFactory dispatchEventFactory;
+    private final PendingEventRegistry pendingEventRegistry;
     private final Set<KeyDeliveryHook> hooks = new CopyOnWriteArraySet<>();
     private final ConcurrentMap<PathChangeListener, Map<FileSystem, DefaultDispatchRestriction>> observers = new ConcurrentHashMap<>();
     private final EventDispatcher defaultDispatcher = new EventDispatcher(this, observers.keySet());
@@ -53,13 +56,15 @@ public class ListenerManager implements ReplayDispatcher {
     private volatile Config config;
 
     // Constructor for activator
-    public ListenerManager() {
-        this(new DefaultDispatchRestrictionFactory(), new DispatchEventFactory());
+    public ListenerManager(final PendingEventRegistry pPendingEventRegistry) {
+        this(pPendingEventRegistry, new DefaultDispatchRestrictionFactory(), new DispatchEventFactory());
     }
 
     // Constructor for testing
-    ListenerManager(final DefaultDispatchRestrictionFactory pRestrictionFactory,
+    ListenerManager(final PendingEventRegistry pPendingEventRegistry,
+                    final DefaultDispatchRestrictionFactory pRestrictionFactory,
                     final DispatchEventFactory pDispatchEventFactory) {
+        pendingEventRegistry = pPendingEventRegistry;
         restrictionFactory = pRestrictionFactory;
         dispatchEventFactory = pDispatchEventFactory;
     }
@@ -156,6 +161,7 @@ public class ListenerManager implements ReplayDispatcher {
 
     private <T> void submitTask(final Collection<PathChangeListener> pListeners,
                                 final T pKeyOrEvent,
+                                final PendingEventDone pDoneHook,
                                 final Consumer<PathChangeListener> pFireEventConsumer,
                                 final KeyDeliveryConsumer<T> pBeforeConsumer,
                                 final KeyDeliveryConsumer<T> pAfterConsumer) {
@@ -164,6 +170,7 @@ public class ListenerManager implements ReplayDispatcher {
                 hooks,
                 pListeners,
                 pKeyOrEvent,
+                pDoneHook,
                 pFireEventConsumer,
                 pBeforeConsumer,
                 pAfterConsumer
@@ -172,6 +179,7 @@ public class ListenerManager implements ReplayDispatcher {
 
     private void submitDispatchTask(final Collection<PathChangeListener> pObservers,
                                     final DispatchKey pKey,
+                                    final PendingEventDone pDoneHook,
                                     final Consumer<PathChangeListener> pFireEventConsumer,
                                     final KeyDeliveryConsumer<DispatchKey> pBeforeConsumer,
                                     final KeyDeliveryConsumer<DispatchKey> pAfterConsumer) {
@@ -180,6 +188,7 @@ public class ListenerManager implements ReplayDispatcher {
         if (!acceptingObservers.isEmpty()) {
             submitTask(acceptingObservers,
                     pKey,
+                    pDoneHook,
                     pFireEventConsumer,
                     pBeforeConsumer,
                     pAfterConsumer
@@ -193,6 +202,7 @@ public class ListenerManager implements ReplayDispatcher {
                        Collection<DispatchKey> pParentKeys) {
         submitTask(asList(pListener),
                 pEvent,
+                () -> pendingEventRegistry.done(pEvent.getFile().getFileSystem()),
                 observer -> fireModification(pListener, pEvent, pParentKeys),
                 (hook, event) -> hook.beforeModify(event.getKey(), event.getFile()),
                 (hook, event) -> hook.afterModify(event.getKey(), event.getFile())
@@ -208,6 +218,7 @@ public class ListenerManager implements ReplayDispatcher {
         submitDispatchTask(
                 pObservers,
                 pKey,
+                () -> pendingEventRegistry.done(pFile.getFileSystem()),
                 observer -> fireModification(observer, pKey, pFile, pParentKeys),
                 (hook, key) -> hook.beforeModify(key, pFile),
                 (hook, key) -> hook.afterModify(key, pFile)
@@ -218,6 +229,7 @@ public class ListenerManager implements ReplayDispatcher {
         submitDispatchTask(
                 pObservers,
                 pKey,
+                () -> pendingEventRegistry.done(pKey.getRelativePath().getFileSystem()),
                 observer -> observer.discard(pKey),
                 (hook, key) -> hook.beforeDiscard(key),
                 (hook, key) -> hook.afterDiscard(key)

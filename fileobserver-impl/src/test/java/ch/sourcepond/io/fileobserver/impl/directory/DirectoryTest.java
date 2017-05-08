@@ -21,6 +21,7 @@ import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -54,7 +55,8 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final Executor directoryWalkerExecutor = directExecutor();
     final ExecutorService listenerExecutor = newSingleThreadExecutor();
     final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
-    final ListenerManager manager = new ListenerManager();
+    private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
+    final ListenerManager manager = new ListenerManager(pendingEventRegistry);
     final EventDispatcher dispatcher = manager.getDefaultDispatcher();
     final DirectoryFactory factory = new DirectoryFactory(
             keyFactory);

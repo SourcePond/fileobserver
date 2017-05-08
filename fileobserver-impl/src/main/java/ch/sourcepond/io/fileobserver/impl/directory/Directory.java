@@ -249,7 +249,10 @@ public abstract class Directory {
      *
      * @param pFile File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final EventDispatcher pDispatcher, final Directory pNewRootOrNull, final Path pFile, boolean pIgnoreChecksumUpdateStatus) {
+    public void informIfChanged(final EventDispatcher pDispatcher,
+                                final Directory pNewRootOrNull,
+                                final Path pFile,
+                                boolean pIgnoreChecksumUpdateStatus) {
         if (pDispatcher.hasListeners()) {
             getResource(pFile).update(getTimeout(),
                     update -> {

@@ -16,6 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -40,11 +41,13 @@ class DispatcherTask<T> implements Runnable {
     private final KeyDeliveryConsumer<T> beforeConsumer;
     private final KeyDeliveryConsumer<T> afterConsumer;
     private final T keyOrEvent;
+    private final PendingEventDone doneHook;
 
     DispatcherTask(final ExecutorService pObserverExecutor,
                    final Collection<KeyDeliveryHook> pHooks,
                    final Collection<PathChangeListener> pObservers,
                    final T pKeyOrEvent,
+                   final PendingEventDone pDoneHook,
                    final Consumer<PathChangeListener> pFireEventConsumer,
                    final KeyDeliveryConsumer<T> pBeforeConsumer,
                    final KeyDeliveryConsumer<T> pAfterConsumer) {
@@ -52,6 +55,7 @@ class DispatcherTask<T> implements Runnable {
         hooks = pHooks;
         observers = pObservers;
         keyOrEvent = pKeyOrEvent;
+        doneHook = pDoneHook;
         fireEventConsumer = pFireEventConsumer;
         beforeConsumer = pBeforeConsumer;
         afterConsumer = pAfterConsumer;
@@ -84,10 +88,14 @@ class DispatcherTask<T> implements Runnable {
 
     @Override
     public void run() {
-        informHooks(beforeConsumer);
-        final Collection<Future<?>> joins = new LinkedList<>();
-        observers.forEach(observer -> submitObserverTask(observer, joins));
-        joins.forEach(this::join);
-        informHooks(afterConsumer);
+        try {
+            informHooks(beforeConsumer);
+            final Collection<Future<?>> joins = new LinkedList<>();
+            observers.forEach(observer -> submitObserverTask(observer, joins));
+            joins.forEach(this::join);
+            informHooks(afterConsumer);
+        } finally {
+            doneHook.done();
+        }
     }
 }

@@ -20,6 +20,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.DiffEventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -210,9 +211,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         LOG.debug("Received event of kind {} for path {}", pKind, child);
         try {
             if (ENTRY_CREATE == pKind) {
-                pendingEventRegistry.registerCreateEvent(child);
                 pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, true);
-            } else if (ENTRY_MODIFY == pKind && pendingEventRegistry.isModificationAllowed(child)) {
+            } else if (ENTRY_MODIFY == pKind) {
                 pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, false);
             } else if (ENTRY_DELETE == pKind) {
                 pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);
@@ -238,7 +238,9 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 continue;
             }
 
-            processPath(kind, directory.resolve((Path) event.context()));
+            if (pendingEventRegistry.awaitIfPending(directory.getFileSystem(), kind)) {
+                processPath(kind, directory.resolve((Path) event.context()));
+            }
         }
 
         // The case when the WatchKey has been cancelled is

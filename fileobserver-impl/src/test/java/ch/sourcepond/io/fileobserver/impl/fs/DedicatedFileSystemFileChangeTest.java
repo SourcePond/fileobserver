@@ -18,6 +18,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -44,7 +45,7 @@ import static org.mockito.Mockito.*;
 public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private static final String DIRECTORY_KEY = "getDirectoryKey";
     private static final String NEW_FILE_NAME = "newfile.txt";
-    private final PendingEventRegistry pendingEventRegistry = new PendingEventRegistry();
+    private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -60,6 +61,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws Exception {
+        when(pendingEventRegistry.awaitIfPending(same(root_dir_path.getFileSystem()), notNull())).thenReturn(true);
         when(manager.getDefaultDispatcher()).thenReturn(dispatcher);
         when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
         when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);
@@ -70,13 +72,11 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
-        pendingEventRegistry.start();
         child.start();
     }
 
     @After
     public void tearDown() throws IOException {
-        pendingEventRegistry.stop();
         child.close();
     }
 

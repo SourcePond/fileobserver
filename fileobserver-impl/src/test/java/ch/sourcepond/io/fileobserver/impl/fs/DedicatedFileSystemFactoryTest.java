@@ -18,6 +18,7 @@ import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import org.junit.Before;
 import org.junit.Test;
 

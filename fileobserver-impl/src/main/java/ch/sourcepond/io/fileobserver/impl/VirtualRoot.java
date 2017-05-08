@@ -15,15 +15,15 @@ package ch.sourcepond.io.fileobserver.impl;
 
 import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
-import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.observer.ListenerManager;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.osgi.service.component.annotations.*;
@@ -64,9 +64,9 @@ public class VirtualRoot implements RelocationObserver {
 
     // Constructor for BundleActivator
     public VirtualRoot() {
-        manager = new ListenerManager();
-        final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         pendingEventRegistry = new PendingEventRegistry();
+        manager = new ListenerManager(pendingEventRegistry);
+        final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
                 manager);
@@ -84,7 +84,6 @@ public class VirtualRoot implements RelocationObserver {
     @Activate
     public void activate(final Config pConfig) {
         setConfig(pConfig);
-        pendingEventRegistry.start();
         LOG.info("Virtual-root activated");
     }
 
@@ -92,15 +91,14 @@ public class VirtualRoot implements RelocationObserver {
     public void deactivate() {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
-        pendingEventRegistry.stop();
         LOG.info("Virtual-root deactivated");
     }
 
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
+        pendingEventRegistry.setModificationLockingTime(pConfig.modificationLockingTime());
         manager.setConfig(pConfig);
-        pendingEventRegistry.setTimoutInMilliseconds(pConfig.pendingDuration());
     }
 
     @Reference
