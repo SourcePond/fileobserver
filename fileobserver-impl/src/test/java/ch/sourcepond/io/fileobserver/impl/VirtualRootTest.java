@@ -44,6 +44,7 @@ import static org.mockito.Mockito.*;
  *
  */
 public class VirtualRootTest {
+    private static final long MODIFICATION_LOCKING_TIME = 1000L;
     private static final Object ROOT_KEY = new Object();
     private static final Object OTHER_KEY = new Object();
     private final Config config = mock(Config.class);
@@ -71,6 +72,7 @@ public class VirtualRootTest {
 
     @Before
     public void setup() throws IOException {
+        when(config.modificationLockingTime()).thenReturn(MODIFICATION_LOCKING_TIME);
         when(manager.addListener(listener)).thenReturn(dispatcher);
         when(modifiedPath.getFileSystem()).thenReturn(fs);
         when(provider.readAttributes(modifiedPath, BasicFileAttributes.class)).thenReturn(modifiedPathAttrs);
@@ -98,6 +100,7 @@ public class VirtualRootTest {
     @Test
     public void setConfig() {
         verify(dedicatedFsFactory).setConfig(config);
+        verify(pendingEventRegistry).setModificationLockingTime(MODIFICATION_LOCKING_TIME);
         verify(manager).setConfig(config);
     }
 

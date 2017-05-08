@@ -94,13 +94,14 @@ public class ListenerManagerTest {
     }
 
     private void verifyHookObserverFlow() throws IOException {
-        final InOrder order = inOrder(listener, restriction, hook);
+        final InOrder order = inOrder(listener, restriction, hook, pendingEventRegistry);
         order.verify(listener).restrict(restriction, fs);
         order.verify(restriction).isAccepted(dispatchKey);
         order.verify(hook, timeout(1000)).beforeModify(dispatchKey, file);
         order.verify(listener, timeout(1000)).supplement(dispatchKey, parentKey);
         order.verify(listener, timeout(1000)).modified(pathChangeEvent);
         order.verify(hook, timeout(1000)).afterModify(dispatchKey, file);
+        order.verify(pendingEventRegistry).done(fs);
         order.verifyNoMoreInteractions();
     }
 
