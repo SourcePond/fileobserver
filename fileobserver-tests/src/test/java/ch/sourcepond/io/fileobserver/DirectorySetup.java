@@ -1,3 +1,16 @@
+/*Copyright (C) 2017 Roland Hauser, <sourcepond@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
 import org.junit.rules.TestRule;
@@ -5,13 +18,20 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
+import static ch.sourcepond.io.fileobserver.RecursiveDeletion.deleteDirectory;
+import static java.lang.System.getProperty;
 import static java.nio.file.FileSystems.getDefault;
+import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.*;
 import static org.junit.Assert.*;
 
@@ -31,8 +51,10 @@ import static org.junit.Assert.*;
  *        + config.properties (C)
  * </pre>
  */
-public class DirectorySetup implements TestRule {
-    public static final Path R = getDefault().getPath(System.getProperty("java.io.tmpdir"), DirectorySetup.class.getName(), UUID.randomUUID().toString());
+class DirectorySetup implements TestRule {
+    static final String ZIP_NAME = "hotdeploy.zip";
+    private static final Path SOURCE = getDefault().getPath(getProperty("user.dir"), "src", "test", "resources", "testdir");
+    public static final Path R = getDefault().getPath(getProperty("java.io.tmpdir"), DirectorySetup.class.getName(), UUID.randomUUID().toString());
     public static final Path E = R.resolve("etc");
     public static final Path E1 = E.resolve("network");
     public static final Path E11 = E1.resolve("network.conf");
@@ -44,6 +66,7 @@ public class DirectorySetup implements TestRule {
     public static final Path H12 = H1.resolve("letter.xml");
     public static final Path H2 = H.resolve("index.idx");
     public static final Path C = R.resolve("config.properties");
+    private static final Path ZIP_FILE = R.resolve(ZIP_NAME);
 
     private void validate() {
         assertTrue(R.toString(), isDirectory(R));
@@ -60,13 +83,46 @@ public class DirectorySetup implements TestRule {
         assertTrue(C.toString(), isRegularFile(C));
     }
 
+    private void unzipEntry(final ZipEntry pEntry, final InputStream pIn) throws IOException {
+        if (!pEntry.isDirectory()) {
+            final Path target = R.resolve(pEntry.getName());
+            createDirectories(target.getParent());
+            copy(pIn, target);
+        }
+    }
+
+    void unzip() throws IOException {
+        try (final ZipInputStream in = new ZipInputStream(newInputStream(R.resolve(ZIP_NAME)))) {
+            ZipEntry next = in.getNextEntry();
+            while (next != null) {
+                unzipEntry(next, in);
+                next = in.getNextEntry();
+            }
+        }
+    }
+
+    void createZip() throws IOException {
+        try (final ZipOutputStream out = new ZipOutputStream(newOutputStream(ZIP_FILE))) {
+            walkFileTree(SOURCE, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                    out.putNextEntry(new ZipEntry(SOURCE.relativize(file).toString()));
+                    copy(file, out);
+                    out.closeEntry();
+                    return CONTINUE;
+                }
+            });
+        }
+    }
+
+
     private void copyDirectories() throws IOException {
-        final Path source = getDefault().getPath(System.getProperty("user.dir"), "src", "test", "resources", "testdir");
-        walkFileTree(source, new SimpleFileVisitor<Path>() {
+        walkFileTree(SOURCE, new SimpleFileVisitor<Path>() {
 
             @Override
             public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                final Path relativePath = source.relativize(file);
+                final Path relativePath = SOURCE.relativize(file);
                 final Path targetPath = R.resolve(relativePath);
                 createDirectories(targetPath.getParent());
                 copy(file, targetPath);
@@ -75,20 +131,11 @@ public class DirectorySetup implements TestRule {
         });
     }
 
-    private void deleteDirectories() throws IOException {
-        walkFileTree(R, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                delete(file);
-                return super.visitFile(file, attrs);
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
-                delete(dir);
-                return super.postVisitDirectory(dir, exc);
-            }
-        });
+    void deleteDirectories() throws IOException {
+        deleteDirectory(E);
+        deleteDirectory(H);
+        deleteIfExists(ZIP_FILE);
+        deleteIfExists(C);
     }
 
     @Override

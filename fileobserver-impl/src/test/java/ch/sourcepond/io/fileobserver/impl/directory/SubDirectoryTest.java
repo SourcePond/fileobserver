@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.verify;
 
 /**
  *
@@ -33,6 +34,19 @@ public class SubDirectoryTest extends DirectoryTest {
     public void setup() throws IOException {
         root = factory.newRoot(wrapper.register(root_dir_path));
         subdir = factory.newBranch(root, wrapper.register(subdir_1_path));
+    }
+
+    @Test
+    public void signalIgnored() {
+        subdir.signalIgnored(testfile_111_txt_path);
+        verify(pendingEventRegistry).done(testfile_111_txt_path);
+    }
+
+    @Test
+    public void createSignalProcessed() {
+        final SignalProcessed processed = subdir.createSignalProcessed(testfile_111_txt_path, 1);
+        processed.done();
+        verify(pendingEventRegistry).done(testfile_111_txt_path);
     }
 
     @Test

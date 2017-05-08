@@ -21,7 +21,6 @@ import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
 import org.slf4j.Logger;
@@ -47,7 +46,6 @@ public class ListenerManager implements ReplayDispatcher {
     private static final Logger LOG = getLogger(ListenerManager.class);
     private final DefaultDispatchRestrictionFactory restrictionFactory;
     private final DispatchEventFactory dispatchEventFactory;
-    private final PendingEventRegistry pendingEventRegistry;
     private final Set<KeyDeliveryHook> hooks = new CopyOnWriteArraySet<>();
     private final ConcurrentMap<PathChangeListener, Map<FileSystem, DefaultDispatchRestriction>> observers = new ConcurrentHashMap<>();
     private final EventDispatcher defaultDispatcher = new EventDispatcher(this, observers.keySet());
@@ -56,15 +54,13 @@ public class ListenerManager implements ReplayDispatcher {
     private volatile Config config;
 
     // Constructor for activator
-    public ListenerManager(final PendingEventRegistry pPendingEventRegistry) {
-        this(pPendingEventRegistry, new DefaultDispatchRestrictionFactory(), new DispatchEventFactory());
+    public ListenerManager() {
+        this(new DefaultDispatchRestrictionFactory(), new DispatchEventFactory());
     }
 
     // Constructor for testing
-    ListenerManager(final PendingEventRegistry pPendingEventRegistry,
-                    final DefaultDispatchRestrictionFactory pRestrictionFactory,
+    ListenerManager(final DefaultDispatchRestrictionFactory pRestrictionFactory,
                     final DispatchEventFactory pDispatchEventFactory) {
-        pendingEventRegistry = pPendingEventRegistry;
         restrictionFactory = pRestrictionFactory;
         dispatchEventFactory = pDispatchEventFactory;
     }
@@ -197,39 +193,35 @@ public class ListenerManager implements ReplayDispatcher {
     }
 
     @Override
-    public void replay(PathChangeListener pListener,
-                       PathChangeEvent pEvent,
-                       Collection<DispatchKey> pParentKeys) {
+    public void replay(final PendingEventDone pDone,
+                       final PathChangeListener pListener,
+                       final PathChangeEvent pEvent,
+                       final Collection<DispatchKey> pParentKeys) {
         submitTask(asList(pListener),
                 pEvent,
-                () -> pendingEventRegistry.done(pEvent.getFile().getFileSystem()),
+                pDone,
                 observer -> fireModification(pListener, pEvent, pParentKeys),
                 (hook, event) -> hook.beforeModify(event.getKey(), event.getFile()),
                 (hook, event) -> hook.afterModify(event.getKey(), event.getFile())
         );
     }
 
-
-    void modified(final Collection<PathChangeListener> pObservers, final Collection<DispatchKey> pKeys, final Path pFile, final Collection<DispatchKey> pParentKeys) {
-        pKeys.forEach(key -> modified(pObservers, key, pFile, pParentKeys));
-    }
-
-    void modified(final Collection<PathChangeListener> pObservers, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
+    void modified(final PendingEventDone pDone, final Collection<PathChangeListener> pObservers, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         submitDispatchTask(
                 pObservers,
                 pKey,
-                () -> pendingEventRegistry.done(pFile.getFileSystem()),
+                pDone,
                 observer -> fireModification(observer, pKey, pFile, pParentKeys),
                 (hook, key) -> hook.beforeModify(key, pFile),
                 (hook, key) -> hook.afterModify(key, pFile)
         );
     }
 
-    void discard(final Collection<PathChangeListener> pObservers, final DispatchKey pKey) {
+    void discard(final PendingEventDone pDone, final Collection<PathChangeListener> pObservers, final DispatchKey pKey) {
         submitDispatchTask(
                 pObservers,
                 pKey,
-                () -> pendingEventRegistry.done(pKey.getRelativePath().getFileSystem()),
+                pDone,
                 observer -> observer.discard(pKey),
                 (hook, key) -> hook.beforeDiscard(key),
                 (hook, key) -> hook.afterDiscard(key)

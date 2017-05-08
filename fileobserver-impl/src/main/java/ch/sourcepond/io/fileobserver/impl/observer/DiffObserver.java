@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
+import static ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry.EMPTY_CALLBACK;
 import static java.util.Collections.emptyList;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -54,7 +55,7 @@ class DiffObserver implements PathChangeListener, Closeable {
     private void informModified(final Update pUpdate, final DispatchKey pKey, final Path pFile) {
         if (pUpdate.hasChanged()) {
             final Collection<DispatchKey> supplementKeysOrNull = supplementKeys.computeIfAbsent(pKey, k -> emptyList());
-            dispatcher.modified(pKey, pFile, supplementKeysOrNull);
+            dispatcher.modified(EMPTY_CALLBACK, pKey, pFile, supplementKeysOrNull);
         }
     }
 
@@ -78,7 +79,7 @@ class DiffObserver implements PathChangeListener, Closeable {
     public void close() {
         modifiedKeys.forEach(this::updateResource);
         discardedKeys.removeAll(modifiedKeys.keySet());
-        discardedKeys.forEach(dispatcher::discard);
+        discardedKeys.forEach(k -> dispatcher.discard(EMPTY_CALLBACK, k));
     }
 
     @Override

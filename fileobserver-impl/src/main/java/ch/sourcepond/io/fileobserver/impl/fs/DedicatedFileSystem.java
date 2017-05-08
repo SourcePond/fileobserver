@@ -238,8 +238,9 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 continue;
             }
 
-            if (pendingEventRegistry.awaitIfPending(directory.getFileSystem(), kind)) {
-                processPath(kind, directory.resolve((Path) event.context()));
+            final Path absolutePath = directory.resolve((Path) event.context());
+            if (pendingEventRegistry.awaitIfPending(absolutePath, kind)) {
+                processPath(kind, absolutePath);
             }
         }
 

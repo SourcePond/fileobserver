@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.pending;
 
-import java.nio.file.FileSystem;
+import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.time.Instant;
 import java.util.HashMap;
@@ -27,16 +27,17 @@ import static java.time.Instant.now;
  *
  */
 public class PendingEventRegistry {
-    private final Map<FileSystem, Instant> pending = new HashMap<>();
+    public static final PendingEventDone EMPTY_CALLBACK = () -> {};
+    private final Map<Path, Instant> pending = new HashMap<>();
     private volatile long modificationLockingTime;
 
     public void setModificationLockingTime(final long pModificationLockingTime) {
         modificationLockingTime = pModificationLockingTime;
     }
 
-    private void awaitPending(final FileSystem pFs) {
+    private void awaitPending(final Path pPath) {
         try {
-            while (pending.containsKey(pFs)) {
+            while (pending.containsKey(pPath)) {
                 wait();
             }
         } catch (final InterruptedException e) {
@@ -44,22 +45,22 @@ public class PendingEventRegistry {
         }
     }
 
-    public synchronized boolean awaitIfPending(final FileSystem pFs, final WatchEvent.Kind<?> pKind) {
+    public synchronized boolean awaitIfPending(final Path pPath, final WatchEvent.Kind<?> pKind) {
         boolean furtherProcessingAllowed = true;
         if (ENTRY_CREATE.equals(pKind)) {
-            pending.put(pFs, now());
+            pending.put(pPath, now());
         } else {
-            final Instant creationTime = pending.get(pFs);
+            final Instant creationTime = pending.get(pPath);
             furtherProcessingAllowed = creationTime == null || now().compareTo(creationTime.plusMillis(modificationLockingTime)) > 0;
             if (furtherProcessingAllowed) {
-                awaitPending(pFs);
+                awaitPending(pPath);
             }
         }
         return furtherProcessingAllowed;
     }
 
-    public synchronized void done(final FileSystem pFs) {
-        pending.remove(pFs);
+    public synchronized void done(final Path pPath) {
+        pending.remove(pPath);
         notifyAll();
     }
 }

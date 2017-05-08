@@ -17,6 +17,7 @@ import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
 import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
@@ -57,12 +58,13 @@ public class ListenerManagerTest {
     private final PathChangeListener listener = mock(PathChangeListener.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
+    private final PendingEventDone doneCallback = mock(PendingEventDone.class);
     private volatile PathChangeEvent realEvent;
-    private ListenerManager manager = new ListenerManager(pendingEventRegistry, restrictionFactory, dispatchEventFactory);
+    private ListenerManager manager = new ListenerManager(restrictionFactory, dispatchEventFactory);
 
     @Before
     public void setup() {
-        when(pendingEventRegistry.awaitIfPending(same(fs), notNull())).thenReturn(true);
+        when(pendingEventRegistry.awaitIfPending(same(file), notNull())).thenReturn(true);
         when(dispatchEventFactory.create(listener, dispatchKey, file, parentKeys, manager)).thenReturn(pathChangeEvent);
         when(file.getFileSystem()).thenReturn(fs);
         when(pathChangeEvent.getKey()).thenReturn(dispatchKey);
@@ -89,53 +91,47 @@ public class ListenerManagerTest {
     @Test
     public void modifiedCurrentlyNoObserversAvailable() {
         manager.removeObserver(listener);
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         verifyZeroInteractions(listener);
     }
 
     private void verifyHookObserverFlow() throws IOException {
-        final InOrder order = inOrder(listener, restriction, hook, pendingEventRegistry);
+        final InOrder order = inOrder(listener, restriction, hook, doneCallback);
         order.verify(listener).restrict(restriction, fs);
         order.verify(restriction).isAccepted(dispatchKey);
         order.verify(hook, timeout(1000)).beforeModify(dispatchKey, file);
         order.verify(listener, timeout(1000)).supplement(dispatchKey, parentKey);
         order.verify(listener, timeout(1000)).modified(pathChangeEvent);
         order.verify(hook, timeout(1000)).afterModify(dispatchKey, file);
-        order.verify(pendingEventRegistry).done(fs);
+        order.verify(doneCallback).done();
         order.verifyNoMoreInteractions();
     }
 
     @Test
     public void removeFileSystem() throws IOException {
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         manager.removeFileSystem(fs);
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         verify(restrictionFactory, times(2)).createRestriction(fs);
     }
 
     @Test
-    public void modifiedWithKeyCollection() throws IOException {
-        manager.modified(manager.getListeners(), asList(dispatchKey), file, parentKeys);
-        verifyHookObserverFlow();
-    }
-
-    @Test
     public void modified() throws IOException {
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modifiedNotAccepted() throws IOException {
         when(restriction.isAccepted(dispatchKey)).thenReturn(false);
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         verifyZeroInteractions(hook);
     }
 
     @Test
     public void modifiedCurrentlyNoHookAvailable() throws Exception {
         manager.removeHook(hook);
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         final InOrder order = inOrder(hook, listener);
         order.verify(listener, timeout(1000)).supplement(dispatchKey, parentKey);
         order.verify(listener, timeout(1000)).modified(pathChangeEvent);
@@ -145,14 +141,14 @@ public class ListenerManagerTest {
     @Test
     public void modifiedBeforeModifiedFailed() throws IOException {
         doThrow(RuntimeException.class).when(hook).beforeModify(dispatchKey, file);
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
     @Test
     public void modifiedObserverFailed() throws IOException {
         doThrow(IOException.class).when(listener).modified(pathChangeEvent);
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         verifyHookObserverFlow();
     }
 
@@ -164,7 +160,7 @@ public class ListenerManagerTest {
         }).when(hook).beforeModify(dispatchKey, file);
         doThrow(RuntimeException.class).when(hook).beforeModify(dispatchKey, file);
         sleep(200);
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
         assertTrue(dispatcherExecutor.shutdownNow().isEmpty());
         verify(listener).restrict(restriction, fs);
         verifyNoMoreInteractions(listener);
@@ -172,7 +168,7 @@ public class ListenerManagerTest {
 
     @Test(timeout = 10000)
     public void clientWantsToReplayEvent() throws Exception {
-        manager = new ListenerManager(pendingEventRegistry);
+        manager = new ListenerManager();
         doCallRealMethod().when(listener).restrict(notNull(), same(fs));
         doAnswer(inv -> {
             final PathChangeEvent event = inv.getArgument(0);
@@ -185,7 +181,7 @@ public class ListenerManagerTest {
             return null;
         }).when(listener).modified(any());
         setupManager();
-        manager.modified(manager.getListeners(), dispatchKey, file, parentKeys);
+        manager.modified(doneCallback, manager.getListeners(), dispatchKey, file, parentKeys);
 
         sleep(5000);
         verify(hook, times(5)).beforeModify(dispatchKey, file);
@@ -197,14 +193,14 @@ public class ListenerManagerTest {
     @Test
     public void discardCurrentlyNoObserversAvailable() {
         manager.removeObserver(listener);
-        manager.discard(manager.getListeners(), dispatchKey);
+        manager.discard(doneCallback, manager.getListeners(), dispatchKey);
         verifyZeroInteractions(listener);
     }
 
     @Test
     public void discardCurrentlyNoHookAvailable() {
         manager.removeHook(hook);
-        manager.discard(manager.getListeners(), dispatchKey);
+        manager.discard(doneCallback, manager.getListeners(), dispatchKey);
         final InOrder order = inOrder(hook, listener);
         order.verify(listener, timeout(1000)).discard(dispatchKey);
         order.verifyNoMoreInteractions();
@@ -212,7 +208,7 @@ public class ListenerManagerTest {
 
     @Test
     public void discard() {
-        manager.discard(manager.getListeners(), dispatchKey);
+        manager.discard(doneCallback, manager.getListeners(), dispatchKey);
         final InOrder order = inOrder(hook, listener);
         order.verify(hook, timeout(1000)).beforeDiscard(dispatchKey);
         order.verify(listener, timeout(1000)).discard(dispatchKey);

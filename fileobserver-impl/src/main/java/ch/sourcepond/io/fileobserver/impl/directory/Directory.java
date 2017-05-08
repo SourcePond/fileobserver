@@ -15,8 +15,10 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.observer.EventDispatcher;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -32,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
+import static ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry.EMPTY_CALLBACK;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.util.Collections.emptyList;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -59,7 +62,7 @@ public abstract class Directory {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
             stream.forEach(p ->
                     createKeys(p).forEach(k ->
-                            pDispatcher.modified(k, p, emptyList())));
+                            pDispatcher.modified(EMPTY_CALLBACK, k, p, emptyList())));
         } catch (final IOException e) {
             LOG.warn("Exception occurred while trying to inform single listeners!", e);
         }
@@ -106,6 +109,7 @@ public abstract class Directory {
     private Collection<DispatchKey> createKeys(final Path pFile) {
         final Collection<WatchedDirectory> watchedDirectories = getWatchedDirectories();
         final List<DispatchKey> keys = new ArrayList<>(watchedDirectories.size());
+        boolean blacklisted = false;
         for (final WatchedDirectory watchedDirectory : watchedDirectories) {
             final Path relativePath = relativizeAgainstRoot(watchedDirectory, pFile);
 
@@ -113,7 +117,14 @@ public abstract class Directory {
                 keys.add(getFactory().newKey(watchedDirectory.getKey(), relativePath));
             } else {
                 LOG.info("{} is blacklisted by {}", relativePath, watchedDirectory);
+                if (!blacklisted) {
+                    blacklisted = true;
+                }
             }
+        }
+
+        if (keys.isEmpty() && blacklisted) {
+            signalIgnored(pFile);
         }
 
         return keys;
@@ -177,7 +188,7 @@ public abstract class Directory {
         // Now, the key can be safely removed
         if (remove(pWatchedDirectory) && pDispatcher.hasListeners()) {
             final DispatchKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
-            pDispatcher.discard(key);
+            pDispatcher.discard(EMPTY_CALLBACK, key);
         }
     }
 
@@ -196,7 +207,7 @@ public abstract class Directory {
     /**
      * Iterates over the files contained by this directory and creates tasks which will be executed
      * sometime in the future. Such a task will inform the listener specified through its
-     * {@link PathChangeListener#modified(ch.sourcepond.io.filelistener.api.PathChangeEvent)} method. Note: only direct children will be
+     * {@link PathChangeListener#modified(PathChangeEvent)} method. Note: only direct children will be
      * considered, sub-directories and non-regular files will be ignored.
      */
     public void forceInform(final EventDispatcher pDispatcher) {
@@ -224,7 +235,9 @@ public abstract class Directory {
         resources.remove(pFile);
 
         if (pDispatcher.hasListeners()) {
-            createKeys(pFile).forEach(pDispatcher::discard);
+            final Collection<DispatchKey> keys = createKeys(pFile);
+            final PendingEventDone doneCallback = createSignalProcessed(pFile, keys.size());
+            keys.forEach(k -> pDispatcher.discard(doneCallback, k));
         }
     }
 
@@ -242,8 +255,12 @@ public abstract class Directory {
         return resources.computeIfAbsent(pFile, f -> getFactory().newResource(SHA256, pFile));
     }
 
+    abstract SignalProcessed createSignalProcessed(Path pPath, int pExpectedSignals);
+
+    abstract void signalIgnored(Path pPath);
+
     /**
-     * Triggers the {@link PathChangeListener#modified(ch.sourcepond.io.filelistener.api.PathChangeEvent)} on all listeners specified if the
+     * Triggers the {@link PathChangeListener#modified(PathChangeEvent)} on all listeners specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *
@@ -263,7 +280,9 @@ public abstract class Directory {
                             final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
                                     emptyList() : pNewRootOrNull.createKeys(pFile);
 
-                            createKeys(pFile).forEach(k -> pDispatcher.modified(k, pFile, supplementKeys));
+                            final Collection<DispatchKey> keys = createKeys(pFile);
+                            final PendingEventDone doneCallback = createSignalProcessed(pFile, keys.size());
+                            keys.forEach(k -> pDispatcher.modified(doneCallback, k, pFile, supplementKeys));
                         } else {
                             LOG.debug("Ignored {} because {} has not been changed", update, pFile);
                         }
@@ -276,7 +295,7 @@ public abstract class Directory {
     }
 
     /**
-     * Triggers the {@link PathChangeListener#modified(ch.sourcepond.io.filelistener.api.PathChangeEvent)} on all listeners specified if the
+     * Triggers the {@link PathChangeListener#modified(PathChangeEvent)} on all listeners specified if the
      * file represented by the path specified has been changed i.e. has a new checksum. If no checksum change
      * has been detected, nothing happens.
      *

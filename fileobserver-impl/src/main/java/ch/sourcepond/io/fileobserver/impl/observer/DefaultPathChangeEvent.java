@@ -13,12 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 
 import java.nio.file.Path;
 import java.util.Collection;
+
+import static ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry.EMPTY_CALLBACK;
 
 /**
  *
@@ -61,7 +63,7 @@ class DefaultPathChangeEvent implements PathChangeEvent {
     @Override
     public void replay() {
         numReplays++;
-        replayDispatcher.replay(listener, this, parentKeys);
+        replayDispatcher.replay(EMPTY_CALLBACK, listener, this, parentKeys);
     }
 
     @Override

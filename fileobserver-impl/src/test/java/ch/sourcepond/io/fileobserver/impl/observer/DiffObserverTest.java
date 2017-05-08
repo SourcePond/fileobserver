@@ -74,7 +74,7 @@ public class DiffObserverTest extends CopyResourcesTest {
     private final ReplayDispatcher replayDispatcher = mock(ReplayDispatcher.class);
     private final Update update = mock(Update.class);
     private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
-    private final ListenerManager manager = new ListenerManager(pendingEventRegistry);
+    private final ListenerManager manager = new ListenerManager();
     private DiffObserver diff;
 
     private void informModified(final Path pPath) throws Exception {

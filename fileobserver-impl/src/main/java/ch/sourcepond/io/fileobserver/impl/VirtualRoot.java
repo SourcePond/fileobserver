@@ -65,10 +65,10 @@ public class VirtualRoot implements RelocationObserver {
     // Constructor for BundleActivator
     public VirtualRoot() {
         pendingEventRegistry = new PendingEventRegistry();
-        manager = new ListenerManager(pendingEventRegistry);
+        manager = new ListenerManager();
         final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
-                new DirectoryFactory(keyFactory),
+                new DirectoryFactory(pendingEventRegistry, keyFactory),
                 manager);
     }
 

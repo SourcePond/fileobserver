@@ -19,6 +19,7 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 
 import java.nio.file.Path;
@@ -29,6 +30,7 @@ import java.util.concurrent.Executor;
  *
  */
 public class DirectoryFactory {
+    private final PendingEventRegistry registry;
     private final DefaultDispatchKeyFactory fileKeyFactory;
     private volatile Config config;
 
@@ -41,7 +43,8 @@ public class DirectoryFactory {
     private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
-    public DirectoryFactory(final DefaultDispatchKeyFactory pFileKeyFactory) {
+    public DirectoryFactory(final PendingEventRegistry pRegistry, final DefaultDispatchKeyFactory pFileKeyFactory) {
+        registry = pRegistry;
         fileKeyFactory = pFileKeyFactory;
     }
 
@@ -51,6 +54,14 @@ public class DirectoryFactory {
 
     public void setDirectoryWalkerExecutor(final Executor pDirectoryWalkerExecutor) {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
+    }
+
+    void signalIgnored(final Path pPath) {
+        registry.done(pPath);
+    }
+
+    SignalProcessed createSignalProcessed(Path pPath, int pExpectedSignals) {
+        return new SignalProcessed(registry, pPath, pExpectedSignals);
     }
 
     public void setListenerExecutor(final Executor pListenerExecutor) {

@@ -61,7 +61,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
 
     @Before
     public void setup() throws Exception {
-        when(pendingEventRegistry.awaitIfPending(same(root_dir_path.getFileSystem()), notNull())).thenReturn(true);
+        when(pendingEventRegistry.awaitIfPending(notNull(), notNull())).thenReturn(true);
         when(manager.getDefaultDispatcher()).thenReturn(dispatcher);
         when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
         when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);

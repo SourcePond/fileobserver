@@ -17,12 +17,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.file.FileSystem;
+import java.nio.file.Path;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static java.lang.Thread.currentThread;
-import static java.lang.Thread.interrupted;
-import static java.lang.Thread.sleep;
+import static java.lang.Thread.*;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
@@ -34,7 +32,7 @@ import static org.mockito.Mockito.mock;
  *
  */
 public class PendingEventRegistryTest {
-    private final FileSystem fs = mock(FileSystem.class);
+    private final Path path = mock(Path.class);
     private final PendingEventRegistry registry = new PendingEventRegistry();
     private final ScheduledExecutorService executor = newScheduledThreadPool(1);
 
@@ -51,38 +49,38 @@ public class PendingEventRegistryTest {
     @Test
     public void awaitIfPendingDropModification() {
         // Should not block
-        assertTrue(registry.awaitIfPending(fs, ENTRY_CREATE));
-        assertFalse(registry.awaitIfPending(fs, ENTRY_MODIFY));
+        assertTrue(registry.awaitIfPending(path, ENTRY_CREATE));
+        assertFalse(registry.awaitIfPending(path, ENTRY_MODIFY));
     }
 
     @Test(timeout = 500)
     public void awaitIfPendingNoCreatePending() {
         // Should not block
-        assertTrue(registry.awaitIfPending(fs, ENTRY_MODIFY));
+        assertTrue(registry.awaitIfPending(path, ENTRY_MODIFY));
     }
 
     @Test(timeout = 500)
     public void awaitIfPendingCreate() {
         // Should not block
-        assertTrue(registry.awaitIfPending(fs, ENTRY_CREATE));
+        assertTrue(registry.awaitIfPending(path, ENTRY_CREATE));
     }
 
     @Test(timeout = 5000)
     public void awaitIfPendingCreationPending() throws Exception {
         // Should not block
-        assertTrue(registry.awaitIfPending(fs, ENTRY_CREATE));
-        executor.schedule(() -> registry.done(fs), 1000, MILLISECONDS);
+        assertTrue(registry.awaitIfPending(path, ENTRY_CREATE));
+        executor.schedule(() -> registry.done(path), 1000, MILLISECONDS);
 
         sleep(500);
 
         // This should block now
-        assertTrue(registry.awaitIfPending(fs, ENTRY_MODIFY));
+        assertTrue(registry.awaitIfPending(path, ENTRY_MODIFY));
     }
 
     @Test(timeout = 5000)
     public void awaitIfPendingCreationPendingInterrupted() throws Exception {
         // Should not block
-        assertTrue(registry.awaitIfPending(fs, ENTRY_CREATE));
+        assertTrue(registry.awaitIfPending(path, ENTRY_CREATE));
         final Thread th = currentThread();
         executor.schedule(() -> th.interrupt(), 1000, MILLISECONDS);
 
@@ -90,7 +88,7 @@ public class PendingEventRegistryTest {
         sleep(500);
 
         // This should block now
-        assertTrue(registry.awaitIfPending(fs, ENTRY_MODIFY));
+        assertTrue(registry.awaitIfPending(path, ENTRY_MODIFY));
         assertTrue(interrupted());
     }
 }

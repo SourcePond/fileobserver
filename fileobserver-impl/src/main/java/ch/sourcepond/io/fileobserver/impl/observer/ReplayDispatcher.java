@@ -13,9 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.observer;
 
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
 
 import java.util.Collection;
 
@@ -25,7 +26,8 @@ import java.util.Collection;
 @FunctionalInterface
 interface ReplayDispatcher {
 
-    void replay(PathChangeListener pListener,
+    void replay(PendingEventDone pDone,
+                PathChangeListener pListener,
                 PathChangeEvent pEvent,
                 Collection<DispatchKey> pParentKeys);
 }

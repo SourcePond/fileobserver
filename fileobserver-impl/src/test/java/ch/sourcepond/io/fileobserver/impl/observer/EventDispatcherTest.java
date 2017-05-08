@@ -15,6 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.observer;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
+import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -38,6 +39,7 @@ public class EventDispatcherTest {
     private final DispatchKey key = mock(DispatchKey.class);
     private final Collection<DispatchKey> keys = asList(key);
     private final Collection<DispatchKey> parentKeys = mock(Collection.class);
+    private final PendingEventDone doneCallback = mock(PendingEventDone.class);
     private final Path file = mock(Path.class);
     private EventDispatcher dispatcher = new EventDispatcher(manager, observers);
 
@@ -50,26 +52,20 @@ public class EventDispatcherTest {
 
     @Test
     public void singleKeyModified() {
-        dispatcher.modified(key, file, parentKeys);
-        verify(manager).modified(observers, key, file, parentKeys);
-    }
-
-    @Test
-    public void multipleKeysModified() {
-        dispatcher.modified(keys, file, parentKeys);
-        verify(manager).modified(observers, keys, file, parentKeys);
+        dispatcher.modified(doneCallback, key, file, parentKeys);
+        verify(manager).modified(doneCallback, observers, key, file, parentKeys);
     }
 
     @Test
     public void discard() {
-        dispatcher.discard(key);
-        verify(manager).discard(observers, key);
+        dispatcher.discard(doneCallback, key);
+        verify(manager).discard(doneCallback, observers, key);
     }
 
     @Test
     public void verifySingleObserverConstructor() {
         dispatcher = new EventDispatcher(manager, observer);
-        dispatcher.discard(key);
-        verify(manager).discard(argThat(inv -> inv.size() == 1 && inv.contains(observer)), same(key));
+        dispatcher.discard(doneCallback, key);
+        verify(manager).discard(same(doneCallback), argThat(inv -> inv.size() == 1 && inv.contains(observer)), same(key));
     }
 }

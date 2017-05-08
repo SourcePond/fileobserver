@@ -20,10 +20,9 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.Collection;
 
+import static ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry.EMPTY_CALLBACK;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -53,7 +52,7 @@ public class DefaultPathChangeEventTest {
         assertEquals(1, event.getNumReplays());
         event.replay();
         assertEquals(2, event.getNumReplays());
-        verify(replayDispatcher, times(2)).replay(listener, event, parentKeys);
+        verify(replayDispatcher, times(2)).replay(EMPTY_CALLBACK, listener, event, parentKeys);
     }
 
     @Test

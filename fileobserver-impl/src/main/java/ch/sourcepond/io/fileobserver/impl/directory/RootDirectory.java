@@ -47,6 +47,16 @@ public class RootDirectory extends Directory {
     }
 
     @Override
+    void signalIgnored(final Path pPath) {
+        factory.signalIgnored(pPath);
+    }
+
+    @Override
+    SignalProcessed createSignalProcessed(final Path pPath, final int pExpectedSignals) {
+        return factory.createSignalProcessed(pPath, pExpectedSignals);
+    }
+
+    @Override
     DirectoryFactory getFactory() {
         return factory;
     }

@@ -55,10 +55,10 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final Executor directoryWalkerExecutor = directExecutor();
     final ExecutorService listenerExecutor = newSingleThreadExecutor();
     final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
-    private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
-    final ListenerManager manager = new ListenerManager(pendingEventRegistry);
+    final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
+    final ListenerManager manager = new ListenerManager();
     final EventDispatcher dispatcher = manager.getDefaultDispatcher();
-    final DirectoryFactory factory = new DirectoryFactory(
+    final DirectoryFactory factory = new DirectoryFactory(pendingEventRegistry,
             keyFactory);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
@@ -92,7 +92,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     @Test
     public void verifyDirectoryFactoryDefaultConstructor() {
         // Should not throw an exception
-        new DirectoryFactory(keyFactory);
+        new DirectoryFactory(pendingEventRegistry, keyFactory);
     }
 
     void setupChecksumAnswer(final Resource pResource, final Checksum pChecksum2) throws IOException {

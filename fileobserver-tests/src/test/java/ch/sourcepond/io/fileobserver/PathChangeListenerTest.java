@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import ch.sourcepond.testing.BundleContextClassLoaderRule;
 import org.junit.*;
@@ -37,13 +37,13 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static ch.sourcepond.io.fileobserver.DirectoryKey.ROOT;
 import static ch.sourcepond.io.fileobserver.DirectorySetup.*;
 import static ch.sourcepond.io.fileobserver.RecursiveDeletion.deleteDirectory;
 import static ch.sourcepond.io.fileobserver.spi.WatchedDirectory.create;
 import static ch.sourcepond.testing.OptionsHelper.karafContainer;
 import static ch.sourcepond.testing.OptionsHelper.mockitoBundles;
 import static java.lang.String.format;
+import static java.lang.System.getProperty;
 import static java.lang.Thread.sleep;
 import static java.nio.file.Files.delete;
 import static java.nio.file.Files.newBufferedWriter;
@@ -60,6 +60,7 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
 public class PathChangeListenerTest {
+    private static final String ROOT = "watchedRoot";
 
     @Rule
     public BundleContextClassLoaderRule rule = new BundleContextClassLoaderRule(this);
@@ -87,7 +88,7 @@ public class PathChangeListenerTest {
         return pDirectoryKey.equals(dispatchKey.getDirectoryKey()) && dispatchKey.getRelativePath().equals(pRelativePath);
     }
 
-    private static DispatchKey key(final DirectoryKey pKey, final Path pRelativePath) {
+    private static DispatchKey key(final Object pKey, final Path pRelativePath) {
         return argThat(new ArgumentMatcher<DispatchKey>() {
             @Override
             public boolean matches(final DispatchKey dispatchKey) {
@@ -101,7 +102,7 @@ public class PathChangeListenerTest {
         });
     }
 
-    private static PathChangeEvent event(final DirectoryKey pKey, final Path pRelativePath) {
+    private static PathChangeEvent event(final Object pKey, final Path pRelativePath) {
         return argThat(new ArgumentMatcher<PathChangeEvent>() {
             @Override
             public boolean matches(final PathChangeEvent event) {
@@ -144,6 +145,8 @@ public class PathChangeListenerTest {
         final InitialCheckusmCalculationBarrier wait = new InitialCheckusmCalculationBarrier();
         listenerRegistration = context.registerService(PathChangeListener.class, wait, null);
         watchedDirectory = create(ROOT, R);
+        watchedDirectory.addBlacklistPattern(ZIP_NAME.replace(".", "\\."));
+
         watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
         wait.waitUntilChecksumsCalculated();
         listenerRegistration.unregister();
@@ -158,13 +161,13 @@ public class PathChangeListenerTest {
     }
 
     private void verifyForceInform(final PathChangeListener pListener) throws Exception {
-        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(E11)));
-        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(E12)));
-        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(E2)));
-        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(H11)));
-        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(H12)));
-        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(H2)));
-        verify(pListener, timeout(5000)).modified(event(ROOT, R.relativize(C)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(E11)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(E2)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(H11)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(H2)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(C)));
     }
 
     private void unregisterService(final ServiceRegistration<?> pRegistration) {
@@ -266,7 +269,7 @@ public class PathChangeListenerTest {
         verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H1)));
 
         // See PathChangeListener::discard for explanation; the following works not for MacOS X
-        if ("Linux".equals(System.getProperty("os.name"))) {
+        if ("Linux".equals(getProperty("os.name"))) {
             verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
             verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
             verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
@@ -305,5 +308,19 @@ public class PathChangeListenerTest {
         order.verify(hook, timeout(15000)).afterModify(key(ROOT, R.relativize(newFile)), eq(newFile));
 
         verifyNoMoreInteractions(listener);
+    }
+
+    @Ignore
+    @Test
+    public void listenerShouldBeInformedAboutFileCreationThroughUnzip() throws Exception {
+        dirSetup.deleteDirectories();
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H)));
+        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(C)));
+
+        reset(listener, secondListener, hook);
+        dirSetup.createZip();
+        dirSetup.unzip();
+        verifyForceInform(listener);
     }
 }
