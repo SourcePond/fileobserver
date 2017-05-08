@@ -56,7 +56,7 @@ public class DiffListenerTest extends CopyResourcesTest {
     private final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
     private final DedicatedFileSystem fs = mock(DedicatedFileSystem.class);
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
-    private final ExecutorService observerExecutor = newSingleThreadExecutor();
+    private final ExecutorService listenerExecutor = newSingleThreadExecutor();
     private final PathChangeListener observer = mock(PathChangeListener.class);
     private final Directory root_dir = mock(Directory.class);
     private final Directory subdir_1 = mock(Directory.class);
@@ -146,8 +146,7 @@ public class DiffListenerTest extends CopyResourcesTest {
         when(subdir_211.getResource(notNull())).thenReturn(resource);
         when(subdir_22.getResource(notNull())).thenReturn(resource);
 
-        manager.setDispatcherExecutor(dispatcherExecutor);
-        manager.setListenerExecutor(observerExecutor);
+        manager.setExecutors(dispatcherExecutor, listenerExecutor);
         manager.setConfig(config);
         manager.addListener(observer);
         diff = manager.openDiff(fs).getDiffListener();

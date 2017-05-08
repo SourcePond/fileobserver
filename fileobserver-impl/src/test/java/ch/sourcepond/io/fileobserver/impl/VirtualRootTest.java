@@ -135,10 +135,8 @@ public class VirtualRootTest {
             return directoryWalkerExecutor;
         });
         virtualRoot.initExecutors(ssbFactory);
-        verify(manager).setListenerExecutor(listenerExecutor);
-        verify(manager).setDispatcherExecutor(dispatcherExecutor);
-        verify(dedicatedFsFactory).setListenerExecutor(listenerExecutor);
-        verify(dedicatedFsFactory).setDirectoryWalkerExecutor(directoryWalkerExecutor);
+        verify(manager).setExecutors(dispatcherExecutor, listenerExecutor);
+        verify(dedicatedFsFactory).setExecutors(directoryWalkerExecutor, listenerExecutor);
     }
 
     @Test

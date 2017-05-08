@@ -60,15 +60,9 @@ public class DedicatedFileSystemFactoryTest {
     }
 
     @Test
-    public void setDirectoryWalkerExecutor() {
-        factory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
+    public void setExecutors() {
+        factory.setExecutors(directoryWalkerExecutor, observerExecutor);
         verify(directoryFactory).setDirectoryWalkerExecutor(directoryWalkerExecutor);
-    }
-
-    @Test
-    public void setObserverExecutor() {
-        factory.setListenerExecutor(observerExecutor);
-        verify(directoryFactory).setListenerExecutor(observerExecutor);
     }
 
     @Test

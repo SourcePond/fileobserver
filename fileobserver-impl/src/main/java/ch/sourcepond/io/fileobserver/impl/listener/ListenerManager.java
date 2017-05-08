@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
+import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -86,12 +87,24 @@ public class ListenerManager implements ReplayDispatcher {
         config = pConfig;
     }
 
-    public void setDispatcherExecutor(final ExecutorService pDispatcherExecutor) {
-        dispatcherExecutor = pDispatcherExecutor;
+    private void waitForExecutors() {
+        if (dispatcherExecutor == null) {
+            synchronized (this) {
+                try {
+                    while (dispatcherExecutor == null) {
+                        wait();
+                    }
+                } catch (final InterruptedException e) {
+                    currentThread().interrupt();
+                }
+            }
+        }
     }
 
-    public void setListenerExecutor(final ExecutorService pListenerExecutor) {
+    public synchronized void setExecutors(final ExecutorService pDispatcherExecutor, final ExecutorService pListenerExecutor) {
+        dispatcherExecutor = pDispatcherExecutor;
         listenerExecutor = pListenerExecutor;
+        notifyAll();
     }
 
     public void addHook(final KeyDeliveryHook pHook) {
@@ -161,6 +174,7 @@ public class ListenerManager implements ReplayDispatcher {
                                 final Consumer<PathChangeListener> pFireEventConsumer,
                                 final KeyDeliveryConsumer<T> pBeforeConsumer,
                                 final KeyDeliveryConsumer<T> pAfterConsumer) {
+        waitForExecutors();
         dispatcherExecutor.execute(new DispatcherTask(
                 listenerExecutor,
                 hooks,

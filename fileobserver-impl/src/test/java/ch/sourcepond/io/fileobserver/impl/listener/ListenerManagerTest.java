@@ -77,8 +77,7 @@ public class ListenerManagerTest {
     }
 
     private void setupManager() {
-        manager.setDispatcherExecutor(dispatcherExecutor);
-        manager.setListenerExecutor(listenerExecutor);
+        manager.setExecutors(dispatcherExecutor, listenerExecutor);
         manager.addListener(listener);
         manager.addHook(hook);
     }

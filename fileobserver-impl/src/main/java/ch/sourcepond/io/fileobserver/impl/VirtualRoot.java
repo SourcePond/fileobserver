@@ -112,19 +112,16 @@ public class VirtualRoot implements RelocationObserver {
                 setFilter("(sourcepond.io.fileobserver.dispatcherexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
-        manager.setDispatcherExecutor(dispatcherExecutor);
-
         final ExecutorService observerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.listenerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
-        dedicatedFileSystemFactory.setListenerExecutor(observerExecutor);
-        manager.setListenerExecutor(observerExecutor);
+        manager.setExecutors(dispatcherExecutor, observerExecutor);
         final Executor directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
-        dedicatedFileSystemFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
+        dedicatedFileSystemFactory.setExecutors(directoryWalkerExecutor, observerExecutor);
     }
 
     /**
