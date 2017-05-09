@@ -29,8 +29,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
-import static java.lang.Thread.currentThread;
-
 /**
  *
  */
@@ -64,25 +62,9 @@ public class DedicatedFileSystemFactory {
         directoryFactory.setListenerExecutor(pExecutor);
         directoryFactory.setDirectoryWalkerExecutor(pDirectoryWalkerExecutor);
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
-        notifyAll();
-    }
-
-    private void waitForExecutors() {
-        if (directoryWalkerExecutor == null) {
-            synchronized (this) {
-                try {
-                    while (directoryWalkerExecutor == null) {
-                        wait();
-                    }
-                } catch (final InterruptedException e) {
-                    currentThread().interrupt();
-                }
-            }
-        }
     }
 
     public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs, final PendingEventRegistry pPendingEventRegistry) throws IOException {
-        waitForExecutors();
         final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
         final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs);
         final DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
