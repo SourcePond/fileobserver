@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.lang.String.valueOf;
 import static java.lang.Thread.currentThread;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -54,16 +55,22 @@ public class PendingEventRegistry {
         boolean furtherProcessingAllowed = true;
         if (ENTRY_CREATE.equals(pKind)) {
             pending.put(pPath, now());
-            LOG.debug("Registered pending CREATE for {}", pPath);
+            LOG.debug("Registered pending {} for {}", pKind, pPath);
         } else if (ENTRY_MODIFY.equals(pKind)) {
             final Instant creationTime = pending.get(pPath);
-            furtherProcessingAllowed = creationTime == null || now().compareTo(creationTime.plusMillis(modificationLockingTime)) > 0;
-            if (furtherProcessingAllowed) {
-                LOG.debug("Waiting until MODIFY can be processed, detected pending CREATE for {}", pPath);
-                awaitPending(pPath);
-                LOG.debug("Pending CREATE processed, going on with MODIFY for {}", pPath);
+            if (creationTime != null) {
+                furtherProcessingAllowed = now().compareTo(creationTime.plusMillis(modificationLockingTime)) > 0;
+                if (furtherProcessingAllowed) {
+                    LOG.debug("Wait until {} can be processed for {}", pKind, pPath);
+                    final long start = now().toEpochMilli();
+                    awaitPending(pPath);
+                    final long end = now().toEpochMilli();
+                    LOG.debug("Processing {} after timeout of {}, {}", pKind, valueOf(end - start), pPath);
+                } else {
+                    LOG.debug("Drop because modification locking time not expired, {} ", pKind, pPath);
+                }
             } else {
-                LOG.debug("MODIFY detected within modification locking time of {} ms, event dropped for {}", modificationLockingTime, pPath);
+                LOG.debug("Directly process {} for {}", pKind, pPath);
             }
         }
         return furtherProcessingAllowed;
