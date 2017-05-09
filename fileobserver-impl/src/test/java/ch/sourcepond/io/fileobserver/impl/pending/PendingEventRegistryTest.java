@@ -91,4 +91,9 @@ public class PendingEventRegistryTest {
         assertTrue(registry.awaitIfPending(path, ENTRY_MODIFY));
         assertTrue(interrupted());
     }
+
+    @Test
+    public void removePendingChildrenWhenDirectoryHasBeenDeleted() {
+
+    }
 }
