@@ -242,12 +242,9 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             }
 
             final Path absolutePath = directory.resolve((Path) event.context());
-
-            dispatcherExecutor.execute(() -> {
-                if (pendingEventRegistry.awaitIfPending(absolutePath, kind)) {
-                    processPath(kind, absolutePath);
-                }
-            });
+            if (pendingEventRegistry.awaitIfPending(absolutePath, kind)) {
+                processPath(kind, absolutePath);
+            }
         }
 
         // The case when the WatchKey has been cancelled is

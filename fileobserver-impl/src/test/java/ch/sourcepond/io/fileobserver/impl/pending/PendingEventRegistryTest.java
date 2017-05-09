@@ -13,32 +13,50 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.pending;
 
+import ch.sourcepond.io.fileobserver.impl.Config;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static java.lang.Thread.*;
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  *
  */
 public class PendingEventRegistryTest {
+    private final Config config = mock(Config.class);
+    private final FileSystem fs = mock(FileSystem.class);
+    private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final Path path = mock(Path.class);
+    private final Path child = mock(Path.class);
     private final PendingEventRegistry registry = new PendingEventRegistry();
     private final ScheduledExecutorService executor = newScheduledThreadPool(1);
 
     @Before
-    public void setup() {
-        registry.setModificationLockingTime(200L);
+    public void setup() throws IOException {
+        when(path.getFileSystem()).thenReturn(fs);
+        when(child.getFileSystem()).thenReturn(fs);
+        when(child.getParent()).thenReturn(path);
+        when(fs.provider()).thenReturn(provider);
+        when(config.modificationLockingMillis()).thenReturn(200L);
+        when(config.pendingTimeoutMillis()).thenReturn(3000L);
+        registry.setConfig(config);
     }
 
     @After
@@ -92,8 +110,24 @@ public class PendingEventRegistryTest {
         assertTrue(interrupted());
     }
 
-    @Test
-    public void removePendingChildrenWhenDirectoryHasBeenDeleted() {
+    @Test(timeout = 5000)
+    public void timeoutIfNotNotified() throws Exception {
+        // Should not block
+        assertTrue(registry.awaitIfPending(path, ENTRY_CREATE));
+        sleep(500);
+        assertTrue(registry.awaitIfPending(path, ENTRY_MODIFY));
+    }
 
+    @Ignore
+    @Test
+    public void removeChildOfDeleteDirectory() throws Exception {
+        doThrow(NoSuchFileException.class).when(provider).readAttributes(path, BasicFileAttributes.class, NOFOLLOW_LINKS);
+        assertTrue(registry.awaitIfPending(path, ENTRY_CREATE));
+        assertTrue(registry.awaitIfPending(child, ENTRY_CREATE));
+        sleep(500);
+        executor.schedule(() -> registry.done(path), 200L, MILLISECONDS);
+
+        // This should not block
+        assertTrue(registry.awaitIfPending(child, ENTRY_CREATE));
     }
 }

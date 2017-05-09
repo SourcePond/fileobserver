@@ -72,7 +72,7 @@ public class VirtualRootTest {
 
     @Before
     public void setup() throws IOException {
-        when(config.modificationLockingTime()).thenReturn(MODIFICATION_LOCKING_TIME);
+        when(config.modificationLockingMillis()).thenReturn(MODIFICATION_LOCKING_TIME);
         when(manager.addListener(listener)).thenReturn(dispatcher);
         when(modifiedPath.getFileSystem()).thenReturn(fs);
         when(provider.readAttributes(modifiedPath, BasicFileAttributes.class)).thenReturn(modifiedPathAttrs);
@@ -100,7 +100,7 @@ public class VirtualRootTest {
     @Test
     public void setConfig() {
         verify(dedicatedFsFactory).setConfig(config);
-        verify(pendingEventRegistry).setModificationLockingTime(MODIFICATION_LOCKING_TIME);
+        verify(pendingEventRegistry).setConfig(config);
         verify(manager).setConfig(config);
     }
 

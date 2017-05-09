@@ -71,7 +71,7 @@ class DiffListener implements PathChangeListener, Closeable {
     private void updateResource(final DispatchKey pKey, final Path pFile) {
         final Resource resource = getResource(pFile);
         if (resource != null) {
-            resource.update(config.timeout(), u -> informModified(u, pKey, pFile));
+            resource.update(config.writeDeadlineMillis(), u -> informModified(u, pKey, pFile));
         }
     }
 

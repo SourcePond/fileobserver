@@ -104,7 +104,7 @@ public class VirtualRoot implements RelocationObserver {
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
-        pendingEventRegistry.setModificationLockingTime(pConfig.modificationLockingTime());
+        pendingEventRegistry.setConfig(pConfig);
         manager.setConfig(pConfig);
     }
 

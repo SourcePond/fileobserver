@@ -27,12 +27,19 @@ public @interface Config {
             name="Modification locking time",
             description = "Duration while no modification event is processed after a create event has been received"
     )
-    long modificationLockingTime() default 100L;
+    long modificationLockingMillis() default 100L;
 
     @AttributeDefinition(
             min = "0",
-            name="Timeout",
+            name="Pending event timeout",
+            description = "Pending events will be processed after this duration"
+    )
+    long pendingTimeoutMillis() default 15000;
+
+    @AttributeDefinition(
+            min = "0",
+            name="Write deadline",
             description = "Duration to wait until a file is considered to be completely written"
     )
-    long timeout() default 2000L;
+    long writeDeadlineMillis() default 2000L;
 }

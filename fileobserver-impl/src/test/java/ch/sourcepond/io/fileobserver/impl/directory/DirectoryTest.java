@@ -69,7 +69,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
         when(watchedRootDir.getKey()).thenReturn(ROOT_DIR_KEY);
         when(watchedSubDir1.getKey()).thenReturn(SUB_DIR_KEY1);
         when(watchedSubDir2.getKey()).thenReturn(SUB_DIR_KEY2);
-        when(config.timeout()).thenReturn(TIMEOUT);
+        when(config.writeDeadlineMillis()).thenReturn(TIMEOUT);
         manager.addListener(listener);
         manager.setExecutors(dispatcherExecutor, listenerExecutor);
         wrapper = new WatchServiceWrapper(getDefault());

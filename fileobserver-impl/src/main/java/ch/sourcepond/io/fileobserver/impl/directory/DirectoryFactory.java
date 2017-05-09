@@ -127,7 +127,7 @@ public class DirectoryFactory {
     }
 
     long getTimeout() {
-        return config.timeout();
+        return config.writeDeadlineMillis();
     }
 
     public void shutdown() {

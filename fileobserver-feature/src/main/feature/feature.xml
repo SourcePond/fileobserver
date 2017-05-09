@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <features xmlns="http://karaf.apache.org/xmlns/features/v1.4.0" name="fileobserver-feature">
     <repository>mvn:ch.sourcepond.commons/smartswitch-feature/${smartswitch.version}/xml/features</repository>
-    <repository>mvn:ch.sourcepond.io/checksum-feature/${checksum.version}/xml/features</repository>
+    <repository>mvn:ch.sourcepond.io/checksum-feature/${checksum-feature.version}/xml/features</repository>
     <feature name="fileobserver-feature" description="fileobserver-feature">
         <feature prerequisite="true">scr</feature>
         <feature prerequisite="true">smartswitch-feature</feature>

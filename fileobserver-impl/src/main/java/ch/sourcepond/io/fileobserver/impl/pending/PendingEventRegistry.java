@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.pending;
 
+import ch.sourcepond.io.fileobserver.impl.Config;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -35,16 +36,25 @@ public class PendingEventRegistry {
     private static final Logger LOG = getLogger(PendingEventRegistry.class);
     public static final PendingEventDone EMPTY_CALLBACK = () -> {};
     private final Map<Path, Instant> pending = new HashMap<>();
-    private volatile long modificationLockingTime;
+    private volatile long modificationLockingTimeInMilliseconds;
+    private volatile long pendingTimeoutInMilliseconds;
 
-    public void setModificationLockingTime(final long pModificationLockingTime) {
-        modificationLockingTime = pModificationLockingTime;
+    public void setConfig(final Config pConfig) {
+        modificationLockingTimeInMilliseconds = pConfig.modificationLockingMillis();
+        pendingTimeoutInMilliseconds = pConfig.pendingTimeoutMillis();
     }
 
-    private void awaitPending(final Path pPath) {
+    private void awaitPending(final Path pPath, final WatchEvent.Kind<?> pKind) {
         try {
-            while (pending.containsKey(pPath)) {
-                wait();
+            final Instant start = now();
+            final Instant threshold = start.plusMillis(pendingTimeoutInMilliseconds);
+            while (pending.containsKey(pPath) && threshold.compareTo(now()) > 0) {
+                wait(pendingTimeoutInMilliseconds);
+            }
+
+            // Wait timed out! Log warning
+            if (pending.remove(pPath) != null) {
+                LOG.warn("No notification received, force processing after {} ms: {}, {}", now().minusMillis(start.toEpochMilli()), pKind, pPath);
             }
         } catch (final InterruptedException e) {
             currentThread().interrupt();
@@ -59,11 +69,11 @@ public class PendingEventRegistry {
         } else if (ENTRY_MODIFY.equals(pKind)) {
             final Instant creationTime = pending.get(pPath);
             if (creationTime != null) {
-                furtherProcessingAllowed = now().compareTo(creationTime.plusMillis(modificationLockingTime)) > 0;
+                furtherProcessingAllowed = now().compareTo(creationTime.plusMillis(modificationLockingTimeInMilliseconds)) > 0;
                 if (furtherProcessingAllowed) {
                     LOG.debug("Wait until {} can be processed for {}", pKind, pPath);
                     final long start = now().toEpochMilli();
-                    awaitPending(pPath);
+                    awaitPending(pPath, pKind);
                     final long end = now().toEpochMilli();
                     LOG.debug("Processing {} after timeout of {}, {}", pKind, valueOf(end - start), pPath);
                 } else {

@@ -123,7 +123,7 @@ public class DiffListenerTest extends CopyResourcesTest {
     @Before
     public void setup() throws Exception {
         doCallRealMethod().when(observer).restrict(notNull(), same(root_dir_path.getFileSystem()));
-        when(config.timeout()).thenReturn(TIMEOUT);
+        when(config.writeDeadlineMillis()).thenReturn(TIMEOUT);
         setupUpdate(resource, update, true);
 
         when(fs.getDirectory(root_dir_path)).thenReturn(root_dir);
