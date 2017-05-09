@@ -166,7 +166,13 @@ class DirectoryRegistrationWalker {
             // This is most certainly the case, but, there is an exception: because we already
             // registered the parent directory of the file with the watch-service there's a small
             // chance that the file had already been modified before we got here.
-            dirs.get(file.getParent()).informIfChanged(session, newRootOrNull, file, ignoreChecksumUpdateStatus);
+            final Directory dir = dirs.get(file.getParent());
+
+            // Important: We need to initialize the resource (and its initial checksum) here.
+            // If not, the first change event will be lost!
+            dir.getResource(file);
+
+            dir.informIfChanged(session, newRootOrNull, file, ignoreChecksumUpdateStatus);
             return CONTINUE;
         }
 

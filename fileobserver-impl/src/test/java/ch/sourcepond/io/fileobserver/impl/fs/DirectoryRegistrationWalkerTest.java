@@ -97,6 +97,16 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     }
 
     private void verifyDirectoryWalk(final Directory pNewRootOrNull, boolean pIgnoreChecksumUpdate) throws IOException {
+        verify(subdir_111, timeout(200)).getResource(testfile_1111_txt_path);
+        verify(subdir_11, timeout(200)).getResource(testfile_111_txt_path);
+        verify(subdir_12, timeout(200)).getResource(testfile_121_txt_path);
+        verify(subdir_1, timeout(200)).getResource(testfile_11_xml_path);
+        verify(subdir_211, timeout(200)).getResource(testfile_2111_txt_path);
+        verify(subdir_21, timeout(200)).getResource(testfile_211_txt_path);
+        verify(subdir_22, timeout(200)).getResource(testfile_221_txt_path);
+        verify(subdir_2, timeout(200)).getResource(testfile_21_xml_path);
+        verify(root_dir, timeout(200)).getResource(testfile_txt_path);
+
         verify(subdir_111, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_1111_txt_path, pIgnoreChecksumUpdate);
         verify(subdir_11, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_111_txt_path, pIgnoreChecksumUpdate);
         verify(subdir_12, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_121_txt_path, pIgnoreChecksumUpdate);
