@@ -30,8 +30,7 @@ import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -42,6 +41,12 @@ import static org.mockito.Mockito.*;
 public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_1 = "dirKey1";
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
+    private final Executor dispatchExecutor = new Executor() {
+        @Override
+        public void execute(final Runnable command) {
+            command.run();
+        }
+    };
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private final ListenerManager manager = mock(ListenerManager.class);
@@ -87,7 +92,8 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(pendingEventRegistry, directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs);
+        fs = new DedicatedFileSystem(pendingEventRegistry,
+                directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs, dispatchExecutor);
     }
 
     @Test

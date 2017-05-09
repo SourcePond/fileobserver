@@ -26,7 +26,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -37,7 +36,10 @@ public class DedicatedFileSystemFactory {
     private final ListenerManager dispatcher;
 
     // Injected by SCR
-    private volatile Executor directoryWalkerExecutor;
+    private volatile ExecutorService directoryWalkerExecutor;
+
+    // Injected by SCR
+    private volatile ExecutorService dispatcherExecutor;
 
     // Constructor for BundleActivator
     public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ListenerManager pDispatcher) {
@@ -58,10 +60,17 @@ public class DedicatedFileSystemFactory {
         directoryFactory.setResourcesFactory(pResourcesFactory);
     }
 
-    public synchronized void setExecutors(final Executor pDirectoryWalkerExecutor, final ExecutorService pExecutor) {
-        directoryFactory.setListenerExecutor(pExecutor);
-        directoryFactory.setDirectoryWalkerExecutor(pDirectoryWalkerExecutor);
+    public void setExecutors(final ExecutorService pDirectoryWalkerExecutor,
+                             final ExecutorService pListenerExecutor,
+                             final ExecutorService pDispatcherExecutor) {
+        directoryFactory.setExecutors(pDirectoryWalkerExecutor, pListenerExecutor);
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
+        dispatcherExecutor = pDispatcherExecutor;
+    }
+
+    public void shutdown() {
+        directoryFactory.shutdown();
+        dispatcherExecutor.shutdown();
     }
 
     public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs, final PendingEventRegistry pPendingEventRegistry) throws IOException {
@@ -79,7 +88,8 @@ public class DedicatedFileSystemFactory {
                 new DirectoryRebase(directoryFactory, wrapper, dirs),
                 dispatcher,
                 new PathChangeHandler(pVirtualRoot, walker, dirs),
-                dirs);
+                dirs,
+                dispatcherExecutor);
         fs.start();
         return fs;
     }

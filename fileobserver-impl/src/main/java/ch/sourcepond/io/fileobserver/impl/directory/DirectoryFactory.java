@@ -24,7 +24,7 @@ import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  *
@@ -35,10 +35,10 @@ public class DirectoryFactory {
     private volatile Config config;
 
     // Injected by SCR
-    private volatile Executor directoryWalkerExecutor;
+    private volatile ExecutorService directoryWalkerExecutor;
 
     // Injected by SCR
-    private volatile Executor listenerExecutor;
+    private volatile ExecutorService listenerExecutor;
     // Injected by SCR
     private volatile ResourcesFactory resourcesFactory;
 
@@ -52,8 +52,9 @@ public class DirectoryFactory {
         config = pConfig;
     }
 
-    public void setDirectoryWalkerExecutor(final Executor pDirectoryWalkerExecutor) {
+    public void setExecutors(final ExecutorService pDirectoryWalkerExecutor, final ExecutorService pListenerExecutor) {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
+        listenerExecutor = pListenerExecutor;
     }
 
     void signalIgnored(final Path pPath) {
@@ -62,10 +63,6 @@ public class DirectoryFactory {
 
     SignalProcessed createSignalProcessed(Path pPath, int pExpectedSignals) {
         return new SignalProcessed(registry, pPath, pExpectedSignals);
-    }
-
-    public void setListenerExecutor(final Executor pListenerExecutor) {
-        listenerExecutor = pListenerExecutor;
     }
 
     public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
@@ -131,5 +128,10 @@ public class DirectoryFactory {
 
     long getTimeout() {
         return config.timeout();
+    }
+
+    public void shutdown() {
+        directoryWalkerExecutor.shutdown();
+        listenerExecutor.shutdown();
     }
 }

@@ -47,7 +47,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
-    private final ExecutorService observerExecutor = newSingleThreadExecutor();
+    private final ExecutorService listenerExecutor = newSingleThreadExecutor();
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final Config config = mock(Config.class);
     private final PendingEventRegistry registry = mock(PendingEventRegistry.class);
@@ -66,9 +66,8 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
         when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);
         wrapper = new WatchServiceWrapper(getDefault());
         directoryFactory.setConfig(config);
-        directoryFactory.setListenerExecutor(observerExecutor);
+        directoryFactory.setExecutors(directoryWalkerExecutor, listenerExecutor);
         directoryFactory.setResourcesFactory(resourcesFactory);
-        directoryFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
         dir = directoryFactory.newRoot(wrapper.register(root_dir_path));
         dir_1 = directoryFactory.newRoot(wrapper.register(subdir_1_path));
         dir_111 = directoryFactory.newRoot(wrapper.register(subdir_111_path));
@@ -81,7 +80,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
     public void shutdownExecutor() {
         wrapper.close();
         directoryWalkerExecutor.shutdown();
-        observerExecutor.shutdown();
+        listenerExecutor.shutdown();
     }
 
     @Test

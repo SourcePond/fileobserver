@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
@@ -49,6 +50,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final DirectoryRebase rebase;
     private final ListenerManager manager;
     private final PathChangeHandler pathChangeHandler;
+    private final Executor dispatcherExecutor;
 
     DedicatedFileSystem(final PendingEventRegistry pPendingEventRegistry,
                         final DirectoryFactory pDirectoryFactory,
@@ -56,7 +58,8 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                         final DirectoryRebase pRebase,
                         final ListenerManager pManager,
                         final PathChangeHandler pPathChangeHandler,
-                        final ConcurrentMap<Path, Directory> pDirs) {
+                        final ConcurrentMap<Path, Directory> pDirs,
+                        final Executor pDispatcherExecutor) {
         pendingEventRegistry = pPendingEventRegistry;
         pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
@@ -64,6 +67,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         rebase = pRebase;
         manager = pManager;
         dirs = pDirs;
+        dispatcherExecutor = pDispatcherExecutor;
         thread = new Thread(this, format("fileobserver %s", this));
     }
 
@@ -238,9 +242,12 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             }
 
             final Path absolutePath = directory.resolve((Path) event.context());
-            if (pendingEventRegistry.awaitIfPending(absolutePath, kind)) {
-                processPath(kind, absolutePath);
-            }
+
+            dispatcherExecutor.execute(() -> {
+                if (pendingEventRegistry.awaitIfPending(absolutePath, kind)) {
+                    processPath(kind, absolutePath);
+                }
+            });
         }
 
         // The case when the WatchKey has been cancelled is

@@ -86,10 +86,9 @@ public class ListenerManager implements ReplayDispatcher {
         config = pConfig;
     }
 
-    public synchronized void setExecutors(final ExecutorService pDispatcherExecutor, final ExecutorService pListenerExecutor) {
+    public void setExecutors(final ExecutorService pDispatcherExecutor, final ExecutorService pListenerExecutor) {
         dispatcherExecutor = pDispatcherExecutor;
         listenerExecutor = pListenerExecutor;
-        notifyAll();
     }
 
     public void addHook(final KeyDeliveryHook pHook) {

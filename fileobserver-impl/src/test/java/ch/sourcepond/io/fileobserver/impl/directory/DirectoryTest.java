@@ -28,10 +28,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.nio.file.FileSystems.getDefault;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.ArgumentMatchers.eq;
@@ -52,7 +50,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final Config config =  mock(Config.class);
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
-    final Executor directoryWalkerExecutor = directExecutor();
+    final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     final ExecutorService listenerExecutor = newSingleThreadExecutor();
     final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
     final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
@@ -76,8 +74,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
         manager.setExecutors(dispatcherExecutor, listenerExecutor);
         wrapper = new WatchServiceWrapper(getDefault());
         factory.setConfig(config);
-        factory.setListenerExecutor(listenerExecutor);
-        factory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
+        factory.setExecutors(directoryWalkerExecutor, listenerExecutor);
         factory.setResourcesFactory(resourcesFactory);
     }
 

@@ -136,7 +136,7 @@ public class VirtualRootTest {
         });
         virtualRoot.initExecutors(ssbFactory);
         verify(manager).setExecutors(dispatcherExecutor, listenerExecutor);
-        verify(dedicatedFsFactory).setExecutors(directoryWalkerExecutor, listenerExecutor);
+        verify(dedicatedFsFactory).setExecutors(directoryWalkerExecutor, listenerExecutor, dispatcherExecutor);
     }
 
     @Test
@@ -259,6 +259,7 @@ public class VirtualRootTest {
     public void deactivate() {
         virtualRoot.deactivate();
         verify(dedicatedFs).close();
+        verify(dedicatedFsFactory).shutdown();
         final PathChangeListener otherListener = mock(PathChangeListener.class);
         virtualRoot.addListener(otherListener);
         verifyZeroInteractions(otherListener);

@@ -97,6 +97,7 @@ public class VirtualRoot implements RelocationObserver {
     public void deactivate() {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
+        dedicatedFileSystemFactory.shutdown();
         LOG.info("Virtual-root deactivated");
     }
 
@@ -123,11 +124,11 @@ public class VirtualRoot implements RelocationObserver {
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
         manager.setExecutors(dispatcherExecutor, listenerExecutor);
-        final Executor directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
+        final ExecutorService directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
-        dedicatedFileSystemFactory.setExecutors(directoryWalkerExecutor, listenerExecutor);
+        dedicatedFileSystemFactory.setExecutors(directoryWalkerExecutor, listenerExecutor, dispatcherExecutor);
     }
 
     private void doAddListener(final PathChangeListener pListener) {

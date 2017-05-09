@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 import static java.lang.Thread.sleep;
 import static java.nio.file.Files.delete;
@@ -45,6 +46,12 @@ import static org.mockito.Mockito.*;
 public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private static final String DIRECTORY_KEY = "getDirectoryKey";
     private static final String NEW_FILE_NAME = "newfile.txt";
+    private final Executor dispatchExecutor = new Executor() {
+        @Override
+        public void execute(final Runnable command) {
+            command.run();
+        }
+    };
     private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final RootDirectory directory = mock(RootDirectory.class);
@@ -68,7 +75,8 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         wrapper = new WatchServiceWrapper(root_dir_path.getFileSystem());
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        child = new DedicatedFileSystem(pendingEventRegistry, directoryFactory, wrapper, rebase, manager, pathChangeHandler, new ConcurrentHashMap<>());
+        child = new DedicatedFileSystem(pendingEventRegistry, directoryFactory, wrapper, rebase, manager,
+                pathChangeHandler, new ConcurrentHashMap<>(), dispatchExecutor);
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
