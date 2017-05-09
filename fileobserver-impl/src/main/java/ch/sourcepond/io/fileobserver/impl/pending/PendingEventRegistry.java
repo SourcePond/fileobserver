@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.pending;
 
+import org.slf4j.Logger;
+
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.time.Instant;
@@ -21,12 +23,15 @@ import java.util.Map;
 
 import static java.lang.Thread.currentThread;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.time.Instant.now;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  *
  */
 public class PendingEventRegistry {
+    private static final Logger LOG = getLogger(PendingEventRegistry.class);
     public static final PendingEventDone EMPTY_CALLBACK = () -> {};
     private final Map<Path, Instant> pending = new HashMap<>();
     private volatile long modificationLockingTime;
@@ -49,11 +54,16 @@ public class PendingEventRegistry {
         boolean furtherProcessingAllowed = true;
         if (ENTRY_CREATE.equals(pKind)) {
             pending.put(pPath, now());
-        } else {
+            LOG.debug("Registered pending CREATE for {}", pPath);
+        } else if (ENTRY_MODIFY.equals(pKind)) {
             final Instant creationTime = pending.get(pPath);
             furtherProcessingAllowed = creationTime == null || now().compareTo(creationTime.plusMillis(modificationLockingTime)) > 0;
             if (furtherProcessingAllowed) {
+                LOG.debug("Waiting until MODIFY can be processed, detected pending CREATE for {}", pPath);
                 awaitPending(pPath);
+                LOG.debug("Pending CREATE processed, going on with MODIFY for {}", pPath);
+            } else {
+                LOG.debug("MODIFY detected within modification locking time of {} ms, event dropped for {}", modificationLockingTime, pPath);
             }
         }
         return furtherProcessingAllowed;
