@@ -25,7 +25,7 @@
 	<modules>
 		<module>fileobserver-api</module>
 		<module>fileobserver-impl</module>
-		<module>fileobserver-tests</module>
+		<!--<module>fileobserver-tests</module>-->
 		<module>fileobserver-feature</module>
 		<module>fileobserver-spi</module>
 	</modules>
