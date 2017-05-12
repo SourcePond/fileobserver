@@ -59,30 +59,33 @@ class PathChangeHandler {
 
     void pathModified(final EventDispatcher pDispatcher,
                       final Path pPath,
-                      boolean pIsNew) {
+                      final PendingEventDone pDoneCallback,
+                      final boolean pIsCreate) {
         if (isDirectory(pPath)) {
             walker.directoryCreated(pDispatcher, pPath);
         } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
-            dir.informIfChanged(pDispatcher, pPath, pIsNew);
+            dir.informIfChanged(pDispatcher, pPath, pDoneCallback, pIsCreate);
         }
     }
 
-    void pathDiscarded(final EventDispatcher pDispatcher, final Path pPath) {
+    void pathDiscarded(final EventDispatcher pDispatcher,
+                       final Path pPath,
+                       final PendingEventDone pDoneCallback) {
         // The deleted path was a directory
-        if (!directoryDiscarded(pDispatcher, pPath)) {
+        if (!directoryDiscarded(pDispatcher, pPath, pDoneCallback)) {
             final Directory parentDirectory = getDirectory(pPath.getParent());
             if (parentDirectory == null) {
                 LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
             } else {
                 // The deleted path was a file
-                parentDirectory.informDiscard(pDispatcher, pPath);
+                parentDirectory.informDiscard(pDispatcher, pPath, pDoneCallback);
             }
         }
     }
 
-    private boolean directoryDiscarded(final EventDispatcher pDispatcher, final Path pDirectory) {
+    private boolean directoryDiscarded(final EventDispatcher pDispatcher, final Path pDirectory, final PendingEventDone pDoneCallback) {
         final Directory dir = dirs.remove(pDirectory);
         final boolean wasDirectory = dir != null;
         if (wasDirectory) {
@@ -94,7 +97,7 @@ class PathChangeHandler {
                     it.remove();
                 }
             }
-            dir.informDiscard(pDispatcher, pDirectory);
+            dir.informDiscard(pDispatcher, pDirectory, pDoneCallback);
         }
         return wasDirectory;
     }

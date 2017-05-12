@@ -21,7 +21,6 @@ import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.WatchServiceWrapper;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
@@ -53,11 +52,9 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     final ExecutorService listenerExecutor = newSingleThreadExecutor();
     final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
-    final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
     final ListenerManager manager = new ListenerManager();
     final EventDispatcher dispatcher = manager.getDefaultDispatcher();
-    final DirectoryFactory factory = new DirectoryFactory(pendingEventRegistry,
-            keyFactory);
+    final DirectoryFactory factory = new DirectoryFactory(keyFactory);
     final Checksum checksum1 = mock(Checksum.class);
     final Checksum checksum2 = mock(Checksum.class);
     final PathChangeListener listener = mock(PathChangeListener.class);
@@ -88,7 +85,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     @Test
     public void verifyDirectoryFactoryDefaultConstructor() {
         // Should not throw an exception
-        new DirectoryFactory(pendingEventRegistry, keyFactory);
+        new DirectoryFactory(keyFactory);
     }
 
     void setupChecksumAnswer(final Resource pResource, final Checksum pChecksum2) throws IOException {

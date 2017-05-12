@@ -17,8 +17,8 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
+import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
-import static ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry.EMPTY_CALLBACK;
+import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.util.Collections.emptyList;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -109,7 +109,6 @@ public abstract class Directory {
     private Collection<DispatchKey> createKeys(final Path pFile) {
         final Collection<WatchedDirectory> watchedDirectories = getWatchedDirectories();
         final List<DispatchKey> keys = new ArrayList<>(watchedDirectories.size());
-        boolean blacklisted = false;
         for (final WatchedDirectory watchedDirectory : watchedDirectories) {
             final Path relativePath = relativizeAgainstRoot(watchedDirectory, pFile);
 
@@ -117,14 +116,7 @@ public abstract class Directory {
                 keys.add(getFactory().newKey(watchedDirectory.getKey(), relativePath));
             } else {
                 LOG.info("{} is blacklisted by {}", relativePath, watchedDirectory);
-                if (!blacklisted) {
-                    blacklisted = true;
-                }
             }
-        }
-
-        if (keys.isEmpty() && blacklisted) {
-            signalIgnored(pFile);
         }
 
         return keys;
@@ -151,7 +143,6 @@ public abstract class Directory {
      * {@link DispatchKey} will be generated for every {@link WatchedDirectory#getKey()}/relative-path combination.
      * This {@link DispatchKey} instance will then be delivered (along with the readable file path)
      * to the {@link PathChangeListener} objects which should be informed.</p>
-     * <p>
      * <p>Note: The object returned by {@link WatchedDirectory#getKey()} should be <em>immutable</em>,
      * {@link String} or an {@link Enum} objects are good condidates for being directory-keys.</p>
      *
@@ -230,14 +221,13 @@ public abstract class Directory {
      *
      * @param pFile Discarded file, must be {@code null}
      */
-    public void informDiscard(final EventDispatcher pDispatcher, final Path pFile) {
+    public void informDiscard(final EventDispatcher pDispatcher, final Path pFile, final PendingEventDone pDoneCallback) {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
         if (pDispatcher.hasListeners()) {
             final Collection<DispatchKey> keys = createKeys(pFile);
-            final PendingEventDone doneCallback = createSignalProcessed(pFile, keys.size());
-            keys.forEach(k -> pDispatcher.discard(doneCallback, k));
+            keys.forEach(k -> pDispatcher.discard(pDoneCallback, k));
         }
     }
 
@@ -255,9 +245,18 @@ public abstract class Directory {
         return resources.computeIfAbsent(pFile, f -> getFactory().newResource(SHA256, pFile));
     }
 
-    abstract SignalProcessed createSignalProcessed(Path pPath, int pExpectedSignals);
+    private void inform(final Directory pNewRootOrNull,
+                        final EventDispatcher pDispatcher,
+                        final PendingEventDone pDoneCallback,
+                        final Path pFile) {
+        // If the modification is requested because a new root-directory has been registered, we
+        // need to inform the listeners about supplement keys.
+        final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
+                emptyList() : pNewRootOrNull.createKeys(pFile);
 
-    abstract void signalIgnored(Path pPath);
+        final Collection<DispatchKey> keys = createKeys(pFile);
+        keys.forEach(k -> pDispatcher.modified(pDoneCallback, k, pFile, supplementKeys));
+    }
 
     /**
      * Triggers the {@link PathChangeListener#modified(PathChangeEvent)} on all listeners specified if the
@@ -269,29 +268,23 @@ public abstract class Directory {
     public void informIfChanged(final EventDispatcher pDispatcher,
                                 final Directory pNewRootOrNull,
                                 final Path pFile,
-                                boolean pIgnoreChecksumUpdateStatus) {
+                                final PendingEventDone pDoneCallback,
+                                final boolean pIgnoreChecksum) {
         if (pDispatcher.hasListeners()) {
-            getResource(pFile).update(getTimeout(),
-                    update -> {
-                        if (pIgnoreChecksumUpdateStatus || update.hasChanged()) {
-                            LOG.debug("Processing {} because {} has been changed", update, pFile);
-                            // If the modification is requested because a new root-directory has been registered, we
-                            // need to inform the listeners about supplement keys.
-                            final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
-                                    emptyList() : pNewRootOrNull.createKeys(pFile);
-
-                            final Collection<DispatchKey> keys = createKeys(pFile);
-                            final PendingEventDone doneCallback = createSignalProcessed(pFile, keys.size());
-                            keys.forEach(k -> pDispatcher.modified(doneCallback, k, pFile, supplementKeys));
-                        } else {
-                            LOG.debug("Ignored {} because {} has not been changed", update, pFile);
-                        }
-                    });
+            if (pIgnoreChecksum) {
+                inform(pNewRootOrNull, pDispatcher, pDoneCallback, pFile);
+            } else {
+                getResource(pFile).update(getTimeout(),
+                        update -> {
+                            if (update.hasChanged()) {
+                                LOG.debug("Processing {} because {} has been changed", update, pFile);
+                                inform(pNewRootOrNull, pDispatcher, pDoneCallback, pFile);
+                            } else {
+                                LOG.debug("Ignored {} because {} has not been changed", update, pFile);
+                            }
+                        });
+            }
         }
-    }
-
-    public void informIfChanged(final EventDispatcher pDispatcher, final Directory pNewRootOrNull, final Path pFile) {
-        informIfChanged(pDispatcher, pNewRootOrNull, pFile, false);
     }
 
     /**
@@ -301,8 +294,11 @@ public abstract class Directory {
      *
      * @param pFile File which potentially has changed, must not be {@code null}
      */
-    public void informIfChanged(final EventDispatcher pDispatcher, final Path pFile, final boolean pIsNew) {
-        informIfChanged(pDispatcher, null, pFile, pIsNew);
+    public void informIfChanged(final EventDispatcher pDispatcher,
+                                final Path pFile,
+                                final PendingEventDone pDoneCallback,
+                                final boolean pIgnoreChecksum) {
+        informIfChanged(pDispatcher, null, pFile, pDoneCallback, pIgnoreChecksum);
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);

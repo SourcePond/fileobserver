@@ -17,8 +17,8 @@ import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
+import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
+import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
 import org.junit.After;
@@ -57,14 +57,13 @@ public class ListenerManagerTest {
     private final Path file = mock(Path.class);
     private final PathChangeListener listener = mock(PathChangeListener.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
-    private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
+    private final PathProcessingQueues pathProcessingQueues = mock(PathProcessingQueues.class);
     private final PendingEventDone doneCallback = mock(PendingEventDone.class);
     private volatile PathChangeEvent realEvent;
     private ListenerManager manager = new ListenerManager(restrictionFactory, dispatchEventFactory);
 
     @Before
     public void setup() {
-        when(pendingEventRegistry.awaitIfPending(same(file), notNull())).thenReturn(true);
         when(dispatchEventFactory.create(listener, dispatchKey, file, parentKeys, manager)).thenReturn(pathChangeEvent);
         when(file.getFileSystem()).thenReturn(fs);
         when(pathChangeEvent.getKey()).thenReturn(dispatchKey);

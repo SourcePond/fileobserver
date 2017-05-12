@@ -14,7 +14,6 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;
@@ -28,9 +27,8 @@ import static org.mockito.Mockito.verify;
 public class DirectoryFactoryTest {
     private final ExecutorService directoryWalkerExecutor = mock(ExecutorService.class);
     private final ExecutorService listenerExecutor = mock(ExecutorService.class);
-    private final PendingEventRegistry registry = mock(PendingEventRegistry.class);
     private final DefaultDispatchKeyFactory keyFactory = mock(DefaultDispatchKeyFactory.class);
-    private final DirectoryFactory factory = new DirectoryFactory(registry, keyFactory);
+    private final DirectoryFactory factory = new DirectoryFactory(keyFactory);
 
     @Test
     public void shutdown() {

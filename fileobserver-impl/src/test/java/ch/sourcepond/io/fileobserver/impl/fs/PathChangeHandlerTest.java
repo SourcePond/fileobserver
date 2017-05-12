@@ -38,6 +38,7 @@ public class PathChangeHandlerTest {
     private final DedicatedFileSystem dfs = mock(DedicatedFileSystem.class);
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
+    private final PendingEventDone doneCallback = mock(PendingEventDone.class);
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
@@ -73,33 +74,33 @@ public class PathChangeHandlerTest {
     @Test
     public void directoryModified() {
         when(attrs.isDirectory()).thenReturn(true);
-        handler.pathModified(dispatcher, path, false);
+        handler.pathModified(dispatcher, path, doneCallback, false);
         verify(walker).directoryCreated(dispatcher, path);
     }
 
     @Test
     public void fileModifed() {
         dirs.put(parent, directory);
-        handler.pathModified(dispatcher, path, true);
-        verify(directory).informIfChanged(dispatcher, path, true);
+        handler.pathModified(dispatcher, path, doneCallback, false);
+        verify(directory).informIfChanged(dispatcher, path, doneCallback, false);
     }
 
     @Test(expected = NullPointerException.class)
     public void fileModifedNoParentRegistered() {
-        handler.pathModified(dispatcher, path, false);
+        handler.pathModified(dispatcher, path, doneCallback, false);
     }
 
     @Test
     public void fileDiscarded() {
         dirs.put(parent, directory);
-        handler.pathDiscarded(dispatcher, path);
-        verify(directory).informDiscard(dispatcher, path);
+        handler.pathDiscarded(dispatcher, path, doneCallback);
+        verify(directory).informDiscard(dispatcher, path, doneCallback);
     }
 
     @Test
     public void fileDiscardedNoParentRegistered() {
         // Should not cause an exception
-        handler.pathDiscarded(dispatcher, path);
+        handler.pathDiscarded(dispatcher, path, doneCallback);
     }
 
     @Test
@@ -112,12 +113,12 @@ public class PathChangeHandlerTest {
         dirs.put(path, subDirectory);
         when(path.startsWith(parent)).thenReturn(true);
 
-        handler.pathDiscarded(dispatcher, parent);
+        handler.pathDiscarded(dispatcher, parent, doneCallback);
 
         final InOrder order = inOrder(directory, subDirectory);
         order.verify(directory).cancelKey();
         order.verify(subDirectory).cancelKey();
-        order.verify(directory).informDiscard(dispatcher, parent);
+        order.verify(directory).informDiscard(dispatcher, parent, doneCallback);
 
         assertFalse(dirs.containsKey(parent));
         assertFalse(dirs.containsKey(path));

@@ -20,7 +20,7 @@ import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
+import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
 import org.slf4j.Logger;

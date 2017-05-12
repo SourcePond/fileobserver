@@ -20,7 +20,6 @@ import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
 import ch.sourcepond.io.fileobserver.impl.listener.DiffEventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,12 +40,6 @@ import static org.mockito.Mockito.*;
 public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_1 = "dirKey1";
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
-    private final Executor dispatchExecutor = new Executor() {
-        @Override
-        public void execute(final Runnable command) {
-            command.run();
-        }
-    };
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private final ListenerManager manager = mock(ListenerManager.class);
@@ -63,7 +56,7 @@ public class DedicatedFileSystemTest {
     private final Path rootDirPath2 = mock(Path.class);
     private final WatchKey rootWatchKey1 = mock(WatchKey.class);
     private final WatchServiceWrapper wrapper = mock(WatchServiceWrapper.class);
-    private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
+    private final PathProcessingQueues pathProcessingQueues = mock(PathProcessingQueues.class);
     private DedicatedFileSystem fs;
 
     @Before
@@ -92,8 +85,8 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(pendingEventRegistry,
-                directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs, dispatchExecutor);
+        fs = new DedicatedFileSystem(pathProcessingQueues,
+                directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs);
     }
 
     @Test

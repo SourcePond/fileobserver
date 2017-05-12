@@ -59,7 +59,6 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
  */
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
-@Ignore
 public class PathChangeListenerTest {
     private static final String ROOT = "watchedRoot";
 

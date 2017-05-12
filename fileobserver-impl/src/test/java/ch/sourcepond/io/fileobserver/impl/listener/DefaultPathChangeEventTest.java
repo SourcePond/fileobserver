@@ -20,7 +20,7 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.Collection;
 
-import static ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry.EMPTY_CALLBACK;
+import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

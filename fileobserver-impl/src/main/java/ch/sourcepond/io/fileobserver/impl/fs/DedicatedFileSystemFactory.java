@@ -19,7 +19,6 @@ import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -73,7 +72,7 @@ public class DedicatedFileSystemFactory {
         dispatcherExecutor.shutdown();
     }
 
-    public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs, final PendingEventRegistry pPendingEventRegistry) throws IOException {
+    public DedicatedFileSystem openFileSystem(final VirtualRoot pVirtualRoot, final FileSystem pFs, final PathProcessingQueues pPathProcessingQueues) throws IOException {
         final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
         final WatchServiceWrapper wrapper = new WatchServiceWrapper(pFs);
         final DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
@@ -82,14 +81,13 @@ public class DedicatedFileSystemFactory {
                 directoryWalkerExecutor,
                 dirs);
         DedicatedFileSystem fs = new DedicatedFileSystem(
-                pPendingEventRegistry,
+                pPathProcessingQueues,
                 directoryFactory,
                 wrapper,
                 new DirectoryRebase(directoryFactory, wrapper, dirs),
                 dispatcher,
                 new PathChangeHandler(pVirtualRoot, walker, dirs),
-                dirs,
-                dispatcherExecutor);
+                dirs);
         fs.start();
         return fs;
     }

@@ -16,7 +16,7 @@ package ch.sourcepond.io.fileobserver.impl.listener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
+import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import org.slf4j.Logger;
 
 import java.util.Collection;

@@ -29,6 +29,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
+import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
@@ -98,7 +99,7 @@ class DirectoryRegistrationWalker {
      * @param pDirectory Newly created directory, must not be {@code null}
      */
     void directoryCreated(final EventDispatcher pDispatcher, final Path pDirectory) {
-        directoryCreated(pDispatcher,null, pDirectory, false);
+        directoryCreated(pDispatcher,null, pDirectory);
     }
 
     /**
@@ -109,7 +110,7 @@ class DirectoryRegistrationWalker {
      * @param pNewRoot Newly created directory, must not be {@code null}
      */
     void rootAdded(final EventDispatcher pDispatcher, final Directory pNewRoot) {
-        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath(), true);
+        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath());
     }
 
     /**
@@ -122,14 +123,13 @@ class DirectoryRegistrationWalker {
      */
     private void directoryCreated(final EventDispatcher pDispatcher,
                                   final Directory pNewRootOrNull,
-                                  final Path pDirectory,
-                                  final boolean pIgnoreChecksumUpdateStatus) {
+                                  final Path pDirectory) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered PathChangeListener
         directoryWalkerExecutor.execute(() -> {
             try {
                 walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(
-                        pDispatcher, pNewRootOrNull, pIgnoreChecksumUpdateStatus));
+                        pDispatcher, pNewRootOrNull));
             } catch (final IOException e) {
                 logger.warn(e.getMessage(), e);
             } catch (final RuntimeException e) {
@@ -147,32 +147,29 @@ class DirectoryRegistrationWalker {
     private class DirectoryInitializerFileVisitor extends SimpleFileVisitor<Path> {
         private final EventDispatcher session;
         private final Directory newRootOrNull;
-        private final boolean ignoreChecksumUpdateStatus;
 
         /**
          * Creates a new instance of this class.
          */
         public DirectoryInitializerFileVisitor(final EventDispatcher pDispatcher,
-                                               final Directory pNewRootOrNull,
-                                               final boolean pIgnoreChecksumUpdateStatus) {
+                                               final Directory pNewRootOrNull) {
             session = pDispatcher;
             newRootOrNull = pNewRootOrNull;
-            ignoreChecksumUpdateStatus = pIgnoreChecksumUpdateStatus;
         }
 
         @Override
         public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
-            // It's important here to only trigger the listeners if the file has changed.
-            // This is most certainly the case, but, there is an exception: because we already
-            // registered the parent directory of the file with the watch-service there's a small
-            // chance that the file had already been modified before we got here.
             final Directory dir = dirs.get(file.getParent());
 
             // Important: We need to initialize the resource (and its initial checksum) here.
             // If not, the first change event will be lost!
-            dir.getResource(file);
+            //dir.getResource(file);
 
-            dir.informIfChanged(session, newRootOrNull, file, ignoreChecksumUpdateStatus);
+            // It's important here to only trigger the listeners if the file has changed.
+            // This is most certainly the case, but, there is an exception: because we already
+            // registered the parent directory of the file with the watch-service there's a small
+            // chance that the file had already been modified before we got here.
+            dir.informIfChanged(session, newRootOrNull, file, EMPTY_CALLBACK, true);
             return CONTINUE;
         }
 

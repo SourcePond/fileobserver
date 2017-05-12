@@ -18,7 +18,6 @@ import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,7 +33,7 @@ import static org.mockito.Mockito.*;
  *
  */
 public class DedicatedFileSystemFactoryTest {
-    private final PendingEventRegistry pendingEventRegistry = mock(PendingEventRegistry.class);
+    private final PathProcessingQueues pathProcessingQueues = mock(PathProcessingQueues.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Config config = mock(Config.class);
@@ -87,7 +86,7 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void newFs() throws IOException {
-        final DedicatedFileSystem dfs = factory.openFileSystem(virtualRoot, fs, pendingEventRegistry);
+        final DedicatedFileSystem dfs = factory.openFileSystem(virtualRoot, fs, pathProcessingQueues);
         dfs.close();
         verify(watchService).close();
     }

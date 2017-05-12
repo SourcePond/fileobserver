@@ -15,7 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.listener;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventDone;
+import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import org.junit.Test;
 
 import java.nio.file.Path;

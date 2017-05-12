@@ -50,16 +50,6 @@ public class SubDirectory extends Directory {
     }
 
     @Override
-    void signalIgnored(final Path pPath) {
-        parent.signalIgnored(pPath);
-    }
-
-    @Override
-    SignalProcessed createSignalProcessed(final Path pPath, final int pExpectedSignals) {
-        return parent.createSignalProcessed(pPath, pExpectedSignals);
-    }
-
-    @Override
     DirectoryFactory getFactory() {
         return parent.getFactory();
     }

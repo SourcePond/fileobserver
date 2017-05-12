@@ -11,23 +11,21 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.*/
-package ch.sourcepond.io.fileobserver.impl.listener;
+package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
-import ch.sourcepond.io.fileobserver.api.PathChangeListener;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
-
-import java.util.Collection;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
 
 /**
  *
  */
 @FunctionalInterface
-interface ReplayDispatcher {
+public interface PathProcessingHandler {
 
-    void replay(PendingEventDone pDone,
-                PathChangeListener pListener,
-                PathChangeEvent pEvent,
-                Collection<DispatchKey> pParentKeys);
+    /**
+     *
+     * @param pKind
+     * @param child
+     */
+    void process(WatchEvent.Kind<?> pKind, Path child, PendingEventDone pDoneCallback);
 }

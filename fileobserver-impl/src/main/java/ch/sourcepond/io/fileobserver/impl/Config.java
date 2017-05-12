@@ -24,13 +24,6 @@ public @interface Config {
 
     @AttributeDefinition(
             min = "0",
-            name="Modification locking time",
-            description = "Duration while no modification event is processed after a create event has been received"
-    )
-    long modificationLockingMillis() default 100L;
-
-    @AttributeDefinition(
-            min = "0",
             name="Pending event timeout",
             description = "Pending events will be processed after this duration"
     )

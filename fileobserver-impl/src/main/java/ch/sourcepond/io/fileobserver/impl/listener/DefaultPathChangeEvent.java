@@ -20,7 +20,7 @@ import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import java.nio.file.Path;
 import java.util.Collection;
 
-import static ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry.EMPTY_CALLBACK;
+import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 
 /**
  *

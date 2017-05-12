@@ -19,7 +19,6 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.DiffEventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
 
@@ -30,7 +29,6 @@ import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
@@ -42,7 +40,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable, Runnable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
-    private final PendingEventRegistry pendingEventRegistry;
+    public static final PendingEventDone EMPTY_CALLBACK = () -> {};
+    private final PathProcessingQueues pathProcessingQueues;
     private final ConcurrentMap<Path, Directory> dirs;
     private final Thread thread;
     private final DirectoryFactory directoryFactory;
@@ -50,24 +49,21 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final DirectoryRebase rebase;
     private final ListenerManager manager;
     private final PathChangeHandler pathChangeHandler;
-    private final Executor dispatcherExecutor;
 
-    DedicatedFileSystem(final PendingEventRegistry pPendingEventRegistry,
+    DedicatedFileSystem(final PathProcessingQueues pPathProcessingQueues,
                         final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final ListenerManager pManager,
                         final PathChangeHandler pPathChangeHandler,
-                        final ConcurrentMap<Path, Directory> pDirs,
-                        final Executor pDispatcherExecutor) {
-        pendingEventRegistry = pPendingEventRegistry;
+                        final ConcurrentMap<Path, Directory> pDirs) {
+        pathProcessingQueues = pPathProcessingQueues;
         pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
         manager = pManager;
         dirs = pDirs;
-        dispatcherExecutor = pDispatcherExecutor;
         thread = new Thread(this, format("fileobserver %s", this));
     }
 
@@ -75,7 +71,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * <p>Iterates through all registered directories and passes all their files to the
      * {@link ch.sourcepond.io.fileobserver.api.PathChangeListener#modified(PathChangeEvent)} of the observer specified. This is necessary for newly registered
      * observers who need to know about all watched files. See {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and
-     * {@link PathChangeHandler#pathModified(EventDispatcher, Path, boolean)} to get an idea how directories are registered with this object.
+     * {@link PathChangeHandler#pathModified(EventDispatcher, Path, PendingEventDone, boolean)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      */
@@ -210,15 +206,17 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         LOG.info("Ready for receiving events");
     }
 
-    private void processPath(final WatchEvent.Kind<?> pKind, final Path child) {
+    private void processPath(final WatchEvent.Kind<?> pKind,
+                             final Path child,
+                             final PendingEventDone pDoneCallback) {
         LOG.debug("Received event of kind {} for path {}", pKind, child);
         try {
             if (ENTRY_CREATE == pKind) {
-                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, true);
+                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, pDoneCallback, true);
             } else if (ENTRY_MODIFY == pKind) {
-                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, false);
+                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, pDoneCallback, false);
             } else if (ENTRY_DELETE == pKind) {
-                pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);
+                pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child, pDoneCallback);
             }
         } catch (final RuntimeException e) {
             LOG.error(e.getMessage(), e);
@@ -241,10 +239,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 continue;
             }
 
-            final Path absolutePath = directory.resolve((Path) event.context());
-            if (pendingEventRegistry.awaitIfPending(absolutePath, kind)) {
-                processPath(kind, absolutePath);
-            }
+            pathProcessingQueues.enque(directory, event, this::processPath);
         }
 
         // The case when the WatchKey has been cancelled is

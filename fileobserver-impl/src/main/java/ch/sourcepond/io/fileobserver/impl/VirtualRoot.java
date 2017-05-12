@@ -23,7 +23,7 @@ import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
-import ch.sourcepond.io.fileobserver.impl.pending.PendingEventRegistry;
+import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.osgi.service.component.annotations.*;
@@ -61,27 +61,27 @@ public class VirtualRoot implements RelocationObserver {
     private final ListenerManager manager;
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
-    private final PendingEventRegistry pendingEventRegistry;
+    private final PathProcessingQueues pathProcessingQueues;
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
 
 
     // Constructor for BundleActivator
     public VirtualRoot() {
-        pendingEventRegistry = new PendingEventRegistry();
+        pathProcessingQueues = new PathProcessingQueues();
         manager = new ListenerManager();
         final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
-                new DirectoryFactory(pendingEventRegistry, keyFactory),
+                new DirectoryFactory(keyFactory),
                 manager);
     }
 
     // Constructor for testing
     public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory,
                        final ListenerManager pManager,
-                       final PendingEventRegistry pPendingEventRegistry) {
+                       final PathProcessingQueues pPathProcessingQueues) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
         manager = pManager;
-        pendingEventRegistry = pPendingEventRegistry;
+        pathProcessingQueues = pPathProcessingQueues;
     }
 
     @Activate
@@ -104,7 +104,6 @@ public class VirtualRoot implements RelocationObserver {
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
-        pendingEventRegistry.setConfig(pConfig);
         manager.setConfig(pConfig);
     }
 
@@ -161,7 +160,7 @@ public class VirtualRoot implements RelocationObserver {
 
     private DedicatedFileSystem newDedicatedFileSystem(final FileSystem pFs) {
         try {
-            return dedicatedFileSystemFactory.openFileSystem(this, pFs, pendingEventRegistry);
+            return dedicatedFileSystemFactory.openFileSystem(this, pFs, pathProcessingQueues);
         } catch (final IOException e) {
             throw new UncheckedIOException(e.getMessage(), e);
         }
