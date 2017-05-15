@@ -94,6 +94,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private void changeContent(final Path pPath) throws Exception {
         writeContent(pPath);
 
+
         if ("Linux".equals(getProperty("os.name"))) {
             verify(pathChangeHandler, new Timeout(15000, times(2))).pathModified(same(dispatcher), eq(pPath), notNull(), anyBoolean());
         } else {
