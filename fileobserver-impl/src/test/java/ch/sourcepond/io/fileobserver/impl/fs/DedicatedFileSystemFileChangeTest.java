@@ -22,6 +22,7 @@ import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.verification.Timeout;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.lang.System.getProperty;
 import static java.lang.Thread.sleep;
 import static java.nio.file.Files.delete;
 import static java.nio.file.Files.newBufferedWriter;
@@ -91,7 +93,12 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     // TODO: Use pNew parameter and check test on Linux and macOS
     private void changeContent(final Path pPath) throws Exception {
         writeContent(pPath);
-        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(pPath), notNull(), anyBoolean());
+
+        if ("Linux".equals(getProperty("os.name"))) {
+            verify(pathChangeHandler, new Timeout(15000, times(2))).pathModified(same(dispatcher), eq(pPath), notNull(), anyBoolean());
+        } else {
+            verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(pPath), notNull(), anyBoolean());
+        }
         reset(pathChangeHandler);
     }
 
