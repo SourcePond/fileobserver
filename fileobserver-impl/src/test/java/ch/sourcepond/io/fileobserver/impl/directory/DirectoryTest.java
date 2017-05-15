@@ -47,7 +47,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final WatchedDirectory watchedSubDir1 = mock(WatchedDirectory.class);
     final WatchedDirectory watchedSubDir2 = mock(WatchedDirectory.class);
     final Config config =  mock(Config.class);
-    final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
+    final UninitializedResourceFactory resourcesFactory = mock(UninitializedResourceFactory.class);
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
     final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     final ExecutorService listenerExecutor = newSingleThreadExecutor();
@@ -97,6 +97,6 @@ public abstract class DirectoryTest extends CopyResourcesTest {
             final UpdateObserver cobsrv = invocationOnMock.getArgument(1);
             cobsrv.done(upd);
             return null;
-        }).when(pResource).update(eq(TIMEOUT), notNull());
+        }).when(pResource).join(eq(TIMEOUT), notNull());
     }
 }

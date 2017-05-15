@@ -41,9 +41,9 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
 
     @Before
     public void setup() throws IOException {
-        when(resourcesFactory.create(SHA256, testfile_111_txt_path)).thenReturn(testfile_111_txt);
-        when(resourcesFactory.create(SHA256, testfile_121_txt_path)).thenReturn(testfile_121_txt);
-        when(resourcesFactory.create(SHA256, testfile_11_xml_path)).thenReturn(testfile_11_xml);
+        when(resourcesFactory.newResource(same(SHA256), eq(testfile_111_txt_path), notNull())).thenReturn(testfile_111_txt);
+        when(resourcesFactory.newResource(same(SHA256), eq(testfile_121_txt_path), notNull())).thenReturn(testfile_121_txt);
+        when(resourcesFactory.newResource(same(SHA256), eq(testfile_11_xml_path), notNull())).thenReturn(testfile_11_xml);
 
         setupChecksumAnswer(testfile_111_txt, checksum2);
         setupChecksumAnswer(testfile_121_txt, checksum2);

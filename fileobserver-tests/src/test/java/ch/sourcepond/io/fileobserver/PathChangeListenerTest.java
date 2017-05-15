@@ -283,7 +283,9 @@ public class PathChangeListenerTest {
      *
      */
     @Test
-    public void listenerShouldBeInformedAboutFileChange() throws IOException {
+    public void listenerShouldBeInformedAboutFileChange() throws Exception {
+        sleep(2000);
+
         writeArbitraryContent(E12);
         writeArbitraryContent(H12);
         writeArbitraryContent(C);

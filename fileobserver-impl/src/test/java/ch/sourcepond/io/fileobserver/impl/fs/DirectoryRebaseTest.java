@@ -13,13 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
-import ch.sourcepond.io.fileobserver.impl.directory.Directory;
-import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
-import ch.sourcepond.io.fileobserver.impl.directory.SubDirectory;
+import ch.sourcepond.io.fileobserver.impl.directory.*;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
@@ -44,7 +40,7 @@ import static org.mockito.Mockito.when;
 public class DirectoryRebaseTest extends CopyResourcesTest {
     private static final String DIRECTORY_KEY = "getDirectoryKey";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
-    private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
+    private final UninitializedResourceFactory resourcesFactory = mock(UninitializedResourceFactory.class);
     private final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     private final ExecutorService listenerExecutor = newSingleThreadExecutor();
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);

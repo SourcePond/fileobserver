@@ -242,13 +242,11 @@ public abstract class Directory {
     }
 
     public Resource getResource(final Path pFile) {
-        return resources.computeIfAbsent(pFile, f -> getFactory().newResource(SHA256, pFile));
+        return resources.computeIfAbsent(pFile, f -> getFactory().newResource(SHA256, f, resources));
     }
 
-    private void inform(final Directory pNewRootOrNull,
-                        final EventDispatcher pDispatcher,
-                        final PendingEventDone pDoneCallback,
-                        final Path pFile) {
+    private void inform(final EventDispatcher pDispatcher, final Directory pNewRootOrNull,
+                       final Path pFile, final PendingEventDone pDoneCallback) {
         // If the modification is requested because a new root-directory has been registered, we
         // need to inform the listeners about supplement keys.
         final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
@@ -256,6 +254,16 @@ public abstract class Directory {
 
         final Collection<DispatchKey> keys = createKeys(pFile);
         keys.forEach(k -> pDispatcher.modified(pDoneCallback, k, pFile, supplementKeys));
+    }
+
+    public void informCreatedOrInitial(final EventDispatcher pDispatcher, final Directory pNewRootOrNull,
+                        final Path pFile, final PendingEventDone pDoneCallback) {
+        // Important: We need to initialize the resource (and its initial checksum) here.
+        // If not, we won't be able to receive further modification events.
+        getResource(pFile);
+
+        // Now, inform observers
+        inform(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);
     }
 
     /**
@@ -269,16 +277,16 @@ public abstract class Directory {
                                 final Directory pNewRootOrNull,
                                 final Path pFile,
                                 final PendingEventDone pDoneCallback,
-                                final boolean pIgnoreChecksum) {
+                                final boolean pIsCreated) {
         if (pDispatcher.hasListeners()) {
-            if (pIgnoreChecksum) {
-                inform(pNewRootOrNull, pDispatcher, pDoneCallback, pFile);
+            if (pIsCreated) {
+                informCreatedOrInitial(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);
             } else {
-                getResource(pFile).update(getTimeout(),
+                getResource(pFile).join(getTimeout(),
                         update -> {
                             if (update.hasChanged()) {
                                 LOG.debug("Processing {} because {} has been changed", update, pFile);
-                                inform(pNewRootOrNull, pDispatcher, pDoneCallback, pFile);
+                                inform(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);
                             } else {
                                 LOG.debug("Ignored {} because {} has not been changed", update, pFile);
                             }
@@ -297,8 +305,8 @@ public abstract class Directory {
     public void informIfChanged(final EventDispatcher pDispatcher,
                                 final Path pFile,
                                 final PendingEventDone pDoneCallback,
-                                final boolean pIgnoreChecksum) {
-        informIfChanged(pDispatcher, null, pFile, pDoneCallback, pIgnoreChecksum);
+                                final boolean pIsCreated) {
+        informIfChanged(pDispatcher, null, pFile, pDoneCallback, pIsCreated);
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);

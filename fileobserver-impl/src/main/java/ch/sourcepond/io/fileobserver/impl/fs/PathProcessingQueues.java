@@ -45,9 +45,7 @@ public class PathProcessingQueues {
         }
 
         synchronized void addEvent(final WatchEvent.Kind<?> pKind) {
-            final WatchEvent.Kind<?> virtualKind = isReCreate(pKind) ? ENTRY_MODIFY : pKind;
-            latestEvent = virtualKind;
-            paths.putIfAbsent(path, this);
+            latestEvent = isReCreate(pKind) ? ENTRY_MODIFY : pKind;
 
             if (taskQueue.isEmpty()) {
                 handler.process(pKind, path, this);
@@ -61,8 +59,6 @@ public class PathProcessingQueues {
             final Runnable task = taskQueue.poll();
             if (task != null) {
                 task.run();
-            } else {
-                paths.remove(path);
             }
         }
     }

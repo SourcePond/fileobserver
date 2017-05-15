@@ -98,15 +98,15 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     }
 
     private void verifyDirectoryWalk(final Directory pNewRootOrNull) throws IOException {
-        verify(subdir_111, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_1111_txt_path, EMPTY_CALLBACK, true);
-        verify(subdir_11, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_111_txt_path, EMPTY_CALLBACK, true);
-        verify(subdir_12, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_121_txt_path, EMPTY_CALLBACK, true);
-        verify(subdir_1, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_11_xml_path, EMPTY_CALLBACK, true);
-        verify(subdir_211, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_2111_txt_path, EMPTY_CALLBACK, true);
-        verify(subdir_21, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_211_txt_path, EMPTY_CALLBACK, true);
-        verify(subdir_22, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_221_txt_path, EMPTY_CALLBACK, true);
-        verify(subdir_2, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_21_xml_path, EMPTY_CALLBACK, true);
-        verify(root_dir, timeout(200)).informIfChanged(dispatcher, pNewRootOrNull, testfile_txt_path, EMPTY_CALLBACK, true);
+        verify(subdir_111, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_1111_txt_path, EMPTY_CALLBACK);
+        verify(subdir_11, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_111_txt_path, EMPTY_CALLBACK);
+        verify(subdir_12, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_121_txt_path, EMPTY_CALLBACK);
+        verify(subdir_1, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_11_xml_path, EMPTY_CALLBACK);
+        verify(subdir_211, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_2111_txt_path, EMPTY_CALLBACK);
+        verify(subdir_21, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_211_txt_path, EMPTY_CALLBACK);
+        verify(subdir_22, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_221_txt_path, EMPTY_CALLBACK);
+        verify(subdir_2, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_21_xml_path, EMPTY_CALLBACK);
+        verify(root_dir, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_txt_path, EMPTY_CALLBACK);
         verifyNoMoreInteractions(subdir_111,
                 subdir_11, subdir_12, subdir_1,
                 subdir_211, subdir_21, subdir_22,

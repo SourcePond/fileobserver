@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
-import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.directory.UninitializedResourceFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +37,7 @@ public class DedicatedFileSystemFactoryTest {
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Config config = mock(Config.class);
-    private final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
+    private final UninitializedResourceFactory resourcesFactory = mock(UninitializedResourceFactory.class);
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final WatchService watchService = mock(WatchService.class);
     private final ExecutorService dispatchExecutor = mock(ExecutorService.class);

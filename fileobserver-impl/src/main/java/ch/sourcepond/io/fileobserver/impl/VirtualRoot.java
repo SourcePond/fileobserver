@@ -18,12 +18,13 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
+import ch.sourcepond.io.fileobserver.impl.directory.UninitializedResourceFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
-import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.osgi.service.component.annotations.*;
@@ -36,7 +37,10 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
@@ -109,7 +113,7 @@ public class VirtualRoot implements RelocationObserver {
 
     @Reference
     public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
-        dedicatedFileSystemFactory.setResourcesFactory(pResourcesFactory);
+        dedicatedFileSystemFactory.setResourcesFactory(new UninitializedResourceFactory(pResourcesFactory));
     }
 
     @Reference

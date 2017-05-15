@@ -145,7 +145,7 @@ class DirectoryRegistrationWalker {
      * detected, a new directory object will be created and registered with the enclosing instance.
      */
     private class DirectoryInitializerFileVisitor extends SimpleFileVisitor<Path> {
-        private final EventDispatcher session;
+        private final EventDispatcher dispatcher;
         private final Directory newRootOrNull;
 
         /**
@@ -153,23 +153,14 @@ class DirectoryRegistrationWalker {
          */
         public DirectoryInitializerFileVisitor(final EventDispatcher pDispatcher,
                                                final Directory pNewRootOrNull) {
-            session = pDispatcher;
+            dispatcher = pDispatcher;
             newRootOrNull = pNewRootOrNull;
         }
 
         @Override
         public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
             final Directory dir = dirs.get(file.getParent());
-
-            // Important: We need to initialize the resource (and its initial checksum) here.
-            // If not, the first change event will be lost!
-            //dir.getResource(file);
-
-            // It's important here to only trigger the listeners if the file has changed.
-            // This is most certainly the case, but, there is an exception: because we already
-            // registered the parent directory of the file with the watch-service there's a small
-            // chance that the file had already been modified before we got here.
-            dir.informIfChanged(session, newRootOrNull, file, EMPTY_CALLBACK, true);
+            dir.informCreatedOrInitial(dispatcher, newRootOrNull, file, EMPTY_CALLBACK);
             return CONTINUE;
         }
 

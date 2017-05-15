@@ -17,8 +17,8 @@
 
 	<properties>
 		<repo.project>${project.artifactId}</repo.project>
-		<checksum-feature.version>3.0.1</checksum-feature.version>
-		<checksum.version>3.0.0</checksum.version>
+		<checksum-feature.version>3.1-SNAPSHOT</checksum-feature.version>
+		<checksum.version>3.1-SNAPSHOT</checksum.version>
 		<smartswitch.version>4.0.1</smartswitch.version>
 	</properties>
 

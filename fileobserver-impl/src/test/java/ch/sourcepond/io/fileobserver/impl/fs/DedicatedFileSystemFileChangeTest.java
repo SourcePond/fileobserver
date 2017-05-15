@@ -126,7 +126,7 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
 
     @Test
     public void entryDelete() throws Exception {
-        changeContent(file, times(2));
+        entryCreate();
         delete(file);
         verify(pathChangeHandler, timeout(15000)).pathDiscarded(same(dispatcher), eq(file), notNull());
     }

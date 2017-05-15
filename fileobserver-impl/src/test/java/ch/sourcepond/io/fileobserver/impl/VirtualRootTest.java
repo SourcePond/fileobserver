@@ -18,6 +18,7 @@ import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
+import ch.sourcepond.io.fileobserver.impl.directory.UninitializedResourceFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
@@ -93,7 +94,8 @@ public class VirtualRootTest {
     @Test
     public void setResourcesFactory() {
         virtualRoot.setResourcesFactory(resourcesFactory);
-        verify(dedicatedFsFactory).setResourcesFactory(resourcesFactory);
+        verify(dedicatedFsFactory).setResourcesFactory(argThat(inv ->
+                inv instanceof UninitializedResourceFactory));
     }
 
     @Test
