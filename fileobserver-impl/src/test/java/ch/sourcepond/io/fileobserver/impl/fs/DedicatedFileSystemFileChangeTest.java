@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.verification.Timeout;
+import org.mockito.verification.VerificationMode;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -91,16 +92,9 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     }
 
     // TODO: Use pNew parameter and check test on Linux and macOS
-    private void changeContent(final Path pPath) throws Exception {
+    private void changeContent(final Path pPath, final VerificationMode pVerification) throws Exception {
         writeContent(pPath);
-
-        System.out.println(getProperty("os.name"));
-
-        if ("Linux".equals(getProperty("os.name"))) {
-            verify(pathChangeHandler, new Timeout(15000, times(2))).pathModified(same(dispatcher), eq(pPath), notNull(), anyBoolean());
-        } else {
-            verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(pPath), notNull(), anyBoolean());
-        }
+        verify(pathChangeHandler, new Timeout(15000, pVerification)).pathModified(same(dispatcher), eq(pPath), notNull(), anyBoolean());
         reset(pathChangeHandler);
     }
 
@@ -108,23 +102,31 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     public void verifyThreadNotKillWhenRuntimeExceptionOccurs() throws Exception {
         doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), eq(file), notNull(), anyBoolean());
         writeContent(file);
-        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(file), notNull(), anyBoolean());
+        if ("Linux".equals(getProperty("os.name"))) {
+            verify(pathChangeHandler, new Timeout(15000, times(2))).pathModified(same(dispatcher), eq(file), notNull(), anyBoolean());
+        } else {
+            verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(file), notNull(), anyBoolean());
+        }
         assertNull(threadKiller);
     }
 
     @Test
     public void entryCreate() throws Exception {
-        changeContent(file);
+        if ("Linux".equals(getProperty("os.name"))) {
+            changeContent(file, times(2));
+        } else {
+            changeContent(file, times(1));
+        }
     }
 
     @Test
     public void entryModify() throws Exception {
-        changeContent(testfile_txt_path);
+        changeContent(testfile_txt_path, times(1));
     }
 
     @Test
     public void entryDelete() throws Exception {
-        changeContent(file);
+        changeContent(file, times(2));
         delete(file);
         verify(pathChangeHandler, timeout(15000)).pathDiscarded(same(dispatcher), eq(file), notNull());
     }
