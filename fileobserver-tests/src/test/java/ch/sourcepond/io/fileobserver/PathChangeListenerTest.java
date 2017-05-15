@@ -312,7 +312,6 @@ public class PathChangeListenerTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore
     @Test
     public void listenerShouldBeInformedAboutFileCreationThroughUnzip() throws Exception {
         dirSetup.deleteDirectories();
