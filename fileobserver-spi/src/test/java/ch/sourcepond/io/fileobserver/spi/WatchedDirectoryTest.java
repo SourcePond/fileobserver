@@ -68,6 +68,12 @@ public class WatchedDirectoryTest {
         assertTrue(dir.isBlacklisted(aaa));
         assertTrue(dir.isBlacklisted(bbb));
         assertFalse(dir.isBlacklisted(ccc));
+
+        dir.removeBlacklistPattern("AAA.zip");
+        dir.removeBlacklistPattern("BBB.zip");
+        assertFalse(dir.isBlacklisted(aaa));
+        assertFalse(dir.isBlacklisted(bbb));
+        assertFalse(dir.isBlacklisted(ccc));
     }
 
     @Test(expected = NullPointerException.class)

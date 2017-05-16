@@ -31,13 +31,21 @@ public interface WatchedDirectory {
     boolean isBlacklisted(Path pRelativePath);
 
     /**
-     * Adds the regular expression to the list of blacklist patterns. If the relative path of a file
+     * Adds the pattern specified to the list of blacklist patterns. If the relative path of a file
      * matches a pattern (see {@link #isBlacklisted(Path)}), no file-key will be created after it has been
      * changed. This means, that it will not be passed to any file-observer.
      *
      * @param pPattern Regular expression, must not be {@code null} or empty.
      */
     void addBlacklistPattern(String pPattern);
+
+    /**
+     * Removes the pattern specified from the the list of blacklist patterns. If the pattern
+     * is not registered nothing happens.
+     *
+     * @param pPattern Pattern to be removed, must not be {@code null}
+     */
+    void removeBlacklistPattern(String pPattern);
 
     /**
      * Returns the unique key of this watched directory instance. The key remains

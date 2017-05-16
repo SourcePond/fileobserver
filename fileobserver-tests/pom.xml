@@ -28,11 +28,6 @@
         </dependency>
         <dependency>
             <groupId>ch.sourcepond.io</groupId>
-            <artifactId>checksum-impl</artifactId>
-            <version>3.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.sourcepond.io</groupId>
             <artifactId>fileobserver-spi</artifactId>
             <version>${project.version}</version>
         </dependency>

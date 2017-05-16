@@ -145,7 +145,7 @@ public class PathChangeListenerTest {
         final InitialCheckusmCalculationBarrier wait = new InitialCheckusmCalculationBarrier();
         listenerRegistration = context.registerService(PathChangeListener.class, wait, null);
         watchedDirectory = create(ROOT, R);
-        watchedDirectory.addBlacklistPattern(ZIP_NAME.replace(".", "\\."));
+        watchedDirectory.addBlacklistPattern("glob:" + ZIP_NAME);
 
         watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
         wait.waitUntilChecksumsCalculated();

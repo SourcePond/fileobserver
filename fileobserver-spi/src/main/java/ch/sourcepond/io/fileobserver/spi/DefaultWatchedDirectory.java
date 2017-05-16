@@ -63,6 +63,11 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
         LOG.debug("Blacklist pattern added: {}", pSyntaxAndPattern);
     }
 
+    @Override
+    public void removeBlacklistPattern(final String pPattern) {
+        blacklistPatterns.remove(pPattern);
+    }
+
     private void validate(final Path pDirectory) {
         requireNonNull(pDirectory, "Directory is null");
         if (!isDirectory(pDirectory)) {
