@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
+import static java.nio.file.Files.isRegularFile;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -61,9 +62,9 @@ class PathChangeHandler {
                       final Path pPath,
                       final Runnable pDoneCallback,
                       final boolean pIsCreated) {
-        if (isDirectory(pPath)) {
+        if (isDirectory(pPath) && pIsCreated) {
             walker.directoryCreated(pDispatcher, pPath);
-        } else {
+        } else if (isRegularFile(pPath)) {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
             dir.informIfChanged(pDispatcher, pPath, pDoneCallback, pIsCreated);

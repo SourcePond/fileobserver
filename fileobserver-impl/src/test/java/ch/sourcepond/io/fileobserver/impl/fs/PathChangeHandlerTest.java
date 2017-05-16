@@ -75,18 +75,27 @@ public class PathChangeHandlerTest {
     public void directoryModified() {
         when(attrs.isDirectory()).thenReturn(true);
         handler.pathModified(dispatcher, path, doneCallback, false);
+        verifyZeroInteractions(walker);
+    }
+
+    @Test
+    public void directoryModifiedNewlyCreated() {
+        when(attrs.isDirectory()).thenReturn(true);
+        handler.pathModified(dispatcher, path, doneCallback, true);
         verify(walker).directoryCreated(dispatcher, path);
     }
 
     @Test
     public void fileModifed() {
         dirs.put(parent, directory);
+        when(attrs.isRegularFile()).thenReturn(true);
         handler.pathModified(dispatcher, path, doneCallback, false);
         verify(directory).informIfChanged(dispatcher, path, doneCallback, false);
     }
 
     @Test(expected = NullPointerException.class)
     public void fileModifedNoParentRegistered() {
+        when(attrs.isRegularFile()).thenReturn(true);
         handler.pathModified(dispatcher, path, doneCallback, false);
     }
 
