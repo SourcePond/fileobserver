@@ -17,16 +17,18 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.Collection;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
 import static java.util.Objects.requireNonNull;
-import static java.util.regex.Pattern.compile;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -34,7 +36,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 final class DefaultWatchedDirectory implements WatchedDirectory {
     private static final Logger LOG = getLogger(DefaultWatchedDirectory.class);
-    private final Collection<Pattern> blacklistPatterns = new CopyOnWriteArrayList<>();
+    private final Map<String, PathMatcher> blacklistPatterns = new ConcurrentHashMap<>();
     private final Collection<RelocationObserver> observers = new CopyOnWriteArraySet<>();
     private final Object key;
     private volatile Path directory;
@@ -47,8 +49,8 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
 
     @Override
     public boolean isBlacklisted(final Path pRelativePath) {
-        for (final Pattern pattern : blacklistPatterns) {
-            if (pattern.matcher(pRelativePath.toString()).matches()) {
+        for (final PathMatcher matcher : blacklistPatterns.values()) {
+            if (matcher.matches(pRelativePath)) {
                 return true;
             }
         }
@@ -56,9 +58,9 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
     }
 
     @Override
-    public void addBlacklistPattern(final String pPattern) {
-        blacklistPatterns.add(compile(pPattern));
-        LOG.debug("Blacklist pattern added: {}", pPattern);
+    public void addBlacklistPattern(final String pSyntaxAndPattern) {
+        blacklistPatterns.put(pSyntaxAndPattern, getDirectory().getFileSystem().getPathMatcher(pSyntaxAndPattern));
+        LOG.debug("Blacklist pattern added: {}", pSyntaxAndPattern);
     }
 
     private void validate(final Path pDirectory) {
@@ -100,10 +102,21 @@ final class DefaultWatchedDirectory implements WatchedDirectory {
         // Do only something if the previous location is
         // different to the directory specified.
         if (!previous.equals(pDirectory)) {
+            final FileSystem fs = pDirectory.getFileSystem();
+            final Map<String, PathMatcher> copy = new HashMap<>(blacklistPatterns);
+            copy.entrySet().forEach(e -> e.setValue(fs.getPathMatcher(e.getKey())));
+
+            // No exception occurred so far; replace the patterns
+            final Map<String, PathMatcher> backup = new HashMap<>(blacklistPatterns);
+            blacklistPatterns.clear();
+            blacklistPatterns.putAll(copy);
+
             directory = pDirectory;
             try {
                 observers.forEach(o -> destinationChange(o, previous));
             } catch (final UncheckedIOException e) {
+                blacklistPatterns.clear();
+                blacklistPatterns.putAll(backup);
                 throw new IOException(e.getMessage(), e);
             }
         }

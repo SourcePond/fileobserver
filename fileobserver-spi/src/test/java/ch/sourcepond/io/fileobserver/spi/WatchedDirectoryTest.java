@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 
@@ -35,6 +36,7 @@ public class WatchedDirectoryTest {
     private final BasicFileAttributes attrs = mock(BasicFileAttributes.class);
     private final BasicFileAttributes newAttrs = mock(BasicFileAttributes.class);
     private final FileSystem fs = mock(FileSystem.class);
+    private final PathMatcher matcher = mock(PathMatcher.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final RelocationObserver observer = mock(RelocationObserver.class);
     private WatchedDirectory dir;
@@ -48,17 +50,21 @@ public class WatchedDirectoryTest {
         when(fs.provider()).thenReturn(provider);
         when(attrs.isDirectory()).thenReturn(true);
         when(newAttrs.isDirectory()).thenReturn(true);
+        when(fs.getPathMatcher("AAA.zip")).thenReturn(matcher);
+        when(fs.getPathMatcher("BBB.zip")).thenReturn(matcher);
         dir = WatchedDirectory.create(TEST_KEY, path);
         dir.addObserver(observer);
     }
 
     @Test
     public void isBlacklisted() {
-        dir.addBlacklistPattern("AAA\\.zip");
-        dir.addBlacklistPattern("BBB\\.zip");
+        dir.addBlacklistPattern("AAA.zip");
+        dir.addBlacklistPattern("BBB.zip");
         final Path aaa = mock(Path.class, withSettings().name("AAA.zip"));
         final Path bbb = mock(Path.class, withSettings().name("BBB.zip"));
         final Path ccc = mock(Path.class, withSettings().name("CCC.zip"));
+        when(matcher.matches(aaa)).thenReturn(true);
+        when(matcher.matches(bbb)).thenReturn(true);
         assertTrue(dir.isBlacklisted(aaa));
         assertTrue(dir.isBlacklisted(bbb));
         assertFalse(dir.isBlacklisted(ccc));
