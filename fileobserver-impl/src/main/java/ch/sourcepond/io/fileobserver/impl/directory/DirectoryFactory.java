@@ -15,6 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 
 import ch.sourcepond.io.checksum.api.Algorithm;
 import ch.sourcepond.io.checksum.api.Resource;
+import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
@@ -22,7 +23,6 @@ import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -38,7 +38,7 @@ public class DirectoryFactory {
     // Injected by SCR
     private volatile ExecutorService listenerExecutor;
     // Injected by SCR
-    private volatile UninitializedResourceFactory resourcesFactory;
+    private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
     public DirectoryFactory(final DefaultDispatchKeyFactory pFileKeyFactory) {
@@ -54,7 +54,7 @@ public class DirectoryFactory {
         listenerExecutor = pListenerExecutor;
     }
 
-    public void setResourcesFactory(final UninitializedResourceFactory pResourcesFactory) {
+    public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
         resourcesFactory = pResourcesFactory;
     }
 
@@ -75,8 +75,8 @@ public class DirectoryFactory {
      * @param pFile      File on which checksums shall be tracked, must not be {@code null}
      * @return New resource instance, never {@code null}
      */
-    Resource newResource(final Algorithm pAlgorithm, final Path pFile, final ConcurrentMap<Path, Resource> pResources) {
-        return resourcesFactory.newResource(pAlgorithm, pFile, pResources);
+    Resource newResource(final Algorithm pAlgorithm, final Path pFile) {
+        return resourcesFactory.create(pAlgorithm, pFile);
     }
 
     /**

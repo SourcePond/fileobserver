@@ -18,7 +18,6 @@ import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.UninitializedResourceFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
@@ -113,7 +112,7 @@ public class VirtualRoot implements RelocationObserver {
 
     @Reference
     public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
-        dedicatedFileSystemFactory.setResourcesFactory(new UninitializedResourceFactory(pResourcesFactory));
+        dedicatedFileSystemFactory.setResourcesFactory(pResourcesFactory);
     }
 
     @Reference

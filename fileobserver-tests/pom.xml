@@ -29,7 +29,7 @@
         <dependency>
             <groupId>ch.sourcepond.io</groupId>
             <artifactId>checksum-impl</artifactId>
-            <version>3.1-SNAPSHOT</version>
+            <version>3.0.1</version>
         </dependency>
         <dependency>
             <groupId>ch.sourcepond.io</groupId>

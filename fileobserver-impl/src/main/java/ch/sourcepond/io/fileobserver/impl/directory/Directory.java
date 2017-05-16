@@ -241,7 +241,7 @@ public abstract class Directory {
     }
 
     public Resource getResource(final Path pFile) {
-        return resources.computeIfAbsent(pFile, f -> getFactory().newResource(SHA256, f, resources));
+        return resources.computeIfAbsent(pFile, f -> getFactory().newResource(SHA256, f));
     }
 
     private void inform(final EventDispatcher pDispatcher, final Directory pNewRootOrNull,
@@ -281,12 +281,13 @@ public abstract class Directory {
             if (pIsCreated) {
                 informCreatedOrInitial(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);
             } else {
-                getResource(pFile).join(getTimeout(),
+                getResource(pFile).update(getTimeout(),
                         update -> {
                             if (update.hasChanged()) {
                                 LOG.debug("Processing {} because {} has been changed", update, pFile);
                                 inform(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);
                             } else {
+                                pDoneCallback.run();
                                 LOG.debug("Ignored {} because {} has not been changed", update, pFile);
                             }
                         });

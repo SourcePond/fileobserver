@@ -41,8 +41,8 @@ public class FileChangeDirectoryTest extends DirectoryTest {
 
     @Before
     public void setup() throws IOException {
-        when(resourcesFactory.newResource(same(SHA256), eq(testfile_txt_path), notNull())).thenReturn(testfile_txt_resource);
-        when(resourcesFactory.newResource(same(SHA256), eq(testfile_11_xml_path), notNull())).thenReturn(testfile_11_xml_resource);
+        when(resourcesFactory.create(same(SHA256), eq(testfile_txt_path))).thenReturn(testfile_txt_resource);
+        when(resourcesFactory.create(same(SHA256), eq(testfile_11_xml_path))).thenReturn(testfile_11_xml_resource);
         root_dir = factory.newRoot(wrapper.register(root_dir_path));
         subdir_1 = factory.newBranch(root_dir, wrapper.register(subdir_1_path));
         root_dir.addWatchedDirectory(watchedRootDir);

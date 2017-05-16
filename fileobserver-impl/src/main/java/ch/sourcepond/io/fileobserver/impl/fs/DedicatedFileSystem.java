@@ -89,7 +89,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         registerRootDirectory(manager.getDefaultDispatcher(), pWatchedDirectory);
     }
 
-    private void registerRootDirectory(final EventDispatcher pDispatcher, final WatchedDirectory pWatchedDirectory)
+    private synchronized void registerRootDirectory(final EventDispatcher pDispatcher, final WatchedDirectory pWatchedDirectory)
             throws IOException {
         // It's already checked that the directory is not null
         final Path directory = pWatchedDirectory.getDirectory();
@@ -206,7 +206,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
         LOG.info("Ready for receiving events");
     }
 
-    private void processPath(final WatchEvent.Kind<?> pKind,
+    private synchronized void processPath(final WatchEvent.Kind<?> pKind,
                              final Path child,
                              final Runnable pDoneCallback) {
         LOG.debug("Received event of kind {} for path {}", pKind, child);

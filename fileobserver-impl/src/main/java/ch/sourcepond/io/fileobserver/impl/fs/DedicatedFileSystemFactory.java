@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
-import ch.sourcepond.io.fileobserver.impl.directory.UninitializedResourceFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
 
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class DedicatedFileSystemFactory {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
-    public void setResourcesFactory(final UninitializedResourceFactory pResourcesFactory) {
+    public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
         directoryFactory.setResourcesFactory(pResourcesFactory);
     }
 

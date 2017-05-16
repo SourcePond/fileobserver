@@ -18,12 +18,11 @@ import ch.sourcepond.commons.smartswitch.api.SmartSwitchBuilderFactory;
 import ch.sourcepond.io.checksum.api.ResourcesFactory;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
-import ch.sourcepond.io.fileobserver.impl.directory.UninitializedResourceFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
-import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +44,6 @@ import static org.mockito.Mockito.*;
  *
  */
 public class VirtualRootTest {
-    private static final long MODIFICATION_LOCKING_TIME = 1000L;
     private static final Object ROOT_KEY = new Object();
     private static final Object OTHER_KEY = new Object();
     private final Config config = mock(Config.class);
@@ -94,8 +92,7 @@ public class VirtualRootTest {
     @Test
     public void setResourcesFactory() {
         virtualRoot.setResourcesFactory(resourcesFactory);
-        verify(dedicatedFsFactory).setResourcesFactory(argThat(inv ->
-                inv instanceof UninitializedResourceFactory));
+        verify(dedicatedFsFactory).setResourcesFactory(resourcesFactory);
     }
 
     @Test
