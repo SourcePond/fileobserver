@@ -48,9 +48,9 @@ public class PathProcessingQueues {
             latestEvent = isReCreate(pKind) ? ENTRY_MODIFY : pKind;
 
             if (taskQueue.isEmpty()) {
-                handler.process(pKind, path, this);
+                handler.process(latestEvent, path, this);
             } else {
-                taskQueue.offer(() -> handler.process(pKind, path, this));
+                taskQueue.offer(() -> handler.process(latestEvent, path, this));
             }
         }
 
