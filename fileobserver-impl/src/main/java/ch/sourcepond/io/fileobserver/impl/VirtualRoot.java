@@ -93,6 +93,7 @@ public class VirtualRoot implements RelocationObserver {
         rootInitSwitch.init();
         observerInitSwitch.init();
         hooksInitSwitch.init();
+        pathProcessingQueues.start();
         LOG.info("Virtual-root activated");
     }
 
@@ -101,12 +102,14 @@ public class VirtualRoot implements RelocationObserver {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
         dedicatedFileSystemFactory.shutdown();
+        pathProcessingQueues.stop();
         LOG.info("Virtual-root deactivated");
     }
 
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
+        pathProcessingQueues.setReCreateTimeout(pConfig.reCreateTimeoutMillis());
         manager.setConfig(pConfig);
     }
 

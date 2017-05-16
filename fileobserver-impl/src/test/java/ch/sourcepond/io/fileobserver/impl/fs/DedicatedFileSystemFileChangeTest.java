@@ -74,12 +74,14 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
+        pathProcessingQueues.start();
         child.start();
     }
 
     @After
     public void tearDown() throws IOException {
         child.close();
+        pathProcessingQueues.stop();
     }
 
     private void writeContent(final Path pPath) throws Exception {
@@ -128,6 +130,6 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     public void entryDelete() throws Exception {
         entryCreate();
         delete(file);
-        verify(pathChangeHandler, timeout(15000)).pathDiscarded(same(dispatcher), eq(file), notNull());
+        verify(pathChangeHandler, timeout(1500000)).pathDiscarded(same(dispatcher), eq(file), notNull());
     }
 }
