@@ -29,7 +29,7 @@ public class PathProcessingQueues {
     /**
      *
      */
-    private class PathQueue implements PendingEventDone {
+    private class PathQueue implements Runnable {
         private final Queue<Runnable> taskQueue = new LinkedBlockingQueue<>();
         private final Path path;
         private final PathProcessingHandler handler;
@@ -55,7 +55,7 @@ public class PathProcessingQueues {
         }
 
         @Override
-        public synchronized void done() {
+        public synchronized void run() {
             final Runnable task = taskQueue.poll();
             if (task != null) {
                 task.run();

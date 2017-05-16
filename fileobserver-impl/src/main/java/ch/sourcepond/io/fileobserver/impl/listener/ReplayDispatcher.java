@@ -16,7 +16,6 @@ package ch.sourcepond.io.fileobserver.impl.listener;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 
 import java.util.Collection;
 
@@ -26,7 +25,7 @@ import java.util.Collection;
 @FunctionalInterface
 interface ReplayDispatcher {
 
-    void replay(PendingEventDone pDone,
+    void replay(Runnable pDone,
                 PathChangeListener pListener,
                 PathChangeEvent pEvent,
                 Collection<DispatchKey> pParentKeys);

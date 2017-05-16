@@ -17,7 +17,6 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.slf4j.Logger;
@@ -221,7 +220,7 @@ public abstract class Directory {
      *
      * @param pFile Discarded file, must be {@code null}
      */
-    public void informDiscard(final EventDispatcher pDispatcher, final Path pFile, final PendingEventDone pDoneCallback) {
+    public void informDiscard(final EventDispatcher pDispatcher, final Path pFile, final Runnable pDoneCallback) {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
@@ -246,7 +245,7 @@ public abstract class Directory {
     }
 
     private void inform(final EventDispatcher pDispatcher, final Directory pNewRootOrNull,
-                       final Path pFile, final PendingEventDone pDoneCallback) {
+                       final Path pFile, final Runnable pDoneCallback) {
         // If the modification is requested because a new root-directory has been registered, we
         // need to inform the listeners about supplement keys.
         final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
@@ -257,7 +256,7 @@ public abstract class Directory {
     }
 
     public void informCreatedOrInitial(final EventDispatcher pDispatcher, final Directory pNewRootOrNull,
-                        final Path pFile, final PendingEventDone pDoneCallback) {
+                        final Path pFile, final Runnable pDoneCallback) {
         // Important: We need to initialize the resource (and its initial checksum) here.
         // If not, we won't be able to receive further modification events.
         getResource(pFile);
@@ -276,7 +275,7 @@ public abstract class Directory {
     public void informIfChanged(final EventDispatcher pDispatcher,
                                 final Directory pNewRootOrNull,
                                 final Path pFile,
-                                final PendingEventDone pDoneCallback,
+                                final Runnable pDoneCallback,
                                 final boolean pIsCreated) {
         if (pDispatcher.hasListeners()) {
             if (pIsCreated) {
@@ -304,7 +303,7 @@ public abstract class Directory {
      */
     public void informIfChanged(final EventDispatcher pDispatcher,
                                 final Path pFile,
-                                final PendingEventDone pDoneCallback,
+                                final Runnable pDoneCallback,
                                 final boolean pIsCreated) {
         informIfChanged(pDispatcher, null, pFile, pDoneCallback, pIsCreated);
     }

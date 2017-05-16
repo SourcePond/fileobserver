@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.listener;
 
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
-import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
+import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
@@ -58,7 +57,7 @@ public class ListenerManagerTest {
     private final PathChangeListener listener = mock(PathChangeListener.class);
     private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private final PathProcessingQueues pathProcessingQueues = mock(PathProcessingQueues.class);
-    private final PendingEventDone doneCallback = mock(PendingEventDone.class);
+    private final Runnable doneCallback = mock(Runnable.class);
     private volatile PathChangeEvent realEvent;
     private ListenerManager manager = new ListenerManager(restrictionFactory, dispatchEventFactory);
 
@@ -101,7 +100,7 @@ public class ListenerManagerTest {
         order.verify(listener, timeout(1000)).supplement(dispatchKey, parentKey);
         order.verify(listener, timeout(1000)).modified(pathChangeEvent);
         order.verify(hook, timeout(1000)).afterModify(dispatchKey, file);
-        order.verify(doneCallback).done();
+        order.verify(doneCallback).run();
         order.verifyNoMoreInteractions();
     }
 

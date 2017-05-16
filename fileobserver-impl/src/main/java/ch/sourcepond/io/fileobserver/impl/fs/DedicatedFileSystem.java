@@ -40,7 +40,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable, Runnable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
-    public static final PendingEventDone EMPTY_CALLBACK = () -> {};
+    public static final Runnable EMPTY_CALLBACK = () -> {};
     private final PathProcessingQueues pathProcessingQueues;
     private final ConcurrentMap<Path, Directory> dirs;
     private final Thread thread;
@@ -71,7 +71,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * <p>Iterates through all registered directories and passes all their files to the
      * {@link ch.sourcepond.io.fileobserver.api.PathChangeListener#modified(PathChangeEvent)} of the observer specified. This is necessary for newly registered
      * observers who need to know about all watched files. See {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and
-     * {@link PathChangeHandler#pathModified(EventDispatcher, Path, PendingEventDone, boolean)} to get an idea how directories are registered with this object.
+     * {@link PathChangeHandler#pathModified(EventDispatcher, Path, Runnable, boolean)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      */
@@ -208,7 +208,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
 
     private void processPath(final WatchEvent.Kind<?> pKind,
                              final Path child,
-                             final PendingEventDone pDoneCallback) {
+                             final Runnable pDoneCallback) {
         LOG.debug("Received event of kind {} for path {}", pKind, child);
         try {
             if (ENTRY_CREATE == pKind) {

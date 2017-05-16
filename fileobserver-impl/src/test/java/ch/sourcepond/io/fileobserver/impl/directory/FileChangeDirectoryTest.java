@@ -16,7 +16,6 @@ package ch.sourcepond.io.fileobserver.impl.directory;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,7 +35,7 @@ import static org.mockito.Mockito.*;
 public class FileChangeDirectoryTest extends DirectoryTest {
     private final Resource testfile_txt_resource = mock(Resource.class);
     private final Resource testfile_11_xml_resource = mock(Resource.class);
-    private final PendingEventDone doneCallback = mock(PendingEventDone.class);
+    private final Runnable doneCallback = mock(Runnable.class);
     private Directory root_dir;
     private Directory subdir_1;
 

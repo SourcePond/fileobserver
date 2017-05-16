@@ -15,7 +15,6 @@ package ch.sourcepond.io.fileobserver.impl.listener;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -44,11 +43,11 @@ public class EventDispatcher {
         return !listeners.isEmpty();
     }
 
-    public void modified(final PendingEventDone pDone, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
+    public void modified(final Runnable pDone, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         dispatcher.modified(pDone, listeners, pKey, pFile, pParentKeys);
     }
 
-    public void discard(final PendingEventDone pDone, final DispatchKey pKey) {
+    public void discard(final Runnable pDone, final DispatchKey pKey) {
         dispatcher.discard(pDone, listeners, pKey);
     }
 }

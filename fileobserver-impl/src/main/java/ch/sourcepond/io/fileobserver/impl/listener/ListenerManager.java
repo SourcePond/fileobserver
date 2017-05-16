@@ -20,7 +20,6 @@ import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestriction;
 import ch.sourcepond.io.fileobserver.impl.restriction.DefaultDispatchRestrictionFactory;
 import org.slf4j.Logger;
@@ -154,7 +153,7 @@ public class ListenerManager implements ReplayDispatcher {
 
     private <T> void submitTask(final Collection<PathChangeListener> pListeners,
                                 final T pKeyOrEvent,
-                                final PendingEventDone pDoneHook,
+                                final Runnable pDoneHook,
                                 final Consumer<PathChangeListener> pFireEventConsumer,
                                 final KeyDeliveryConsumer<T> pBeforeConsumer,
                                 final KeyDeliveryConsumer<T> pAfterConsumer) {
@@ -172,7 +171,7 @@ public class ListenerManager implements ReplayDispatcher {
 
     private void submitDispatchTask(final Collection<PathChangeListener> pObservers,
                                     final DispatchKey pKey,
-                                    final PendingEventDone pDoneHook,
+                                    final Runnable pDoneHook,
                                     final Consumer<PathChangeListener> pFireEventConsumer,
                                     final KeyDeliveryConsumer<DispatchKey> pBeforeConsumer,
                                     final KeyDeliveryConsumer<DispatchKey> pAfterConsumer) {
@@ -190,7 +189,7 @@ public class ListenerManager implements ReplayDispatcher {
     }
 
     @Override
-    public void replay(final PendingEventDone pDone,
+    public void replay(final Runnable pDone,
                        final PathChangeListener pListener,
                        final PathChangeEvent pEvent,
                        final Collection<DispatchKey> pParentKeys) {
@@ -203,7 +202,7 @@ public class ListenerManager implements ReplayDispatcher {
         );
     }
 
-    void modified(final PendingEventDone pDone, final Collection<PathChangeListener> pObservers, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
+    void modified(final Runnable pDone, final Collection<PathChangeListener> pObservers, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         submitDispatchTask(
                 pObservers,
                 pKey,
@@ -214,7 +213,7 @@ public class ListenerManager implements ReplayDispatcher {
         );
     }
 
-    void discard(final PendingEventDone pDone, final Collection<PathChangeListener> pObservers, final DispatchKey pKey) {
+    void discard(final Runnable pDone, final Collection<PathChangeListener> pObservers, final DispatchKey pKey) {
         submitDispatchTask(
                 pObservers,
                 pKey,

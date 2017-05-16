@@ -27,5 +27,5 @@ public interface PathProcessingHandler {
      * @param pKind
      * @param child
      */
-    void process(WatchEvent.Kind<?> pKind, Path child, PendingEventDone pDoneCallback);
+    void process(WatchEvent.Kind<?> pKind, Path child, Runnable pDoneCallback);
 }

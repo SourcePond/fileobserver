@@ -59,7 +59,7 @@ class PathChangeHandler {
 
     void pathModified(final EventDispatcher pDispatcher,
                       final Path pPath,
-                      final PendingEventDone pDoneCallback,
+                      final Runnable pDoneCallback,
                       final boolean pIsCreated) {
         if (isDirectory(pPath)) {
             walker.directoryCreated(pDispatcher, pPath);
@@ -72,7 +72,7 @@ class PathChangeHandler {
 
     void pathDiscarded(final EventDispatcher pDispatcher,
                        final Path pPath,
-                       final PendingEventDone pDoneCallback) {
+                       final Runnable pDoneCallback) {
         // The deleted path was a directory
         if (!directoryDiscarded(pDispatcher, pPath, pDoneCallback)) {
             final Directory parentDirectory = getDirectory(pPath.getParent());
@@ -85,7 +85,7 @@ class PathChangeHandler {
         }
     }
 
-    private boolean directoryDiscarded(final EventDispatcher pDispatcher, final Path pDirectory, final PendingEventDone pDoneCallback) {
+    private boolean directoryDiscarded(final EventDispatcher pDispatcher, final Path pDirectory, final Runnable pDoneCallback) {
         final Directory dir = dirs.remove(pDirectory);
         final boolean wasDirectory = dir != null;
         if (wasDirectory) {

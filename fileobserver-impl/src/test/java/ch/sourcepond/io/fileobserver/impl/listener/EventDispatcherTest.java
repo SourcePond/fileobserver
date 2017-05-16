@@ -15,7 +15,6 @@ package ch.sourcepond.io.fileobserver.impl.listener;
 
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -39,7 +38,7 @@ public class EventDispatcherTest {
     private final DispatchKey key = mock(DispatchKey.class);
     private final Collection<DispatchKey> keys = asList(key);
     private final Collection<DispatchKey> parentKeys = mock(Collection.class);
-    private final PendingEventDone doneCallback = mock(PendingEventDone.class);
+    private final Runnable doneCallback = mock(Runnable.class);
     private final Path file = mock(Path.class);
     private EventDispatcher dispatcher = new EventDispatcher(manager, observers);
 

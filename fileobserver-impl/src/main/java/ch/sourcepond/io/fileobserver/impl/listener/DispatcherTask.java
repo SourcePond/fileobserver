@@ -16,7 +16,6 @@ package ch.sourcepond.io.fileobserver.impl.listener;
 import ch.sourcepond.io.fileobserver.api.KeyDeliveryHook;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.dispatch.KeyDeliveryConsumer;
-import ch.sourcepond.io.fileobserver.impl.fs.PendingEventDone;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -41,13 +40,13 @@ class DispatcherTask<T> implements Runnable {
     private final KeyDeliveryConsumer<T> beforeConsumer;
     private final KeyDeliveryConsumer<T> afterConsumer;
     private final T keyOrEvent;
-    private final PendingEventDone doneHook;
+    private final Runnable doneHook;
 
     DispatcherTask(final ExecutorService pObserverExecutor,
                    final Collection<KeyDeliveryHook> pHooks,
                    final Collection<PathChangeListener> pObservers,
                    final T pKeyOrEvent,
-                   final PendingEventDone pDoneHook,
+                   final Runnable pDoneHook,
                    final Consumer<PathChangeListener> pFireEventConsumer,
                    final KeyDeliveryConsumer<T> pBeforeConsumer,
                    final KeyDeliveryConsumer<T> pAfterConsumer) {
@@ -95,7 +94,7 @@ class DispatcherTask<T> implements Runnable {
             joins.forEach(this::join);
             informHooks(afterConsumer);
         } finally {
-            doneHook.done();
+            doneHook.run();
         }
     }
 }

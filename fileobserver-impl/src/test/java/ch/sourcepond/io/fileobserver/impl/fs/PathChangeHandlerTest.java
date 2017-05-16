@@ -38,7 +38,7 @@ public class PathChangeHandlerTest {
     private final DedicatedFileSystem dfs = mock(DedicatedFileSystem.class);
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
-    private final PendingEventDone doneCallback = mock(PendingEventDone.class);
+    private final Runnable doneCallback = mock(Runnable.class);
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
