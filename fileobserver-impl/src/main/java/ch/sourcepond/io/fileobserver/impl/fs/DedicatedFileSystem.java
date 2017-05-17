@@ -239,7 +239,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 continue;
             }
 
-            pathProcessingQueues.enque(directory, event, this::processPath);
+            pathProcessingQueues.enqueue(directory, event, this::processPath);
         }
 
         // The case when the WatchKey has been cancelled is

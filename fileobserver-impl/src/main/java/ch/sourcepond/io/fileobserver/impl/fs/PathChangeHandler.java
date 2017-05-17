@@ -62,9 +62,13 @@ class PathChangeHandler {
                       final Path pPath,
                       final Runnable pDoneCallback,
                       final boolean pIsCreated) {
-        if (isDirectory(pPath) && pIsCreated) {
-            walker.directoryCreated(pDispatcher, pPath);
-        } else if (isRegularFile(pPath)) {
+        if (isDirectory(pPath)) {
+            //if (pIsCreated) {
+                walker.directoryCreated(pDispatcher, pPath, pDoneCallback);
+            //} else {
+              //  pDoneCallback.run();
+           // }
+        } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
             dir.informIfChanged(pDispatcher, pPath, pDoneCallback, pIsCreated);
@@ -79,6 +83,7 @@ class PathChangeHandler {
             final Directory parentDirectory = getDirectory(pPath.getParent());
             if (parentDirectory == null) {
                 LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
+                pDoneCallback.run();
             } else {
                 // The deleted path was a file
                 parentDirectory.informDiscard(pDispatcher, pPath, pDoneCallback);
@@ -86,7 +91,9 @@ class PathChangeHandler {
         }
     }
 
-    private boolean directoryDiscarded(final EventDispatcher pDispatcher, final Path pDirectory, final Runnable pDoneCallback) {
+    private boolean directoryDiscarded(final EventDispatcher pDispatcher,
+                                       final Path pDirectory,
+                                       final Runnable pDoneCallback) {
         final Directory dir = dirs.remove(pDirectory);
         final boolean wasDirectory = dir != null;
         if (wasDirectory) {
