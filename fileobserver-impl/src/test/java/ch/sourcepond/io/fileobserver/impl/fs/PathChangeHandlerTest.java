@@ -75,7 +75,7 @@ public class PathChangeHandlerTest {
     public void directoryModified() {
         when(attrs.isDirectory()).thenReturn(true);
         handler.pathModified(dispatcher, path, doneCallback, false);
-        verify(walker).directoryCreated(dispatcher, path, doneCallback);
+        verifyZeroInteractions(walker);
     }
 
     @Test

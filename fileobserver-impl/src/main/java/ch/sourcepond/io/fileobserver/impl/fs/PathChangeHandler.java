@@ -63,11 +63,11 @@ class PathChangeHandler {
                       final Runnable pDoneCallback,
                       final boolean pIsCreated) {
         if (isDirectory(pPath)) {
-            //if (pIsCreated) {
+            if (pIsCreated) {
                 walker.directoryCreated(pDispatcher, pPath, pDoneCallback);
-            //} else {
-              //  pDoneCallback.run();
-           // }
+            } else {
+                pDoneCallback.run();
+            }
         } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
