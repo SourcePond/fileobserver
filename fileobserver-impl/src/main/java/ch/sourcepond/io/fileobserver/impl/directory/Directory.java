@@ -255,11 +255,14 @@ public abstract class Directory {
         keys.forEach(k -> pDispatcher.modified(pDoneCallback, k, pFile, supplementKeys));
     }
 
-    public void informCreatedOrInitial(final EventDispatcher pDispatcher, final Directory pNewRootOrNull,
-                        final Path pFile, final Runnable pDoneCallback) {
+    public void informCreatedOrInitial(final EventDispatcher pDispatcher,
+                                       final Directory pNewRootOrNull,
+                                       final Path pFile,
+                                       final Runnable pDoneCallback) {
         // Important: We need to initialize the resource (and its initial checksum) here.
         // If not, we won't be able to receive further modification events.
         getResource(pFile);
+        LOG.debug("Initialized checksum resource for {}", pFile);
 
         // Now, inform observers
         inform(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);

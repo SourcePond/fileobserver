@@ -134,9 +134,10 @@ public class PathProcessingQueues implements Runnable {
         thread.interrupt();
     }
 
-    public void enque(final Path pDirectory, final WatchEvent<?> pEvent, final PathProcessingHandler pHandler) {
+    public void enqueue(final Path pDirectory, final WatchEvent<?> pEvent, final PathProcessingHandler pHandler) {
         final Path absolutePath = pDirectory.resolve((Path) pEvent.context());
         final PathQueue queue = paths.computeIfAbsent(absolutePath, p -> new PathQueue(absolutePath, pHandler));
+
         if (pEvent.count() == 1) {
             queue.addEvent(pEvent.kind(), true);
         }

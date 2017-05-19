@@ -19,6 +19,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 
@@ -65,6 +66,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private final Directory subdir_21 = mock(Directory.class);
     private final Directory subdir_211 = mock(Directory.class);
     private final Directory subdir_22 = mock(Directory.class);
+    private final Runnable doneCallback = mock(Runnable.class);
     private DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
             logger,
             directoryFactory,
@@ -134,8 +136,9 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
      */
     @Test
     public void directoryCreated() throws IOException {
-        walker.directoryCreated(dispatcher, root_dir_path);
+        walker.directoryCreated(dispatcher, root_dir_path, doneCallback);
         verifyDirectoryWalk(null);
+        verify(doneCallback).run();
     }
 
     @Test
@@ -156,11 +159,12 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
                 dirs);
         final IOException expected = new IOException(ANY_MESSAGE);
         doThrow(expected).when(wrapper).register(subdir_11_path);
-        walker.directoryCreated(dispatcher, root_dir_path);
+        walker.directoryCreated(dispatcher, root_dir_path, doneCallback);
         verify(logger, timeout(200)).warn(eq(ANY_MESSAGE), argThat((Throwable th) -> {
             Throwable cause = th.getCause();
             return (cause instanceof UncheckedIOException) && expected == cause.getCause();
         }));
+        verify(doneCallback).run();
     }
 
     @Test
@@ -173,7 +177,8 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
                 dirs);
         final RuntimeException expected = new RuntimeException(ANY_MESSAGE);
         doThrow(expected).when(wrapper).register(subdir_11_path);
-        walker.directoryCreated(dispatcher, root_dir_path);
+        walker.directoryCreated(dispatcher, root_dir_path, doneCallback);
         verify(logger, timeout(200)).error(ANY_MESSAGE, expected);
+        verify(doneCallback).run();
     }
 }

@@ -98,8 +98,8 @@ class DirectoryRegistrationWalker {
      *
      * @param pDirectory Newly created directory, must not be {@code null}
      */
-    void directoryCreated(final EventDispatcher pDispatcher, final Path pDirectory) {
-        directoryCreated(pDispatcher,null, pDirectory);
+    void directoryCreated(final EventDispatcher pDispatcher, final Path pDirectory, final Runnable pDoneCallback) {
+        directoryCreated(pDispatcher,null, pDirectory, pDoneCallback);
     }
 
     /**
@@ -110,7 +110,7 @@ class DirectoryRegistrationWalker {
      * @param pNewRoot Newly created directory, must not be {@code null}
      */
     void rootAdded(final EventDispatcher pDispatcher, final Directory pNewRoot) {
-        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath());
+        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath(), EMPTY_CALLBACK);
     }
 
     /**
@@ -123,7 +123,8 @@ class DirectoryRegistrationWalker {
      */
     private void directoryCreated(final EventDispatcher pDispatcher,
                                   final Directory pNewRootOrNull,
-                                  final Path pDirectory) {
+                                  final Path pDirectory,
+                                  final Runnable pDoneCallback) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered PathChangeListener
         directoryWalkerExecutor.execute(() -> {
@@ -134,6 +135,8 @@ class DirectoryRegistrationWalker {
                 logger.warn(e.getMessage(), e);
             } catch (final RuntimeException e) {
                 logger.error(e.getMessage(), e);
+            } finally {
+                pDoneCallback.run();
             }
         });
     }

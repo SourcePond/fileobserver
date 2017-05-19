@@ -82,7 +82,7 @@ public class PathChangeHandlerTest {
     public void directoryModifiedNewlyCreated() {
         when(attrs.isDirectory()).thenReturn(true);
         handler.pathModified(dispatcher, path, doneCallback, true);
-        verify(walker).directoryCreated(dispatcher, path);
+        verify(walker).directoryCreated(dispatcher, path, doneCallback);
     }
 
     @Test
