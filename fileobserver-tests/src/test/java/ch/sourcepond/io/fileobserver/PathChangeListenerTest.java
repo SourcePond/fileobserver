@@ -57,6 +57,7 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
 /**
  *
  */
+@Ignore
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
 public class PathChangeListenerTest {
