@@ -160,7 +160,7 @@ class DirectoryRegistrationWalker {
         @Override
         public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
             final Directory dir = dirs.get(file.getParent());
-            dir.informIfChanged(dispatcher, file,  newRootOrNull, file, EMPTY_CALLBACK);
+            dir.informCreatedOrInitial(dispatcher, newRootOrNull, file, EMPTY_CALLBACK);
             return CONTINUE;
         }
 
