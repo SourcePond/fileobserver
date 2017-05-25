@@ -3,8 +3,8 @@
     <repository>mvn:ch.sourcepond.commons/smartswitch-feature/${smartswitch.version}/xml/features</repository>
     <repository>mvn:ch.sourcepond.io/checksum-feature/${checksum-feature.version}/xml/features</repository>
     <feature name="fileobserver-feature" description="fileobserver-feature">
-        <feature prerequisite="true">scr</feature>
-        <feature prerequisite="true">smartswitch-feature</feature>
-        <feature prerequisite="true">checksum-feature</feature>
+        <feature>scr</feature>
+        <feature>smartswitch-feature</feature>
+        <feature>checksum-feature</feature>
     </feature>
 </features>

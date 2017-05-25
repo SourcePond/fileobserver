@@ -22,6 +22,7 @@
 		</plugins>
 	</build>
 
+
 	<ciManagement>
 		<url>${jenkins.baseurl}/job/${project.artifactId}</url>
 		<system>Jenkins</system>
