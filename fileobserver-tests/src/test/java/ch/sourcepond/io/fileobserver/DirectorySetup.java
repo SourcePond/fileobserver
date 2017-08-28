@@ -51,7 +51,7 @@ import static org.junit.Assert.*;
  *        + config.properties (C)
  * </pre>
  */
-class DirectorySetup implements TestRule {
+class DirectorySetup {
     static final String ZIP_NAME = "hotdeploy.zip";
     private static final Path SOURCE = getDefault().getPath(getProperty("user.dir"), "src", "test", "resources", "testdir");
     public static final Path R = getDefault().getPath(getProperty("java.io.tmpdir"), DirectorySetup.class.getName(), UUID.randomUUID().toString());
@@ -131,26 +131,15 @@ class DirectorySetup implements TestRule {
         });
     }
 
-    void deleteDirectories() throws IOException {
+    protected void deleteDirectories() throws IOException {
         deleteDirectory(E);
         deleteDirectory(H);
         deleteIfExists(ZIP_FILE);
         deleteIfExists(C);
     }
 
-    @Override
-    public Statement apply(final Statement base, final Description description) {
-        return new Statement() {
-            @Override
-            public void evaluate() throws Throwable {
-                copyDirectories();
-                validate();
-                try {
-                    base.evaluate();
-                } finally {
-                    deleteDirectories();
-                }
-            }
-        };
+    protected void setupDirectories() throws Exception {
+        copyDirectories();
+        validate();
     }
 }

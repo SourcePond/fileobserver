@@ -57,17 +57,13 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
 /**
  *
  */
-@Ignore
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
-public class PathChangeListenerTest {
+public class PathChangeListenerTest extends DirectorySetup {
     private static final String ROOT = "watchedRoot";
 
     @Rule
     public BundleContextClassLoaderRule rule = new BundleContextClassLoaderRule(this);
-
-    @Rule
-    public DirectorySetup dirSetup = new DirectorySetup();
 
     @Configuration
     public Option[] config() {
@@ -138,6 +134,7 @@ public class PathChangeListenerTest {
 
     @Before
     public void setup() throws Exception {
+        setupDirectories();
         doCallRealMethod().when(listener).restrict(notNull(), same(R.getFileSystem()));
         doCallRealMethod().when(secondListener).restrict(notNull(), same(R.getFileSystem()));
 
@@ -182,11 +179,12 @@ public class PathChangeListenerTest {
     }
 
     @After
-    public void tearDown() throws InterruptedException {
+    public void tearDown() throws Exception {
         unregisterService(watchedDirectoryRegistration);
         unregisterService(listenerRegistration);
         unregisterService(secondListenerRegistration);
         unregisterService(hookRegistration);
+        deleteDirectories();
     }
 
     @Test
@@ -313,17 +311,16 @@ public class PathChangeListenerTest {
         verifyNoMoreInteractions(listener);
     }
 
-    @Ignore
     @Test
     public void listenerShouldBeInformedAboutFileCreationThroughUnzip() throws Exception {
-        dirSetup.deleteDirectories();
+        deleteDirectories();
         verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E)));
         verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H)));
         verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(C)));
 
         reset(listener, secondListener, hook);
-        dirSetup.createZip();
-        dirSetup.unzip();
+        createZip();
+        unzip();
         verifyForceInform(listener);
     }
 }

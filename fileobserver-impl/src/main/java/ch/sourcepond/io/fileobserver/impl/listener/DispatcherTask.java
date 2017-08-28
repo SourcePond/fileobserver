@@ -33,26 +33,26 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 class DispatcherTask<T> implements Runnable {
     private static final Logger LOG = getLogger(DispatcherTask.class);
-    private final ExecutorService observerExecutor;
+    private final ExecutorService listenerExecutor;
     private final Collection<KeyDeliveryHook> hooks;
-    private final Collection<PathChangeListener> observers;
+    private final Collection<PathChangeListener> listeners;
     private final Consumer<PathChangeListener> fireEventConsumer;
     private final KeyDeliveryConsumer<T> beforeConsumer;
     private final KeyDeliveryConsumer<T> afterConsumer;
     private final T keyOrEvent;
     private final Runnable doneHook;
 
-    DispatcherTask(final ExecutorService pObserverExecutor,
+    DispatcherTask(final ExecutorService pListenerExecutor,
                    final Collection<KeyDeliveryHook> pHooks,
-                   final Collection<PathChangeListener> pObservers,
+                   final Collection<PathChangeListener> pListeners,
                    final T pKeyOrEvent,
                    final Runnable pDoneHook,
                    final Consumer<PathChangeListener> pFireEventConsumer,
                    final KeyDeliveryConsumer<T> pBeforeConsumer,
                    final KeyDeliveryConsumer<T> pAfterConsumer) {
-        observerExecutor = pObserverExecutor;
+        listenerExecutor = pListenerExecutor;
         hooks = pHooks;
-        observers = pObservers;
+        listeners = pListeners;
         keyOrEvent = pKeyOrEvent;
         doneHook = pDoneHook;
         fireEventConsumer = pFireEventConsumer;
@@ -63,7 +63,7 @@ class DispatcherTask<T> implements Runnable {
     private void informHooks(final KeyDeliveryConsumer<T> pConsumer) {
         if (!hooks.isEmpty()) {
             final Collection<Future<?>> joins = new LinkedList<>();
-            hooks.forEach(hook -> joins.add(observerExecutor.submit(() -> pConsumer.consume(hook, keyOrEvent))));
+            hooks.forEach(hook -> joins.add(listenerExecutor.submit(() -> pConsumer.consume(hook, keyOrEvent))));
             joins.forEach(this::join);
         }
     }
@@ -80,7 +80,7 @@ class DispatcherTask<T> implements Runnable {
 
     private void submitObserverTask(final PathChangeListener pObserver, final Collection<Future<?>> pJoins) {
         if (!currentThread().isInterrupted()) {
-            pJoins.add(observerExecutor.submit(() ->
+            pJoins.add(listenerExecutor.submit(() ->
                     fireEventConsumer.accept(pObserver)));
         }
     }
@@ -90,7 +90,7 @@ class DispatcherTask<T> implements Runnable {
         try {
             informHooks(beforeConsumer);
             final Collection<Future<?>> joins = new LinkedList<>();
-            observers.forEach(observer -> submitObserverTask(observer, joins));
+            listeners.forEach(observer -> submitObserverTask(observer, joins));
             joins.forEach(this::join);
             informHooks(afterConsumer);
         } finally {

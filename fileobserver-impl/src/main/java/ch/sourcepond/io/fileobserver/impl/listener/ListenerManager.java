@@ -64,9 +64,9 @@ public class ListenerManager implements ReplayDispatcher {
         dispatchEventFactory = pDispatchEventFactory;
     }
 
-    public EventDispatcher addListener(final PathChangeListener pObserver) {
-        listeners.computeIfAbsent(pObserver, o -> new ConcurrentHashMap<>());
-        return new EventDispatcher(this, pObserver);
+    public EventDispatcher addListener(final PathChangeListener pListener) {
+        listeners.computeIfAbsent(pListener, o -> new ConcurrentHashMap<>());
+        return new EventDispatcher(this, pListener);
     }
 
     public DiffEventDispatcher openDiff(final DedicatedFileSystem pFs) {
@@ -94,15 +94,15 @@ public class ListenerManager implements ReplayDispatcher {
         hooks.add(pHook);
     }
 
-    public void removeObserver(final PathChangeListener pObserver) {
-        listeners.remove(pObserver);
+    public void removeObserver(final PathChangeListener pListener) {
+        listeners.remove(pListener);
     }
 
     public void removeHook(final KeyDeliveryHook pHook) {
         hooks.remove(pHook);
     }
 
-    private static void fireModification(final PathChangeListener pObserver,
+    private static void fireModification(final PathChangeListener pListener,
                                          final PathChangeEvent pEvent,
                                          final Collection<DispatchKey> pParentKeys) {
         final DispatchKey key = pEvent.getKey();
@@ -118,37 +118,37 @@ public class ListenerManager implements ReplayDispatcher {
                  *
                  */
                 if (!key.getDirectoryKey().equals(parentKey.getDirectoryKey())) {
-                    pObserver.supplement(key, parentKey);
+                    pListener.supplement(key, parentKey);
                 }
             }
         }
         try {
-            pObserver.modified(pEvent);
+            pListener.modified(pEvent);
         } catch (final IOException e) {
             LOG.warn(e.getMessage(), e);
         }
     }
 
-    private void fireModification(final PathChangeListener pObserver,
+    private void fireModification(final PathChangeListener pListener,
                                   final DispatchKey pKey,
                                   final Path pFile,
                                   final Collection<DispatchKey> pParentKeys) {
-        fireModification(pObserver,
-                dispatchEventFactory.create(pObserver, pKey, pFile, pParentKeys, this),
+        fireModification(pListener,
+                dispatchEventFactory.create(pListener, pKey, pFile, pParentKeys, this),
                 pParentKeys);
     }
 
-    private DefaultDispatchRestriction createRestriction(final PathChangeListener pObserver, final FileSystem pFs) {
+    private DefaultDispatchRestriction createRestriction(final PathChangeListener pListener, final FileSystem pFs) {
         final DefaultDispatchRestriction restriction = restrictionFactory.createRestriction(pFs);
-        pObserver.restrict(restriction, pFs);
+        pListener.restrict(restriction, pFs);
         return restriction;
     }
 
-    private boolean isAccepted(final PathChangeListener pObserver, final DispatchKey pDispatchKey) {
+    private boolean isAccepted(final PathChangeListener pListener, final DispatchKey pDispatchKey) {
         final FileSystem fs = pDispatchKey.getRelativePath().getFileSystem();
         return listeners.computeIfAbsent(
-                pObserver, o -> new ConcurrentHashMap<>()).
-                computeIfAbsent(fs, f -> createRestriction(pObserver, f)).isAccepted(pDispatchKey);
+                pListener, o -> new ConcurrentHashMap<>()).
+                computeIfAbsent(fs, f -> createRestriction(pListener, f)).isAccepted(pDispatchKey);
     }
 
     private <T> void submitTask(final Collection<PathChangeListener> pListeners,
@@ -169,16 +169,16 @@ public class ListenerManager implements ReplayDispatcher {
         ));
     }
 
-    private void submitDispatchTask(final Collection<PathChangeListener> pObservers,
+    private void submitDispatchTask(final Collection<PathChangeListener> pListeners,
                                     final DispatchKey pKey,
                                     final Runnable pDoneHook,
                                     final Consumer<PathChangeListener> pFireEventConsumer,
                                     final KeyDeliveryConsumer<DispatchKey> pBeforeConsumer,
                                     final KeyDeliveryConsumer<DispatchKey> pAfterConsumer) {
-        final Collection<PathChangeListener> acceptingObservers = pObservers.stream().filter(
+        final Collection<PathChangeListener> acceptingListeners = pListeners.stream().filter(
                 o -> isAccepted(o, pKey)).collect(toList());
-        if (!acceptingObservers.isEmpty()) {
-            submitTask(acceptingObservers,
+        if (!acceptingListeners.isEmpty()) {
+            submitTask(acceptingListeners,
                     pKey,
                     pDoneHook,
                     pFireEventConsumer,
@@ -202,9 +202,9 @@ public class ListenerManager implements ReplayDispatcher {
         );
     }
 
-    void modified(final Runnable pDone, final Collection<PathChangeListener> pObservers, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
+    void modified(final Runnable pDone, final Collection<PathChangeListener> pListeners, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         submitDispatchTask(
-                pObservers,
+                pListeners,
                 pKey,
                 pDone,
                 observer -> fireModification(observer, pKey, pFile, pParentKeys),
@@ -213,9 +213,9 @@ public class ListenerManager implements ReplayDispatcher {
         );
     }
 
-    void discard(final Runnable pDone, final Collection<PathChangeListener> pObservers, final DispatchKey pKey) {
+    void discard(final Runnable pDone, final Collection<PathChangeListener> pListeners, final DispatchKey pKey) {
         submitDispatchTask(
-                pObservers,
+                pListeners,
                 pKey,
                 pDone,
                 observer -> observer.discard(pKey),
