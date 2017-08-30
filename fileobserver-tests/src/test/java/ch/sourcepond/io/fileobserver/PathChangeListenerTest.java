@@ -28,6 +28,7 @@ import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.options.MavenUrlReference;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
+import org.ops4j.pax.exam.spi.reactors.PerMethod;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -35,7 +36,10 @@ import org.osgi.framework.ServiceRegistration;
 import javax.inject.Inject;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 
 import static ch.sourcepond.io.fileobserver.DirectorySetup.*;
 import static ch.sourcepond.io.fileobserver.RecursiveDeletion.deleteDirectory;
@@ -47,6 +51,7 @@ import static java.lang.System.getProperty;
 import static java.lang.Thread.sleep;
 import static java.nio.file.Files.delete;
 import static java.nio.file.Files.newBufferedWriter;
+import static java.nio.file.Files.newOutputStream;
 import static java.util.UUID.randomUUID;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
@@ -61,6 +66,7 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
 @ExamReactorStrategy(PerSuite.class)
 public class PathChangeListenerTest extends DirectorySetup {
     private static final String ROOT = "watchedRoot";
+    private static final Random RANDOM = new Random();
 
     @Rule
     public BundleContextClassLoaderRule rule = new BundleContextClassLoaderRule(this);
@@ -114,10 +120,11 @@ public class PathChangeListenerTest extends DirectorySetup {
     }
 
 
-    private static void writeArbitraryContent(final Path pFile) throws IOException {
-        try (final BufferedWriter writer = newBufferedWriter(pFile)) {
-            writer.write(randomUUID().toString());
+    private static void writeArbitraryContent(final Path pFile) throws Exception {
+        try (final OutputStream out = newOutputStream(pFile)) {
+            out.write(RANDOM.nextInt());
         }
+        sleep(1000);
     }
 
     @Inject
@@ -132,6 +139,12 @@ public class PathChangeListenerTest extends DirectorySetup {
     private ServiceRegistration<KeyDeliveryHook> hookRegistration;
     private WatchedDirectory watchedDirectory;
 
+    private <T> ServiceRegistration<T> registerService(final Class<T> pInterface, final T pService) throws Exception {
+        final ServiceRegistration<T> reg = context.registerService(pInterface, pService, null);
+        sleep(1500);
+        return reg;
+    }
+
     @Before
     public void setup() throws Exception {
         setupDirectories();
@@ -141,21 +154,21 @@ public class PathChangeListenerTest extends DirectorySetup {
         // Step 1: make fileobserver bundle watching R by
         // registering an appropriate service.
         final InitialCheckusmCalculationBarrier wait = new InitialCheckusmCalculationBarrier();
-        listenerRegistration = context.registerService(PathChangeListener.class, wait, null);
+        listenerRegistration = registerService(PathChangeListener.class, wait);
         watchedDirectory = create(ROOT, R);
         watchedDirectory.addBlacklistPattern("glob:" + ZIP_NAME);
 
-        watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
+        watchedDirectoryRegistration = registerService(WatchedDirectory.class, watchedDirectory);
         wait.waitUntilChecksumsCalculated();
         listenerRegistration.unregister();
 
         // Step 2: register PathChangeListener
-        listenerRegistration = context.registerService(PathChangeListener.class, listener, null);
+        listenerRegistration = registerService(PathChangeListener.class, listener);
         verifyForceInform(listener);
         reset(listener);
 
         // Step 3: register key-hook
-        hookRegistration = context.registerService(KeyDeliveryHook.class, hook, null);
+        hookRegistration = registerService(KeyDeliveryHook.class, hook);
     }
 
     private void verifyForceInform(final PathChangeListener pListener) throws Exception {
@@ -168,13 +181,14 @@ public class PathChangeListenerTest extends DirectorySetup {
         verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(C)));
     }
 
-    private void unregisterService(final ServiceRegistration<?> pRegistration) {
+    private void unregisterService(final ServiceRegistration<?> pRegistration) throws Exception {
         if (pRegistration != null) {
             try {
                 pRegistration.unregister();
             } catch (final IllegalStateException e) {
                 e.printStackTrace();
             }
+            sleep(1000);
         }
     }
 
@@ -189,7 +203,7 @@ public class PathChangeListenerTest extends DirectorySetup {
 
     @Test
     public void doExlusivelyInformNewlyRegisteredListener() throws Exception {
-        secondListenerRegistration = context.registerService(PathChangeListener.class, secondListener, null);
+        secondListenerRegistration = registerService(PathChangeListener.class, secondListener);
         verifyForceInform(secondListener);
         verifyZeroInteractions(listener);
     }
@@ -223,7 +237,7 @@ public class PathChangeListenerTest extends DirectorySetup {
         verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(R)));
 
         // Now, listener should be informed about newly registered root
-        watchedDirectoryRegistration = context.registerService(WatchedDirectory.class, watchedDirectory, null);
+        watchedDirectoryRegistration = registerService(WatchedDirectory.class, watchedDirectory);
 
         verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E11)));
         verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
@@ -283,8 +297,6 @@ public class PathChangeListenerTest extends DirectorySetup {
      */
     @Test
     public void listenerShouldBeInformedAboutFileChange() throws Exception {
-        sleep(2000);
-
         writeArbitraryContent(E12);
         writeArbitraryContent(H12);
         writeArbitraryContent(C);
@@ -299,7 +311,7 @@ public class PathChangeListenerTest extends DirectorySetup {
      *
      */
     @Test
-    public void listenerShouldBeInformedAboutFileCreation() throws IOException {
+    public void listenerShouldBeInformedAboutFileCreation() throws Exception {
         final Path newFile = E1.resolve("newFile.txt");
         writeArbitraryContent(newFile);
 
@@ -319,6 +331,7 @@ public class PathChangeListenerTest extends DirectorySetup {
         verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(C)));
 
         reset(listener, secondListener, hook);
+        sleep(1000);
         createZip();
         unzip();
         verifyForceInform(listener);
