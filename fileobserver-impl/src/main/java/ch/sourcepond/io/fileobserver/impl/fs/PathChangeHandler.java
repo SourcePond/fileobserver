@@ -82,7 +82,7 @@ class PathChangeHandler {
         if (!directoryDiscarded(pDispatcher, pPath, pDoneCallback)) {
             final Directory parentDirectory = getDirectory(pPath.getParent());
             if (parentDirectory == null) {
-                LOG.warn("Parent of {} does not exist. Nothing to discard", pPath, new Exception());
+                LOG.debug("Parent of {} does not exist. Nothing to discard", pPath);
                 pDoneCallback.run();
             } else {
                 // The deleted path was a file
@@ -100,8 +100,11 @@ class PathChangeHandler {
             dir.cancelKey();
             for (final Iterator<Map.Entry<Path, Directory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
                 final Map.Entry<Path, Directory> entry = it.next();
-                if (entry.getKey().startsWith(pDirectory)) {
-                    entry.getValue().cancelKey();
+                final Path subDirKey = entry.getKey();
+                if (subDirKey.startsWith(pDirectory)) {
+                    final Directory subDir = entry.getValue();
+                    subDir.cancelKey();
+                    subDir.informDiscard(pDispatcher, subDirKey, pDoneCallback);
                     it.remove();
                 }
             }
