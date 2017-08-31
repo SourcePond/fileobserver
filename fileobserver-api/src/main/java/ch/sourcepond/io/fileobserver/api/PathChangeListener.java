@@ -47,23 +47,8 @@ public interface PathChangeListener {
     void modified(PathChangeEvent pEvent) throws IOException;
 
     /**
-     * <p>Indicates, that the file or directory with the {@link DispatchKey} specified has been discarded for some reason
-     * (file/directory has been deleted, watched directory is being unregistered etc.). Depending on the operating
-     * system, the delivered keys can <em>differ in case when a directory has been deleted recursively</em>. For instance, on
-     * systems with a native {@link java.nio.file.WatchService} implementation you will probably get a {@link DispatchKey}
-     * instance for every deleted path. On other systems which work with the default polling watch-service you
-     * likely only get the file key of the deleted base directory.</p>
-     * <p>
-     * <p>If you work with cached objects and you want to avoid different behaviour on varying operating systems,
-     * resource discarding can be safely implemented as follows:
-     * <pre>
-     *      final Map&lt;DispatchKey, Object&gt; cache = ...
-     *
-     *      // Remove any key which is a sub-key of pKey.
-     *      pKey.removeSubKeys(cache.keySet());
-     * </pre>
-     * <p>
-     * See {@link DispatchKey#removeSubKeys(java.util.Collection)} and {@link DispatchKey#findSubKeys(java.util.Collection)} for further information.
+     * <p>Indicates, that the file denoted with the {@link DispatchKey} specified has been discarded for some reason
+     * (file/directory has been deleted, watched directory is being unregistered etc.).
      *
      * @param pKey File-key of the discarded file or directory, never {@code null}
      */
