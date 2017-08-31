@@ -25,9 +25,20 @@ import java.nio.file.WatchKey;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.notNull;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -35,7 +46,6 @@ import static org.mockito.Mockito.*;
 public class FileChangeDirectoryTest extends DirectoryTest {
     private final Resource testfile_txt_resource = mock(Resource.class);
     private final Resource testfile_11_xml_resource = mock(Resource.class);
-    private final Runnable doneCallback = mock(Runnable.class);
     private Directory root_dir;
     private Directory subdir_1;
 
@@ -66,7 +76,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     @Test
     public void rootDirInformIfChangedChecksumsEqual() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum1);
-        root_dir.informIfChanged(dispatcher, testfile_txt_path, doneCallback, false);
+        root_dir.informIfChanged(dispatcher, testfile_txt_path, false);
         verifyZeroInteractions(listener);
     }
 
@@ -76,7 +86,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     @Test
     public void rootDirInformIfChangedChecksumsDifferent() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum2);
-        root_dir.informIfChanged(dispatcher, testfile_txt_path, doneCallback, false);
+        root_dir.informIfChanged(dispatcher, testfile_txt_path, false);
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_txt_path));
         sleep(500);
         verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
@@ -90,7 +100,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     public void rootDirInformIfChangedChecksumsDifferentButNoKeyRegistered() throws Exception {
         setupChecksumAnswer(testfile_txt_resource, checksum2);
         root_dir.remove(watchedRootDir);
-        root_dir.informIfChanged(dispatcher, testfile_txt_path, doneCallback, false);
+        root_dir.informIfChanged(dispatcher, testfile_txt_path, false);
         verifyZeroInteractions(listener);
     }
 
@@ -100,7 +110,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     @Test
     public void subDirInformIfChangedChecksumsEqual() throws Exception {
         setupChecksumAnswer(testfile_11_xml_resource, checksum1);
-        subdir_1.informIfChanged(dispatcher, testfile_11_xml_path, doneCallback, false);
+        subdir_1.informIfChanged(dispatcher, testfile_11_xml_path, false);
         verifyZeroInteractions(listener);
     }
 
@@ -110,7 +120,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     @Test
     public void subDirInformIfChangedChecksumsDifferent() throws Exception {
         setupChecksumAnswer(testfile_11_xml_resource, checksum2);
-        subdir_1.informIfChanged(dispatcher, testfile_11_xml_path, doneCallback, false);
+        subdir_1.informIfChanged(dispatcher, testfile_11_xml_path, false);
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_11_xml_path));
         sleep(500);
         verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
@@ -124,7 +134,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     public void formerRootInformIfChangedChecksumsEqual() throws Exception {
         subdir_1.addWatchedDirectory(watchedSubDir1);
         setupChecksumAnswer(testfile_11_xml_resource, checksum1);
-        subdir_1.informIfChanged(dispatcher, testfile_11_xml_path, doneCallback, false);
+        subdir_1.informIfChanged(dispatcher, testfile_11_xml_path, false);
         verifyZeroInteractions(listener);
     }
 
@@ -135,7 +145,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     public void formerRootInformIfChangedChecksumsDifferent() throws Exception {
         subdir_1.addWatchedDirectory(watchedSubDir1);
         setupChecksumAnswer(testfile_11_xml_resource, checksum2);
-        subdir_1.informIfChanged(dispatcher, testfile_11_xml_path, doneCallback, false);
+        subdir_1.informIfChanged(dispatcher, testfile_11_xml_path, false);
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_11_xml_path));
         verify(listener, timeout(500)).modified(toEvent(subdir_1_path, testfile_11_xml_path));
         sleep(500);
@@ -148,7 +158,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      */
     @Test
     public void rootDirInformIfFileDiscarded() throws IOException, InterruptedException {
-        root_dir.informDiscard(dispatcher, testfile_txt_path, doneCallback);
+        root_dir.informDiscard(dispatcher, testfile_txt_path);
         verify(listener, timeout(500)).discard(toKey(root_dir_path, testfile_txt_path));
     }
 

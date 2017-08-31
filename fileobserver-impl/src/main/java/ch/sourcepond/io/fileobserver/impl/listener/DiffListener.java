@@ -26,9 +26,13 @@ import org.slf4j.Logger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
-import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static java.util.Collections.emptyList;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -55,7 +59,7 @@ class DiffListener implements PathChangeListener, Closeable {
     private void informModified(final Update pUpdate, final DispatchKey pKey, final Path pFile) {
         if (pUpdate.hasChanged()) {
             final Collection<DispatchKey> supplementKeysOrNull = supplementKeys.computeIfAbsent(pKey, k -> emptyList());
-            dispatcher.modified(EMPTY_CALLBACK, pKey, pFile, supplementKeysOrNull);
+            dispatcher.modified(pKey, pFile, supplementKeysOrNull);
         }
     }
 
@@ -79,7 +83,7 @@ class DiffListener implements PathChangeListener, Closeable {
     public void close() {
         modifiedKeys.forEach(this::updateResource);
         discardedKeys.removeAll(modifiedKeys.keySet());
-        discardedKeys.forEach(k -> dispatcher.discard(EMPTY_CALLBACK, k));
+        discardedKeys.forEach(k -> dispatcher.discard(k));
     }
 
     @Override

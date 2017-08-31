@@ -59,33 +59,28 @@ class PathChangeHandler {
 
     void pathModified(final EventDispatcher pDispatcher,
                       final Path pPath,
-                      final Runnable pDoneCallback,
                       final boolean pIsCreated) {
         if (isDirectory(pPath)) {
             if (pIsCreated) {
-                walker.directoryCreated(pDispatcher, pPath, pDoneCallback);
-            } else {
-                pDoneCallback.run();
+                walker.directoryCreated(pDispatcher, pPath);
             }
         } else {
             final Directory dir = requireNonNull(getDirectory(pPath.getParent()),
                     () -> format("No directory registered for file %s", pPath));
-            dir.informIfChanged(pDispatcher, pPath, pDoneCallback, pIsCreated);
+            dir.informIfChanged(pDispatcher, pPath, pIsCreated);
         }
     }
 
     void pathDiscarded(final EventDispatcher pDispatcher,
-                       final Path pPath,
-                       final Runnable pDoneCallback) {
+                       final Path pPath) {
         // The deleted path was a directory
-        if (!directoryDiscarded(pDispatcher, pPath, pDoneCallback)) {
+        if (!directoryDiscarded(pDispatcher, pPath)) {
             final Directory parentDirectory = getDirectory(pPath.getParent());
             if (parentDirectory == null) {
                 LOG.debug("Parent of {} does not exist. Nothing to discard", pPath);
-                pDoneCallback.run();
             } else {
                 // The deleted path was a file
-                parentDirectory.informDiscard(pDispatcher, pPath, pDoneCallback);
+                parentDirectory.informDiscard(pDispatcher, pPath);
             }
         }
     }
@@ -105,8 +100,7 @@ class PathChangeHandler {
     }
 
     private boolean directoryDiscarded(final EventDispatcher pDispatcher,
-                                       final Path pDirectory,
-                                       final Runnable pDoneCallback) {
+                                       final Path pDirectory) {
         final Directory dir = dirs.remove(pDirectory);
         final boolean wasDirectory = dir != null;
         if (wasDirectory) {

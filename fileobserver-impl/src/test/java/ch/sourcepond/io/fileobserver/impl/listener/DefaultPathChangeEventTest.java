@@ -20,9 +20,11 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.Collection;
 
-import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  *
@@ -52,7 +54,7 @@ public class DefaultPathChangeEventTest {
         assertEquals(1, event.getNumReplays());
         event.replay();
         assertEquals(2, event.getNumReplays());
-        verify(replayDispatcher, times(2)).replay(EMPTY_CALLBACK, listener, event, parentKeys);
+        verify(replayDispatcher, times(2)).replay(listener, event, parentKeys);
     }
 
     @Test

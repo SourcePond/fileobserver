@@ -19,7 +19,6 @@ import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 
@@ -32,10 +31,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
-import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -66,7 +72,6 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private final Directory subdir_21 = mock(Directory.class);
     private final Directory subdir_211 = mock(Directory.class);
     private final Directory subdir_22 = mock(Directory.class);
-    private final Runnable doneCallback = mock(Runnable.class);
     private DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
             logger,
             directoryFactory,
@@ -100,15 +105,15 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     }
 
     private void verifyDirectoryWalk(final Directory pNewRootOrNull) throws IOException {
-        verify(subdir_111, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_1111_txt_path, EMPTY_CALLBACK);
-        verify(subdir_11, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_111_txt_path, EMPTY_CALLBACK);
-        verify(subdir_12, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_121_txt_path, EMPTY_CALLBACK);
-        verify(subdir_1, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_11_xml_path, EMPTY_CALLBACK);
-        verify(subdir_211, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_2111_txt_path, EMPTY_CALLBACK);
-        verify(subdir_21, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_211_txt_path, EMPTY_CALLBACK);
-        verify(subdir_22, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_221_txt_path, EMPTY_CALLBACK);
-        verify(subdir_2, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_21_xml_path, EMPTY_CALLBACK);
-        verify(root_dir, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_txt_path, EMPTY_CALLBACK);
+        verify(subdir_111, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_1111_txt_path);
+        verify(subdir_11, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_111_txt_path);
+        verify(subdir_12, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_121_txt_path);
+        verify(subdir_1, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_11_xml_path);
+        verify(subdir_211, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_2111_txt_path);
+        verify(subdir_21, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_211_txt_path);
+        verify(subdir_22, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_221_txt_path);
+        verify(subdir_2, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_21_xml_path);
+        verify(root_dir, timeout(200)).informCreatedOrInitial(dispatcher, pNewRootOrNull, testfile_txt_path);
         verifyNoMoreInteractions(subdir_111,
                 subdir_11, subdir_12, subdir_1,
                 subdir_211, subdir_21, subdir_22,
@@ -136,9 +141,8 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
      */
     @Test
     public void directoryCreated() throws IOException {
-        walker.directoryCreated(dispatcher, root_dir_path, doneCallback);
+        walker.directoryCreated(dispatcher, root_dir_path);
         verifyDirectoryWalk(null);
-        verify(doneCallback).run();
     }
 
     @Test
@@ -159,12 +163,11 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
                 dirs);
         final IOException expected = new IOException(ANY_MESSAGE);
         doThrow(expected).when(wrapper).register(subdir_11_path);
-        walker.directoryCreated(dispatcher, root_dir_path, doneCallback);
+        walker.directoryCreated(dispatcher, root_dir_path);
         verify(logger, timeout(200)).warn(eq(ANY_MESSAGE), argThat((Throwable th) -> {
             Throwable cause = th.getCause();
             return (cause instanceof UncheckedIOException) && expected == cause.getCause();
         }));
-        verify(doneCallback).run();
     }
 
     @Test
@@ -177,8 +180,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
                 dirs);
         final RuntimeException expected = new RuntimeException(ANY_MESSAGE);
         doThrow(expected).when(wrapper).register(subdir_11_path);
-        walker.directoryCreated(dispatcher, root_dir_path, doneCallback);
+        walker.directoryCreated(dispatcher, root_dir_path);
         verify(logger, timeout(200)).error(ANY_MESSAGE, expected);
-        verify(doneCallback).run();
     }
 }

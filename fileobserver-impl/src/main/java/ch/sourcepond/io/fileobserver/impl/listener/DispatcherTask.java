@@ -40,13 +40,11 @@ class DispatcherTask<T> implements Runnable {
     private final KeyDeliveryConsumer<T> beforeConsumer;
     private final KeyDeliveryConsumer<T> afterConsumer;
     private final T keyOrEvent;
-    private final Runnable doneHook;
 
     DispatcherTask(final ExecutorService pListenerExecutor,
                    final Collection<KeyDeliveryHook> pHooks,
                    final Collection<PathChangeListener> pListeners,
                    final T pKeyOrEvent,
-                   final Runnable pDoneHook,
                    final Consumer<PathChangeListener> pFireEventConsumer,
                    final KeyDeliveryConsumer<T> pBeforeConsumer,
                    final KeyDeliveryConsumer<T> pAfterConsumer) {
@@ -54,7 +52,6 @@ class DispatcherTask<T> implements Runnable {
         hooks = pHooks;
         listeners = pListeners;
         keyOrEvent = pKeyOrEvent;
-        doneHook = pDoneHook;
         fireEventConsumer = pFireEventConsumer;
         beforeConsumer = pBeforeConsumer;
         afterConsumer = pAfterConsumer;
@@ -87,14 +84,10 @@ class DispatcherTask<T> implements Runnable {
 
     @Override
     public void run() {
-        try {
-            informHooks(beforeConsumer);
-            final Collection<Future<?>> joins = new LinkedList<>();
-            listeners.forEach(observer -> submitObserverTask(observer, joins));
-            joins.forEach(this::join);
-            informHooks(afterConsumer);
-        } finally {
-            doneHook.run();
-        }
+        informHooks(beforeConsumer);
+        final Collection<Future<?>> joins = new LinkedList<>();
+        listeners.forEach(observer -> submitObserverTask(observer, joins));
+        joins.forEach(this::join);
+        informHooks(afterConsumer);
     }
 }

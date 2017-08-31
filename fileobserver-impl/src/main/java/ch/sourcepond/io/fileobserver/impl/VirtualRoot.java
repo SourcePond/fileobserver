@@ -21,12 +21,15 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
-import org.osgi.service.component.annotations.*;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 import org.slf4j.Logger;
 
@@ -64,13 +67,11 @@ public class VirtualRoot implements RelocationObserver {
     private final ListenerManager manager;
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
-    private final PathProcessingQueues pathProcessingQueues;
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
 
 
     // Constructor for BundleActivator
     public VirtualRoot() {
-        pathProcessingQueues = new PathProcessingQueues();
         manager = new ListenerManager();
         final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
@@ -80,11 +81,9 @@ public class VirtualRoot implements RelocationObserver {
 
     // Constructor for testing
     public VirtualRoot(final DedicatedFileSystemFactory pDedicatedFileSystemFactory,
-                       final ListenerManager pManager,
-                       final PathProcessingQueues pPathProcessingQueues) {
+                       final ListenerManager pManager) {
         dedicatedFileSystemFactory = pDedicatedFileSystemFactory;
         manager = pManager;
-        pathProcessingQueues = pPathProcessingQueues;
     }
 
     @Activate
@@ -93,7 +92,6 @@ public class VirtualRoot implements RelocationObserver {
         rootInitSwitch.init();
         observerInitSwitch.init();
         hooksInitSwitch.init();
-        pathProcessingQueues.start();
         LOG.info("Virtual-root activated");
     }
 
@@ -102,14 +100,12 @@ public class VirtualRoot implements RelocationObserver {
         children.values().forEach(DedicatedFileSystem::close);
         children.clear();
         dedicatedFileSystemFactory.shutdown();
-        pathProcessingQueues.stop();
         LOG.info("Virtual-root deactivated");
     }
 
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
-        pathProcessingQueues.setReCreateTimeout(pConfig.reCreateTimeoutMillis());
         manager.setConfig(pConfig);
     }
 
@@ -166,7 +162,7 @@ public class VirtualRoot implements RelocationObserver {
 
     private DedicatedFileSystem newDedicatedFileSystem(final FileSystem pFs) {
         try {
-            return dedicatedFileSystemFactory.openFileSystem(this, pFs, pathProcessingQueues);
+            return dedicatedFileSystemFactory.openFileSystem(this, pFs);
         } catch (final IOException e) {
             throw new UncheckedIOException(e.getMessage(), e);
         }

@@ -20,8 +20,6 @@ import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import java.nio.file.Path;
 import java.util.Collection;
 
-import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
-
 /**
  *
  */
@@ -63,7 +61,7 @@ class DefaultPathChangeEvent implements PathChangeEvent {
     @Override
     public void replay() {
         numReplays++;
-        replayDispatcher.replay(EMPTY_CALLBACK, listener, this, parentKeys);
+        replayDispatcher.replay(listener, this, parentKeys);
     }
 
     @Override

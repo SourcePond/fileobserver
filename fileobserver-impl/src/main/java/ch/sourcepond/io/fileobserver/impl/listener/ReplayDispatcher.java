@@ -25,8 +25,7 @@ import java.util.Collection;
 @FunctionalInterface
 interface ReplayDispatcher {
 
-    void replay(Runnable pDone,
-                PathChangeListener pListener,
+    void replay(PathChangeListener pListener,
                 PathChangeEvent pEvent,
                 Collection<DispatchKey> pParentKeys);
 }

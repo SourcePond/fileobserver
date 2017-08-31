@@ -29,7 +29,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
-import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.walkFileTree;
@@ -98,8 +97,8 @@ class DirectoryRegistrationWalker {
      *
      * @param pDirectory Newly created directory, must not be {@code null}
      */
-    void directoryCreated(final EventDispatcher pDispatcher, final Path pDirectory, final Runnable pDoneCallback) {
-        directoryCreated(pDispatcher,null, pDirectory, pDoneCallback);
+    void directoryCreated(final EventDispatcher pDispatcher, final Path pDirectory) {
+        directoryCreated(pDispatcher,null, pDirectory);
     }
 
     /**
@@ -110,7 +109,7 @@ class DirectoryRegistrationWalker {
      * @param pNewRoot Newly created directory, must not be {@code null}
      */
     void rootAdded(final EventDispatcher pDispatcher, final Directory pNewRoot) {
-        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath(), EMPTY_CALLBACK);
+        directoryCreated(pDispatcher, pNewRoot, pNewRoot.getPath());
     }
 
     /**
@@ -123,8 +122,7 @@ class DirectoryRegistrationWalker {
      */
     private void directoryCreated(final EventDispatcher pDispatcher,
                                   final Directory pNewRootOrNull,
-                                  final Path pDirectory,
-                                  final Runnable pDoneCallback) {
+                                  final Path pDirectory) {
         // Asynchronously register all sub-directories with the watch-service, and,
         // inform the registered PathChangeListener
         directoryWalkerExecutor.execute(() -> {
@@ -135,8 +133,6 @@ class DirectoryRegistrationWalker {
                 logger.warn(e.getMessage(), e);
             } catch (final RuntimeException e) {
                 logger.error(e.getMessage(), e);
-            } finally {
-                pDoneCallback.run();
             }
         });
     }
@@ -163,7 +159,7 @@ class DirectoryRegistrationWalker {
         @Override
         public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
             final Directory dir = dirs.get(file.getParent());
-            dir.informCreatedOrInitial(dispatcher, newRootOrNull, file, EMPTY_CALLBACK);
+            dir.informCreatedOrInitial(dispatcher, newRootOrNull, file);
             return CONTINUE;
         }
 

@@ -24,9 +24,17 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
-import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static java.lang.Thread.sleep;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.notNull;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -75,8 +83,8 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
 
     @Test
     public void forceInformModifiedAfterRebase() throws Exception {
-        existing_root_11.informIfChanged(dispatcher, new_root, testfile_111_txt_path, EMPTY_CALLBACK, false);
-        existing_root_12.informIfChanged(dispatcher, new_root, testfile_121_txt_path, EMPTY_CALLBACK, false);
+        existing_root_11.informIfChanged(dispatcher, new_root, testfile_111_txt_path, false);
+        existing_root_12.informIfChanged(dispatcher, new_root, testfile_121_txt_path, false);
         verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
         verify(listener, timeout(500)).modified(toEvent(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path));
         verify(listener, timeout(500)).modified(toEvent(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path));
@@ -94,8 +102,8 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
         existing_root_12.removeWatchedDirectory(dispatcher, watchedSubDir2);
         verify(listener, timeout(500)).discard(toKey(SUB_DIR_KEY1, subdir_11_path, subdir_11_path));
         verify(listener, timeout(500)).discard(toKey(SUB_DIR_KEY2, subdir_12_path, subdir_12_path));
-        existing_root_11.informIfChanged(dispatcher, new_root, testfile_111_txt_path, EMPTY_CALLBACK, false);
-        existing_root_12.informIfChanged(dispatcher, new_root, testfile_121_txt_path, EMPTY_CALLBACK, false);
+        existing_root_11.informIfChanged(dispatcher, new_root, testfile_111_txt_path, false);
+        existing_root_12.informIfChanged(dispatcher, new_root, testfile_121_txt_path, false);
         final InOrder order = inOrder(listener);
         order.verify(listener, timeout(500)).modified(toEvent(ROOT_DIR_KEY, root_dir_path, testfile_111_txt_path));
         order.verify(listener, timeout(500)).modified(toEvent(ROOT_DIR_KEY, root_dir_path, testfile_121_txt_path));

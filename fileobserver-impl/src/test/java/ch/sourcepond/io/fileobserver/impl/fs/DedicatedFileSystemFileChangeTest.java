@@ -37,9 +37,17 @@ import static java.nio.file.Files.delete;
 import static java.nio.file.Files.newBufferedWriter;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.util.UUID.randomUUID;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -47,7 +55,6 @@ import static org.mockito.Mockito.*;
 public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private static final String DIRECTORY_KEY = "getDirectoryKey";
     private static final String NEW_FILE_NAME = "newfile.txt";
-    private final PathProcessingQueues pathProcessingQueues = new PathProcessingQueues();
     private final WatchedDirectory watchedDirectory = mock(WatchedDirectory.class);
     private final RootDirectory directory = mock(RootDirectory.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -69,19 +76,17 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         wrapper = new WatchServiceWrapper(root_dir_path.getFileSystem());
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        child = new DedicatedFileSystem(pathProcessingQueues, directoryFactory, wrapper, rebase, manager,
+        child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager,
                 pathChangeHandler, new ConcurrentHashMap<>());
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
-        pathProcessingQueues.start();
         child.start();
     }
 
     @After
     public void tearDown() throws IOException {
         child.close();
-        pathProcessingQueues.stop();
     }
 
     private void writeContent(final Path pPath) throws Exception {
@@ -96,18 +101,18 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     // TODO: Use pNew parameter and check test on Linux and macOS
     private void changeContent(final Path pPath, final VerificationMode pVerification) throws Exception {
         writeContent(pPath);
-        verify(pathChangeHandler, new Timeout(15000, pVerification)).pathModified(same(dispatcher), eq(pPath), notNull(), anyBoolean());
+        verify(pathChangeHandler, new Timeout(15000, pVerification)).pathModified(same(dispatcher), eq(pPath), anyBoolean());
         reset(pathChangeHandler);
     }
 
     @Test
     public void verifyThreadNotKillWhenRuntimeExceptionOccurs() throws Exception {
-        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), eq(file), notNull(), anyBoolean());
+        doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), eq(file), anyBoolean());
         writeContent(file);
         if ("Linux".equals(getProperty("os.name"))) {
-            verify(pathChangeHandler, new Timeout(15000, times(2))).pathModified(same(dispatcher), eq(file), notNull(), anyBoolean());
+            verify(pathChangeHandler, new Timeout(15000, times(2))).pathModified(same(dispatcher), eq(file), anyBoolean());
         } else {
-            verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(file), notNull(), anyBoolean());
+            verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(file), anyBoolean());
         }
         assertNull(threadKiller);
     }
@@ -130,6 +135,6 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     public void entryDelete() throws Exception {
         entryCreate();
         delete(file);
-        verify(pathChangeHandler, timeout(1500000)).pathDiscarded(same(dispatcher), eq(file), notNull());
+        verify(pathChangeHandler, timeout(1500000)).pathDiscarded(same(dispatcher), eq(file));
     }
 }

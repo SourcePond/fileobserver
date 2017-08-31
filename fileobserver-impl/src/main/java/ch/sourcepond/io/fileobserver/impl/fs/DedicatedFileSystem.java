@@ -32,7 +32,10 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
-import static java.nio.file.StandardWatchEventKinds.*;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -40,8 +43,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DedicatedFileSystem implements Closeable, Runnable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
-    public static final Runnable EMPTY_CALLBACK = () -> {};
-    private final PathProcessingQueues pathProcessingQueues;
     private final ConcurrentMap<Path, Directory> dirs;
     private final Thread thread;
     private final DirectoryFactory directoryFactory;
@@ -50,14 +51,12 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     private final ListenerManager manager;
     private final PathChangeHandler pathChangeHandler;
 
-    DedicatedFileSystem(final PathProcessingQueues pPathProcessingQueues,
-                        final DirectoryFactory pDirectoryFactory,
+    DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final ListenerManager pManager,
                         final PathChangeHandler pPathChangeHandler,
                         final ConcurrentMap<Path, Directory> pDirs) {
-        pathProcessingQueues = pPathProcessingQueues;
         pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
@@ -71,7 +70,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      * <p>Iterates through all registered directories and passes all their files to the
      * {@link ch.sourcepond.io.fileobserver.api.PathChangeListener#modified(PathChangeEvent)} of the observer specified. This is necessary for newly registered
      * observers who need to know about all watched files. See {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and
-     * {@link PathChangeHandler#pathModified(EventDispatcher, Path, Runnable, boolean)} to get an idea how directories are registered with this object.
+     * {@link PathChangeHandler#pathModified(EventDispatcher, Path, boolean)} to get an idea how directories are registered with this object.
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      */
@@ -207,16 +206,15 @@ public class DedicatedFileSystem implements Closeable, Runnable {
     }
 
     private synchronized void processPath(final WatchEvent.Kind<?> pKind,
-                             final Path child,
-                             final Runnable pDoneCallback) {
+                             final Path child) {
         LOG.debug("Received event of kind {} for path {}", pKind, child);
         try {
             if (ENTRY_CREATE == pKind) {
-                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, pDoneCallback, true);
+                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, true);
             } else if (ENTRY_MODIFY == pKind) {
-                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, pDoneCallback, false);
+                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, false);
             } else if (ENTRY_DELETE == pKind) {
-                pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child, pDoneCallback);
+                pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);
             }
         } catch (final RuntimeException e) {
             LOG.error(e.getMessage(), e);
@@ -239,7 +237,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                 continue;
             }
 
-            pathProcessingQueues.enqueue(directory, event, this::processPath);
+            processPath(kind, directory.resolve((Path) event.context()));
         }
 
         // The case when the WatchKey has been cancelled is

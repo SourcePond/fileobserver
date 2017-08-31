@@ -27,13 +27,14 @@ import java.nio.file.WatchService;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.concurrent.ExecutorService;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  *
  */
 public class DedicatedFileSystemFactoryTest {
-    private final PathProcessingQueues pathProcessingQueues = mock(PathProcessingQueues.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final Config config = mock(Config.class);
@@ -85,7 +86,7 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void newFs() throws IOException {
-        final DedicatedFileSystem dfs = factory.openFileSystem(virtualRoot, fs, pathProcessingQueues);
+        final DedicatedFileSystem dfs = factory.openFileSystem(virtualRoot, fs);
         dfs.close();
         verify(watchService).close();
     }

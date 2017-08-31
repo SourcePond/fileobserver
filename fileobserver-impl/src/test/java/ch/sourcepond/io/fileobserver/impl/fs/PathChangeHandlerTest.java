@@ -28,7 +28,6 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.inOrder;
@@ -44,7 +43,6 @@ public class PathChangeHandlerTest {
     private final DedicatedFileSystem dfs = mock(DedicatedFileSystem.class);
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
-    private final Runnable doneCallback = mock(Runnable.class);
     private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final FileSystem fs = mock(FileSystem.class);
     private final FileSystemProvider provider = mock(FileSystemProvider.class);
@@ -80,42 +78,42 @@ public class PathChangeHandlerTest {
     @Test
     public void directoryModified() {
         when(attrs.isDirectory()).thenReturn(true);
-        handler.pathModified(dispatcher, path, doneCallback, false);
+        handler.pathModified(dispatcher, path, false);
         verifyZeroInteractions(walker);
     }
 
     @Test
     public void directoryModifiedNewlyCreated() {
         when(attrs.isDirectory()).thenReturn(true);
-        handler.pathModified(dispatcher, path, doneCallback, true);
-        verify(walker).directoryCreated(dispatcher, path, doneCallback);
+        handler.pathModified(dispatcher, path, true);
+        verify(walker).directoryCreated(dispatcher, path);
     }
 
     @Test
     public void fileModifed() {
         dirs.put(parent, directory);
         when(attrs.isRegularFile()).thenReturn(true);
-        handler.pathModified(dispatcher, path, doneCallback, false);
-        verify(directory).informIfChanged(dispatcher, path, doneCallback, false);
+        handler.pathModified(dispatcher, path, false);
+        verify(directory).informIfChanged(dispatcher, path, false);
     }
 
     @Test(expected = NullPointerException.class)
     public void fileModifedNoParentRegistered() {
         when(attrs.isRegularFile()).thenReturn(true);
-        handler.pathModified(dispatcher, path, doneCallback, false);
+        handler.pathModified(dispatcher, path, false);
     }
 
     @Test
     public void fileDiscarded() {
         dirs.put(parent, directory);
-        handler.pathDiscarded(dispatcher, path, doneCallback);
-        verify(directory).informDiscard(dispatcher, path, doneCallback);
+        handler.pathDiscarded(dispatcher, path);
+        verify(directory).informDiscard(dispatcher, path);
     }
 
     @Test
     public void fileDiscardedNoParentRegistered() {
         // Should not cause an exception
-        handler.pathDiscarded(dispatcher, path, doneCallback);
+        handler.pathDiscarded(dispatcher, path);
     }
 
     @Test
@@ -128,7 +126,7 @@ public class PathChangeHandlerTest {
         dirs.put(path, subDirectory);
         when(path.startsWith(parent)).thenReturn(true);
 
-        handler.pathDiscarded(dispatcher, parent, doneCallback);
+        handler.pathDiscarded(dispatcher, parent);
 
         final InOrder order = inOrder(directory, subDirectory);
         order.verify(directory).cancelKeyAndDiscardResources(dispatcher);

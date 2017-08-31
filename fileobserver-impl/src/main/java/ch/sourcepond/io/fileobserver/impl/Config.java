@@ -28,14 +28,4 @@ public @interface Config {
             description = "Duration to wait until a file is considered to be completely written"
     )
     long writeDeadlineMillis() default 2000L;
-
-    @AttributeDefinition(
-            min = "0",
-            name = "Re-creation timeout",
-            description = "Duration to wait after a delete-event has been received before the" +
-                    " the observers are actually informed about the discard. If during the timeout " +
-                    "a create- or modify-event is being received, the pending delete-event will " +
-                    "silently be dropped."
-    )
-    long reCreateTimeoutMillis() default 500L;
 }

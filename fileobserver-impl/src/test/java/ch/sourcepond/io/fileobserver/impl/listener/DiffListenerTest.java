@@ -16,15 +16,14 @@ package ch.sourcepond.io.fileobserver.impl.listener;
 import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.checksum.api.Update;
 import ch.sourcepond.io.checksum.api.UpdateObserver;
-import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
+import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
-import ch.sourcepond.io.fileobserver.impl.fs.PathProcessingQueues;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -44,7 +43,18 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -73,7 +83,6 @@ public class DiffListenerTest extends CopyResourcesTest {
     private final Resource resource = mock(Resource.class);
     private final ReplayDispatcher replayDispatcher = mock(ReplayDispatcher.class);
     private final Update update = mock(Update.class);
-    private final PathProcessingQueues pathProcessingQueues = mock(PathProcessingQueues.class);
     private final ListenerManager manager = new ListenerManager();
     private DiffListener diff;
 

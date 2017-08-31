@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
-import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.util.Collections.emptyList;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -61,7 +60,7 @@ public abstract class Directory {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
             stream.forEach(p ->
                     createKeys(p).forEach(k ->
-                            pDispatcher.modified(EMPTY_CALLBACK, k, p, emptyList())));
+                            pDispatcher.modified(k, p, emptyList())));
         } catch (final IOException e) {
             LOG.warn("Exception occurred while trying to inform single listeners!", e);
         }
@@ -178,7 +177,7 @@ public abstract class Directory {
         // Now, the key can be safely removed
         if (remove(pWatchedDirectory) && pDispatcher.hasListeners()) {
             final DispatchKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
-            pDispatcher.discard(EMPTY_CALLBACK, key);
+            pDispatcher.discard(key);
         }
     }
 
@@ -203,7 +202,7 @@ public abstract class Directory {
             getWatchKey().cancel();
         } finally {
             resources.keySet().removeIf(p -> {
-                informDiscard(pDispatcher, p, EMPTY_CALLBACK);
+                informDiscard(pDispatcher, p);
                 return true;
             });
         }
@@ -235,13 +234,13 @@ public abstract class Directory {
      *
      * @param pFile Discarded file, must be {@code null}
      */
-    public void informDiscard(final EventDispatcher pDispatcher, final Path pFile, final Runnable pDoneCallback) {
+    public void informDiscard(final EventDispatcher pDispatcher, final Path pFile) {
         // Remove the checksum resource to save memory
         resources.remove(pFile);
 
         if (pDispatcher.hasListeners()) {
             final Collection<DispatchKey> keys = createKeys(pFile);
-            keys.forEach(k -> pDispatcher.discard(pDoneCallback, k));
+            keys.forEach(k -> pDispatcher.discard(k));
         }
     }
 
@@ -259,28 +258,28 @@ public abstract class Directory {
         return resources.computeIfAbsent(pFile, f -> getFactory().newResource(SHA256, f));
     }
 
-    private void inform(final EventDispatcher pDispatcher, final Directory pNewRootOrNull,
-                        final Path pFile, final Runnable pDoneCallback) {
+    private void inform(final EventDispatcher pDispatcher,
+                        final Directory pNewRootOrNull,
+                        final Path pFile) {
         // If the modification is requested because a new root-directory has been registered, we
         // need to inform the listeners about supplement keys.
         final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?
                 emptyList() : pNewRootOrNull.createKeys(pFile);
 
         final Collection<DispatchKey> keys = createKeys(pFile);
-        keys.forEach(k -> pDispatcher.modified(pDoneCallback, k, pFile, supplementKeys));
+        keys.forEach(k -> pDispatcher.modified(k, pFile, supplementKeys));
     }
 
     public void informCreatedOrInitial(final EventDispatcher pDispatcher,
                                        final Directory pNewRootOrNull,
-                                       final Path pFile,
-                                       final Runnable pDoneCallback) {
+                                       final Path pFile) {
         // Important: We need to initialize the resource (and its initial checksum) here.
         // If not, we won't be able to receive further modification events.
         getResource(pFile);
         LOG.debug("Initialized checksum resource for {}", pFile);
 
         // Now, inform observers
-        inform(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);
+        inform(pDispatcher, pNewRootOrNull, pFile);
     }
 
     /**
@@ -293,19 +292,17 @@ public abstract class Directory {
     public void informIfChanged(final EventDispatcher pDispatcher,
                                 final Directory pNewRootOrNull,
                                 final Path pFile,
-                                final Runnable pDoneCallback,
                                 final boolean pIsCreated) {
         if (pDispatcher.hasListeners()) {
             if (pIsCreated) {
-                informCreatedOrInitial(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);
+                informCreatedOrInitial(pDispatcher, pNewRootOrNull, pFile);
             } else {
                 getResource(pFile).update(getTimeout(),
                         update -> {
                             if (update.hasChanged()) {
                                 LOG.debug("Processing {} because {} has been changed", update, pFile);
-                                inform(pDispatcher, pNewRootOrNull, pFile, pDoneCallback);
+                                inform(pDispatcher, pNewRootOrNull, pFile);
                             } else {
-                                pDoneCallback.run();
                                 LOG.debug("Ignored {} because {} has not been changed", update, pFile);
                             }
                         });
@@ -322,9 +319,8 @@ public abstract class Directory {
      */
     public void informIfChanged(final EventDispatcher pDispatcher,
                                 final Path pFile,
-                                final Runnable pDoneCallback,
                                 final boolean pIsCreated) {
-        informIfChanged(pDispatcher, null, pFile, pDoneCallback, pIsCreated);
+        informIfChanged(pDispatcher, null, pFile, pIsCreated);
     }
 
     public abstract Directory rebase(Directory pBaseDirectory);

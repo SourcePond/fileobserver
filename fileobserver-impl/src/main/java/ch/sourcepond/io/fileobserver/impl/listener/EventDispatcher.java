@@ -43,11 +43,11 @@ public class EventDispatcher {
         return !listeners.isEmpty();
     }
 
-    public void modified(final Runnable pDone, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
-        dispatcher.modified(pDone, listeners, pKey, pFile, pParentKeys);
+    public void modified(final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
+        dispatcher.modified(listeners, pKey, pFile, pParentKeys);
     }
 
-    public void discard(final Runnable pDone, final DispatchKey pKey) {
-        dispatcher.discard(pDone, listeners, pKey);
+    public void discard(final DispatchKey pKey) {
+        dispatcher.discard(listeners, pKey);
     }
 }

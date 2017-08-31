@@ -22,7 +22,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
@@ -38,7 +39,6 @@ public class EventDispatcherTest {
     private final DispatchKey key = mock(DispatchKey.class);
     private final Collection<DispatchKey> keys = asList(key);
     private final Collection<DispatchKey> parentKeys = mock(Collection.class);
-    private final Runnable doneCallback = mock(Runnable.class);
     private final Path file = mock(Path.class);
     private EventDispatcher dispatcher = new EventDispatcher(manager, observers);
 
@@ -51,20 +51,20 @@ public class EventDispatcherTest {
 
     @Test
     public void singleKeyModified() {
-        dispatcher.modified(doneCallback, key, file, parentKeys);
-        verify(manager).modified(doneCallback, observers, key, file, parentKeys);
+        dispatcher.modified(key, file, parentKeys);
+        verify(manager).modified(observers, key, file, parentKeys);
     }
 
     @Test
     public void discard() {
-        dispatcher.discard(doneCallback, key);
-        verify(manager).discard(doneCallback, observers, key);
+        dispatcher.discard(key);
+        verify(manager).discard(observers, key);
     }
 
     @Test
     public void verifySingleObserverConstructor() {
         dispatcher = new EventDispatcher(manager, observer);
-        dispatcher.discard(doneCallback, key);
-        verify(manager).discard(same(doneCallback), argThat(inv -> inv.size() == 1 && inv.contains(observer)), same(key));
+        dispatcher.discard(key);
+        verify(manager).discard(argThat(inv -> inv.size() == 1 && inv.contains(observer)), same(key));
     }
 }

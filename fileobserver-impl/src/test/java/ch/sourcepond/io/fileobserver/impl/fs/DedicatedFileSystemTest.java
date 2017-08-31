@@ -29,10 +29,19 @@ import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.notNull;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -56,7 +65,6 @@ public class DedicatedFileSystemTest {
     private final Path rootDirPath2 = mock(Path.class);
     private final WatchKey rootWatchKey1 = mock(WatchKey.class);
     private final WatchServiceWrapper wrapper = mock(WatchServiceWrapper.class);
-    private final PathProcessingQueues pathProcessingQueues = mock(PathProcessingQueues.class);
     private DedicatedFileSystem fs;
 
     @Before
@@ -85,8 +93,7 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(pathProcessingQueues,
-                directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs);
+        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs);
     }
 
     @Test

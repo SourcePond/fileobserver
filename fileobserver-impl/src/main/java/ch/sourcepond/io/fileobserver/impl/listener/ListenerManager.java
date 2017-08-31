@@ -30,7 +30,11 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
@@ -153,7 +157,6 @@ public class ListenerManager implements ReplayDispatcher {
 
     private <T> void submitTask(final Collection<PathChangeListener> pListeners,
                                 final T pKeyOrEvent,
-                                final Runnable pDoneHook,
                                 final Consumer<PathChangeListener> pFireEventConsumer,
                                 final KeyDeliveryConsumer<T> pBeforeConsumer,
                                 final KeyDeliveryConsumer<T> pAfterConsumer) {
@@ -162,7 +165,6 @@ public class ListenerManager implements ReplayDispatcher {
                 hooks,
                 pListeners,
                 pKeyOrEvent,
-                pDoneHook,
                 pFireEventConsumer,
                 pBeforeConsumer,
                 pAfterConsumer
@@ -171,7 +173,6 @@ public class ListenerManager implements ReplayDispatcher {
 
     private void submitDispatchTask(final Collection<PathChangeListener> pListeners,
                                     final DispatchKey pKey,
-                                    final Runnable pDoneHook,
                                     final Consumer<PathChangeListener> pFireEventConsumer,
                                     final KeyDeliveryConsumer<DispatchKey> pBeforeConsumer,
                                     final KeyDeliveryConsumer<DispatchKey> pAfterConsumer) {
@@ -180,7 +181,6 @@ public class ListenerManager implements ReplayDispatcher {
         if (!acceptingListeners.isEmpty()) {
             submitTask(acceptingListeners,
                     pKey,
-                    pDoneHook,
                     pFireEventConsumer,
                     pBeforeConsumer,
                     pAfterConsumer
@@ -189,35 +189,31 @@ public class ListenerManager implements ReplayDispatcher {
     }
 
     @Override
-    public void replay(final Runnable pDone,
-                       final PathChangeListener pListener,
+    public void replay(final PathChangeListener pListener,
                        final PathChangeEvent pEvent,
                        final Collection<DispatchKey> pParentKeys) {
         submitTask(asList(pListener),
                 pEvent,
-                pDone,
                 observer -> fireModification(pListener, pEvent, pParentKeys),
                 (hook, event) -> hook.beforeModify(event.getKey(), event.getFile()),
                 (hook, event) -> hook.afterModify(event.getKey(), event.getFile())
         );
     }
 
-    void modified(final Runnable pDone, final Collection<PathChangeListener> pListeners, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
+    void modified(final Collection<PathChangeListener> pListeners, final DispatchKey pKey, final Path pFile, final Collection<DispatchKey> pParentKeys) {
         submitDispatchTask(
                 pListeners,
                 pKey,
-                pDone,
                 observer -> fireModification(observer, pKey, pFile, pParentKeys),
                 (hook, key) -> hook.beforeModify(key, pFile),
                 (hook, key) -> hook.afterModify(key, pFile)
         );
     }
 
-    void discard(final Runnable pDone, final Collection<PathChangeListener> pListeners, final DispatchKey pKey) {
+    void discard(final Collection<PathChangeListener> pListeners, final DispatchKey pKey) {
         submitDispatchTask(
                 pListeners,
                 pKey,
-                pDone,
                 observer -> observer.discard(pKey),
                 (hook, key) -> hook.beforeDiscard(key),
                 (hook, key) -> hook.afterDiscard(key)
