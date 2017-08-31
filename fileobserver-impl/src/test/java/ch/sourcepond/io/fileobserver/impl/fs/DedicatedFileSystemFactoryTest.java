@@ -41,7 +41,6 @@ public class DedicatedFileSystemFactoryTest {
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final WatchService watchService = mock(WatchService.class);
     private final ExecutorService dispatchExecutor = mock(ExecutorService.class);
-    private final ExecutorService listenerExecutor = mock(ExecutorService.class);
     private final ExecutorService directoryWalkerExecutor = mock(ExecutorService.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final ListenerManager dispatcher = mock(ListenerManager.class);
@@ -55,7 +54,7 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void shutdown() {
-        factory.setExecutors(directoryWalkerExecutor, listenerExecutor, dispatchExecutor);
+        factory.setExecutors(directoryWalkerExecutor, dispatchExecutor);
         factory.shutdown();
         verify(directoryFactory).shutdown();
         verify(dispatchExecutor).shutdown();
@@ -69,8 +68,8 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void setExecutors() {
-        factory.setExecutors(directoryWalkerExecutor, listenerExecutor, dispatchExecutor);
-        verify(directoryFactory).setExecutors(directoryWalkerExecutor, listenerExecutor);
+        factory.setExecutors(directoryWalkerExecutor, dispatchExecutor);
+        verify(directoryFactory).setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
     @Test

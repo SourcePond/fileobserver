@@ -133,12 +133,12 @@ public class VirtualRoot implements RelocationObserver {
                 setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
                 build(Executors::newCachedThreadPool);
-        dedicatedFileSystemFactory.setExecutors(directoryWalkerExecutor, listenerExecutor, dispatcherExecutor);
+        dedicatedFileSystemFactory.setExecutors(directoryWalkerExecutor, dispatcherExecutor);
     }
 
     private void doAddListener(final PathChangeListener pListener) {
-        final EventDispatcher session = manager.addListener(pListener);
-        children.values().forEach(dfs -> dfs.forceInform(session));
+        final EventDispatcher dispatcher = manager.addListener(pListener);
+        children.values().forEach(dfs -> dfs.forceInform(dispatcher));
     }
 
     /**

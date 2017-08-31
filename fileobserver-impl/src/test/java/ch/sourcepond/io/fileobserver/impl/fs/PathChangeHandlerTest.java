@@ -28,8 +28,14 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem.EMPTY_CALLBACK;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -125,9 +131,8 @@ public class PathChangeHandlerTest {
         handler.pathDiscarded(dispatcher, parent, doneCallback);
 
         final InOrder order = inOrder(directory, subDirectory);
-        order.verify(directory).cancelKey();
-        order.verify(subDirectory).cancelKey();
-        order.verify(directory).informDiscard(dispatcher, parent, doneCallback);
+        order.verify(directory).cancelKeyAndDiscardResources(dispatcher);
+        order.verify(subDirectory).cancelKeyAndDiscardResources(dispatcher);
 
         assertFalse(dirs.containsKey(parent));
         assertFalse(dirs.containsKey(path));

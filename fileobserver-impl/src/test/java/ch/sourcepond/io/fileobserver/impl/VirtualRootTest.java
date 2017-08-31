@@ -133,7 +133,7 @@ public class VirtualRootTest {
         });
         virtualRoot.initExecutors(ssbFactory);
         verify(manager).setExecutors(dispatcherExecutor, listenerExecutor);
-        verify(dedicatedFsFactory).setExecutors(directoryWalkerExecutor, listenerExecutor, dispatcherExecutor);
+        verify(dedicatedFsFactory).setExecutors(directoryWalkerExecutor, dispatcherExecutor);
     }
 
     @Test

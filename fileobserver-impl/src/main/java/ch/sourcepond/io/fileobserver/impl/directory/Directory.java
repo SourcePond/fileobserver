@@ -195,6 +195,21 @@ public abstract class Directory {
     }
 
     /**
+     * Cancels the {@link WatchKey} held by this directory object (see {@link WatchKey#cancel()}).
+     * After this, checksum resources are cleared and no more events for this directory can be retrieved.
+     */
+    public void cancelKeyAndDiscardResources(final EventDispatcher pDispatcher) {
+        try {
+            getWatchKey().cancel();
+        } finally {
+            resources.keySet().removeIf(p -> {
+                informDiscard(pDispatcher, p, EMPTY_CALLBACK);
+                return true;
+            });
+        }
+    }
+
+    /**
      * Iterates over the files contained by this directory and creates tasks which will be executed
      * sometime in the future. Such a task will inform the listener specified through its
      * {@link PathChangeListener#modified(PathChangeEvent)} method. Note: only direct children will be
@@ -245,7 +260,7 @@ public abstract class Directory {
     }
 
     private void inform(final EventDispatcher pDispatcher, final Directory pNewRootOrNull,
-                       final Path pFile, final Runnable pDoneCallback) {
+                        final Path pFile, final Runnable pDoneCallback) {
         // If the modification is requested because a new root-directory has been registered, we
         // need to inform the listeners about supplement keys.
         final Collection<DispatchKey> supplementKeys = pNewRootOrNull == null ?

@@ -28,20 +28,16 @@ import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.options.MavenUrlReference;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
-import org.ops4j.pax.exam.spi.reactors.PerMethod;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
 import javax.inject.Inject;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
 
-import static ch.sourcepond.io.fileobserver.DirectorySetup.*;
 import static ch.sourcepond.io.fileobserver.RecursiveDeletion.deleteDirectory;
 import static ch.sourcepond.io.fileobserver.spi.WatchedDirectory.create;
 import static ch.sourcepond.testing.OptionsHelper.karafContainer;
@@ -52,7 +48,6 @@ import static java.lang.Thread.sleep;
 import static java.nio.file.Files.delete;
 import static java.nio.file.Files.newBufferedWriter;
 import static java.nio.file.Files.newOutputStream;
-import static java.util.UUID.randomUUID;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 import static org.ops4j.pax.exam.CoreOptions.maven;
@@ -147,38 +142,32 @@ public class PathChangeListenerTest extends DirectorySetup {
 
     @Before
     public void setup() throws Exception {
-        setupDirectories();
-        doCallRealMethod().when(listener).restrict(notNull(), same(R.getFileSystem()));
-        doCallRealMethod().when(secondListener).restrict(notNull(), same(R.getFileSystem()));
+        doCallRealMethod().when(listener).restrict(notNull(), same(root.getFileSystem()));
+        doCallRealMethod().when(secondListener).restrict(notNull(), same(root.getFileSystem()));
 
-        // Step 1: make fileobserver bundle watching R by
+        // Step 1: make fileobserver bundle watching root by
         // registering an appropriate service.
-        final InitialCheckusmCalculationBarrier wait = new InitialCheckusmCalculationBarrier();
-        listenerRegistration = registerService(PathChangeListener.class, wait);
-        watchedDirectory = create(ROOT, R);
+        watchedDirectory = create(ROOT, root);
         watchedDirectory.addBlacklistPattern("glob:" + ZIP_NAME);
 
         watchedDirectoryRegistration = registerService(WatchedDirectory.class, watchedDirectory);
-        wait.waitUntilChecksumsCalculated();
-        listenerRegistration.unregister();
 
         // Step 2: register PathChangeListener
         listenerRegistration = registerService(PathChangeListener.class, listener);
-        verifyForceInform(listener);
-        reset(listener);
 
         // Step 3: register key-hook
         hookRegistration = registerService(KeyDeliveryHook.class, hook);
+        reset(listener, hook);
     }
 
     private void verifyForceInform(final PathChangeListener pListener) throws Exception {
-        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(E11)));
-        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
-        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(E2)));
-        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(H11)));
-        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
-        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(H2)));
-        verify(pListener, timeout(15000)).modified(event(ROOT, R.relativize(C)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_networkConf)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_dhcpConf)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_manConf)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_home_jeff_documentTxt)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_home_jeff_letterXml)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_home_indexIdx)));
+        verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_configProperties)));
     }
 
     private void unregisterService(final ServiceRegistration<?> pRegistration) throws Exception {
@@ -186,7 +175,7 @@ public class PathChangeListenerTest extends DirectorySetup {
             try {
                 pRegistration.unregister();
             } catch (final IllegalStateException e) {
-                e.printStackTrace();
+                // Ignore
             }
             sleep(1000);
         }
@@ -198,7 +187,6 @@ public class PathChangeListenerTest extends DirectorySetup {
         unregisterService(listenerRegistration);
         unregisterService(secondListenerRegistration);
         unregisterService(hookRegistration);
-        deleteDirectories();
     }
 
     @Test
@@ -215,13 +203,13 @@ public class PathChangeListenerTest extends DirectorySetup {
     public void insureNoInteractionWithUnregisteredFileListener() throws Exception {
         listenerRegistration.unregister();
 
-        delete(E11);
-        delete(E12);
-        delete(E2);
-        delete(H11);
-        delete(H12);
-        delete(H2);
-        delete(C);
+        delete(root_etc_network_networkConf);
+        delete(root_etc_network_dhcpConf);
+        delete(root_etc_manConf);
+        delete(root_home_jeff_documentTxt);
+        delete(root_home_jeff_letterXml);
+        delete(root_home_indexIdx);
+        delete(root_configProperties);
 
         sleep(6000);
         verifyNoMoreInteractions(listener);
@@ -234,18 +222,18 @@ public class PathChangeListenerTest extends DirectorySetup {
     public void unregisterAndRegisterAdditionalWatchedDirectory() throws Exception {
         // Insure listener gets informed about unregistration
         watchedDirectoryRegistration.unregister();
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(R)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root)));
 
         // Now, listener should be informed about newly registered root
         watchedDirectoryRegistration = registerService(WatchedDirectory.class, watchedDirectory);
 
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E11)));
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E2)));
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(H11)));
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(H2)));
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(C)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_networkConf)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_dhcpConf)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_manConf)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_home_jeff_documentTxt)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_home_jeff_letterXml)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_home_indexIdx)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_configProperties)));
         verifyNoMoreInteractions(listener);
     }
 
@@ -254,20 +242,20 @@ public class PathChangeListenerTest extends DirectorySetup {
      */
     @Test
     public void listenerShouldBeInformedAboutFileDeletion() throws IOException {
-        delete(E11);
-        delete(E12);
-        delete(E2);
-        delete(H11);
-        delete(H12);
-        delete(H2);
-        delete(C);
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E2)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H2)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(C)));
+        delete(root_etc_network_networkConf);
+        delete(root_etc_network_dhcpConf);
+        delete(root_etc_manConf);
+        delete(root_home_jeff_documentTxt);
+        delete(root_home_jeff_letterXml);
+        delete(root_home_indexIdx);
+        delete(root_configProperties);
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_network_networkConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_network_dhcpConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_manConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_jeff_documentTxt)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_jeff_letterXml)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_indexIdx)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_configProperties)));
         verifyNoMoreInteractions(listener);
     }
 
@@ -276,19 +264,14 @@ public class PathChangeListenerTest extends DirectorySetup {
      */
     @Test
     public void listenerShouldBeInformedAboutDirectoryDeletion() throws IOException {
-        deleteDirectory(E1);
-        deleteDirectory(H1);
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E1)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H1)));
-
-        // See PathChangeListener::discard for explanation; the following works not for MacOS X
-        if ("Linux".equals(getProperty("os.name"))) {
-            verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E11)));
-            verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E12)));
-            verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H11)));
-            verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H12)));
-        }
-
+        deleteWatchedResources();
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_network_networkConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_network_dhcpConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_manConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_indexIdx)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_jeff_documentTxt)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_jeff_letterXml)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_configProperties)));
         verifyNoMoreInteractions(listener);
     }
 
@@ -297,13 +280,13 @@ public class PathChangeListenerTest extends DirectorySetup {
      */
     @Test
     public void listenerShouldBeInformedAboutFileChange() throws Exception {
-        writeArbitraryContent(E12);
-        writeArbitraryContent(H12);
-        writeArbitraryContent(C);
+        writeArbitraryContent(root_etc_network_dhcpConf);
+        writeArbitraryContent(root_home_jeff_letterXml);
+        writeArbitraryContent(root_configProperties);
 
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(E12)));
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(H12)));
-        verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(C)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_dhcpConf)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_home_jeff_letterXml)));
+        verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_configProperties)));
         verifyNoMoreInteractions(listener);
     }
 
@@ -312,25 +295,22 @@ public class PathChangeListenerTest extends DirectorySetup {
      */
     @Test
     public void listenerShouldBeInformedAboutFileCreation() throws Exception {
-        final Path newFile = E1.resolve("newFile.txt");
+        final Path newFile = root_etc_network.resolve("newFile.txt");
         writeArbitraryContent(newFile);
 
         final InOrder order = inOrder(hook, listener);
-        order.verify(hook, timeout(15000)).beforeModify(key(ROOT, R.relativize(newFile)), eq(newFile));
-        order.verify(listener, timeout(15000)).modified(event(ROOT, R.relativize(newFile)));
-        order.verify(hook, timeout(15000)).afterModify(key(ROOT, R.relativize(newFile)), eq(newFile));
+        order.verify(hook, timeout(15000)).beforeModify(key(ROOT, root.relativize(newFile)), eq(newFile));
+        order.verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(newFile)));
+        order.verify(hook, timeout(15000)).afterModify(key(ROOT, root.relativize(newFile)), eq(newFile));
 
         verifyNoMoreInteractions(listener);
     }
 
     @Test
     public void listenerShouldBeInformedAboutFileCreationThroughUnzip() throws Exception {
-        deleteDirectories();
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(E)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(H)));
-        verify(listener, timeout(15000)).discard(key(ROOT, R.relativize(C)));
+        listenerShouldBeInformedAboutDirectoryDeletion();
 
-        reset(listener, secondListener, hook);
+        reset(listener);
         sleep(1000);
         createZip();
         unzip();

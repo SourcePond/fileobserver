@@ -60,9 +60,8 @@ public class DedicatedFileSystemFactory {
     }
 
     public void setExecutors(final ExecutorService pDirectoryWalkerExecutor,
-                             final ExecutorService pListenerExecutor,
                              final ExecutorService pDispatcherExecutor) {
-        directoryFactory.setExecutors(pDirectoryWalkerExecutor, pListenerExecutor);
+        directoryFactory.setDirectoryWalkerExecutor(pDirectoryWalkerExecutor);
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
         dispatcherExecutor = pDispatcherExecutor;
     }

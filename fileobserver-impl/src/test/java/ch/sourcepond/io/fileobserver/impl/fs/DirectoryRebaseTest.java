@@ -65,7 +65,7 @@ public class DirectoryRebaseTest extends CopyResourcesTest {
         when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);
         wrapper = new WatchServiceWrapper(getDefault());
         directoryFactory.setConfig(config);
-        directoryFactory.setExecutors(directoryWalkerExecutor, listenerExecutor);
+        directoryFactory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
         directoryFactory.setResourcesFactory(resourcesFactory);
         dir = directoryFactory.newRoot(wrapper.register(root_dir_path));
         dir_1 = directoryFactory.newRoot(wrapper.register(subdir_1_path));

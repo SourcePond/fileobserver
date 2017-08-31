@@ -71,7 +71,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
         manager.setExecutors(dispatcherExecutor, listenerExecutor);
         wrapper = new WatchServiceWrapper(getDefault());
         factory.setConfig(config);
-        factory.setExecutors(directoryWalkerExecutor, listenerExecutor);
+        factory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
         factory.setResourcesFactory(resourcesFactory);
     }
 

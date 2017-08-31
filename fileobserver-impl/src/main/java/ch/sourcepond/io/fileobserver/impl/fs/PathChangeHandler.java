@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
 import static java.nio.file.Files.isDirectory;
-import static java.nio.file.Files.isRegularFile;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -91,24 +90,27 @@ class PathChangeHandler {
         }
     }
 
+    private void directoryDiscarded(final EventDispatcher pDispatcher, final Path pPath, final Directory dir) {
+        dir.cancelKeyAndDiscardResources(pDispatcher);
+
+        for (final Iterator<Map.Entry<Path, Directory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
+            final Map.Entry<Path, Directory> entry = it.next();
+
+            final Path subPath = entry.getKey();
+            if (subPath.startsWith(pPath)) {
+                it.remove();
+                directoryDiscarded(pDispatcher, subPath, entry.getValue());
+            }
+        }
+    }
+
     private boolean directoryDiscarded(final EventDispatcher pDispatcher,
                                        final Path pDirectory,
                                        final Runnable pDoneCallback) {
         final Directory dir = dirs.remove(pDirectory);
         final boolean wasDirectory = dir != null;
         if (wasDirectory) {
-            dir.cancelKey();
-            for (final Iterator<Map.Entry<Path, Directory>> it = dirs.entrySet().iterator(); it.hasNext(); ) {
-                final Map.Entry<Path, Directory> entry = it.next();
-                final Path subDirKey = entry.getKey();
-                if (subDirKey.startsWith(pDirectory)) {
-                    final Directory subDir = entry.getValue();
-                    subDir.cancelKey();
-                    subDir.informDiscard(pDispatcher, subDirKey, pDoneCallback);
-                    it.remove();
-                }
-            }
-            dir.informDiscard(pDispatcher, pDirectory, pDoneCallback);
+            directoryDiscarded(pDispatcher, pDirectory, dir);
         }
         return wasDirectory;
     }

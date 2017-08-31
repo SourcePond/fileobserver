@@ -36,8 +36,6 @@ public class DirectoryFactory {
     private volatile ExecutorService directoryWalkerExecutor;
 
     // Injected by SCR
-    private volatile ExecutorService listenerExecutor;
-    // Injected by SCR
     private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
@@ -49,9 +47,8 @@ public class DirectoryFactory {
         config = pConfig;
     }
 
-    public void setExecutors(final ExecutorService pDirectoryWalkerExecutor, final ExecutorService pListenerExecutor) {
+    public void setDirectoryWalkerExecutor(final ExecutorService pDirectoryWalkerExecutor) {
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
-        listenerExecutor = pListenerExecutor;
     }
 
     public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
@@ -96,17 +93,6 @@ public class DirectoryFactory {
     /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
-     * Asynchronously executes the task specified using the observer executor service.
-     *
-     * @param pTask Task to be executed, must not be {@code null}
-     */
-    void executeObserverTask(final Runnable pTask) {
-        listenerExecutor.execute(pTask);
-    }
-
-    /**
-     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
-     * <p>
      * Asynchronously executes the task specified using the directory walker executor service.
      *
      * @param pTask Task to be executed, must not be {@code null}
@@ -121,6 +107,5 @@ public class DirectoryFactory {
 
     public void shutdown() {
         directoryWalkerExecutor.shutdown();
-        listenerExecutor.shutdown();
     }
 }

@@ -13,9 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver;
 
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.After;
+import org.junit.Before;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,62 +36,62 @@ import static org.junit.Assert.*;
 
 /**
  * <pre>
- *     + Root folder (R)
- *        + etc (E)
- *        |   + network (E1)
- *        |   |    + network.conf (E11)
- *        |   |    + dhcp.conf (E12)
- *        |   + man.conf (E2)
- *        + home (H)
- *        |   + jeff (H1)
- *        |   |   + document.txt (H11)
- *        |   |   + letter.xml (H12)
- *        |   + index.idx (H2)
- *        + config.properties (C)
+ *     + Root folder (root)
+ *        + etc (root_etc)
+ *        |   + network (root_etc_network)
+ *        |   |    + network.conf (root_etc_network_networkConf)
+ *        |   |    + dhcp.conf (root_etc_network_dhcpConf)
+ *        |   + man.conf (root_etc_manConf)
+ *        + home (root_home)
+ *        |   + jeff (root_home_jeff)
+ *        |   |   + document.txt (root_home_jeff_documentTxt)
+ *        |   |   + letter.xml (root_home_jeff_letterXml)
+ *        |   + index.idx (root_home_indexIdx)
+ *        + config.properties (root_configProperties)
  * </pre>
  */
-class DirectorySetup {
+public class DirectorySetup {
     static final String ZIP_NAME = "hotdeploy.zip";
     private static final Path SOURCE = getDefault().getPath(getProperty("user.dir"), "src", "test", "resources", "testdir");
-    public static final Path R = getDefault().getPath(getProperty("java.io.tmpdir"), DirectorySetup.class.getName(), UUID.randomUUID().toString());
-    public static final Path E = R.resolve("etc");
-    public static final Path E1 = E.resolve("network");
-    public static final Path E11 = E1.resolve("network.conf");
-    public static final Path E12 = E1.resolve("dhcp.conf");
-    public static final Path E2 = E.resolve("man.conf");
-    public static final Path H = R.resolve("home");
-    public static final Path H1 = H.resolve("jeff");
-    public static final Path H11 = H1.resolve("document.txt");
-    public static final Path H12 = H1.resolve("letter.xml");
-    public static final Path H2 = H.resolve("index.idx");
-    public static final Path C = R.resolve("config.properties");
-    private static final Path ZIP_FILE = R.resolve(ZIP_NAME);
+    public final Path root = getDefault().getPath(getProperty("java.io.tmpdir"), DirectorySetup.class.getName(), UUID.randomUUID().toString());
+    public final Path root_etc = root.resolve("etc");
+    public final Path root_etc_network = root_etc.resolve("network");
+    public final Path root_etc_network_networkConf = root_etc_network.resolve("network.conf");
+    public final Path root_etc_network_dhcpConf = root_etc_network.resolve("dhcp.conf");
+    public final Path root_etc_manConf = root_etc.resolve("man.conf");
+    public final Path root_home = root.resolve("home");
+    public final Path root_home_jeff = root_home.resolve("jeff");
+    public final Path root_home_jeff_documentTxt = root_home_jeff.resolve("document.txt");
+    public final Path root_home_jeff_letterXml = root_home_jeff.resolve("letter.xml");
+    public final Path root_home_indexIdx = root_home.resolve("index.idx");
+    public final Path root_configProperties = root.resolve("config.properties");
+    private final Path zipFile = root.resolve(ZIP_NAME);
 
     private void validate() {
-        assertTrue(R.toString(), isDirectory(R));
-        assertTrue(E.toString(), isDirectory(E));
-        assertTrue(E1.toString(), isDirectory(E1));
-        assertTrue(E11.toString(), isRegularFile(E11));
-        assertTrue(E12.toString(), isRegularFile(E12));
-        assertTrue(E2.toString(), isRegularFile(E2));
-        assertTrue(H.toString(), isDirectory(H));
-        assertTrue(H1.toString(), isDirectory(H1));
-        assertTrue(H11.toString(), isRegularFile(H11));
-        assertTrue(H12.toString(), isRegularFile(H12));
-        assertTrue(H2.toString(), isRegularFile(H2));
-        assertTrue(C.toString(), isRegularFile(C));
+        assertTrue(root.toString(), isDirectory(root));
+        assertTrue(root_etc.toString(), isDirectory(root_etc));
+        assertTrue(root_etc_network.toString(), isDirectory(root_etc_network));
+        assertTrue(root_etc_network_networkConf.toString(), isRegularFile(root_etc_network_networkConf));
+        assertTrue(root_etc_network_dhcpConf.toString(), isRegularFile(root_etc_network_dhcpConf));
+        assertTrue(root_etc_manConf.toString(), isRegularFile(root_etc_manConf));
+        assertTrue(root_home.toString(), isDirectory(root_home));
+        assertTrue(root_home_jeff.toString(), isDirectory(root_home_jeff));
+        assertTrue(root_home_jeff_documentTxt.toString(), isRegularFile(root_home_jeff_documentTxt));
+        assertTrue(root_home_jeff_letterXml.toString(), isRegularFile(root_home_jeff_letterXml));
+        assertTrue(root_home_indexIdx.toString(), isRegularFile(root_home_indexIdx));
+        assertTrue(root_configProperties.toString(), isRegularFile(root_configProperties));
     }
 
     private void unzipEntry(final ZipEntry pEntry, final InputStream pIn) throws IOException {
         if (!pEntry.isDirectory()) {
-            final Path target = R.resolve(pEntry.getName());
+            final Path target = root.resolve(pEntry.getName());
             createDirectories(target.getParent());
             copy(pIn, target);
         }
     }
 
     void unzip() throws IOException {
-        try (final ZipInputStream in = new ZipInputStream(newInputStream(R.resolve(ZIP_NAME)))) {
+        try (final ZipInputStream in = new ZipInputStream(newInputStream(root.resolve(ZIP_NAME)))) {
             ZipEntry next = in.getNextEntry();
             while (next != null) {
                 unzipEntry(next, in);
@@ -102,7 +101,7 @@ class DirectorySetup {
     }
 
     void createZip() throws IOException {
-        try (final ZipOutputStream out = new ZipOutputStream(newOutputStream(ZIP_FILE))) {
+        try (final ZipOutputStream out = new ZipOutputStream(newOutputStream(zipFile))) {
             walkFileTree(SOURCE, new SimpleFileVisitor<Path>() {
 
                 @Override
@@ -123,7 +122,7 @@ class DirectorySetup {
             @Override
             public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
                 final Path relativePath = SOURCE.relativize(file);
-                final Path targetPath = R.resolve(relativePath);
+                final Path targetPath = root.resolve(relativePath);
                 createDirectories(targetPath.getParent());
                 copy(file, targetPath);
                 return super.visitFile(file, attrs);
@@ -131,14 +130,20 @@ class DirectorySetup {
         });
     }
 
-    protected void deleteDirectories() throws IOException {
-        deleteDirectory(E);
-        deleteDirectory(H);
-        deleteIfExists(ZIP_FILE);
-        deleteIfExists(C);
+    protected void deleteWatchedResources() throws IOException {
+        deleteDirectory(root_etc);
+        deleteDirectory(root_home);
+        deleteIfExists(zipFile);
+        deleteIfExists(root_configProperties);
     }
 
-    protected void setupDirectories() throws Exception {
+    @After
+    public void deleteRootDirectory() throws IOException {
+        deleteDirectory(root);
+    }
+
+    @Before
+    public void setupDirectories() throws Exception {
         copyDirectories();
         validate();
     }
