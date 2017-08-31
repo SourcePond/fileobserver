@@ -16,8 +16,10 @@ package ch.sourcepond.io.fileobserver;
 import org.junit.After;
 import org.junit.Before;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
@@ -98,6 +100,23 @@ public class DirectorySetup {
                 next = in.getNextEntry();
             }
         }
+    }
+
+    public void nativeUnzip() throws InterruptedException,  IOException {
+        final ProcessBuilder pb = new ProcessBuilder("unzip",
+                "-o",
+                zipFile.toString(),
+                "-d",
+                root.toString());
+        final Process process = pb.start();
+        final int errCode = process.waitFor();
+        try (final BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        }
+        assertEquals("Process returned error", 0, errCode);
     }
 
     void createZip() throws IOException {

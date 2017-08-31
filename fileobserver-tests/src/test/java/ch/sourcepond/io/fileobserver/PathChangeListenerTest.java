@@ -316,4 +316,15 @@ public class PathChangeListenerTest extends DirectorySetup {
         unzip();
         verifyForceInform(listener);
     }
+
+    @Test
+    public void listenerShouldBeInformedAboutFileCreationThroughNativeUnzip() throws Exception {
+        listenerShouldBeInformedAboutDirectoryDeletion();
+
+        reset(listener);
+        sleep(1000);
+        createZip();
+        nativeUnzip();
+        verifyForceInform(listener);
+    }
 }
