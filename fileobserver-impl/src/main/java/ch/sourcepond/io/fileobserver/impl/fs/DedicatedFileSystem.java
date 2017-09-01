@@ -233,7 +233,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
             // An OVERFLOW event can
             // occur regardless if events
             // are lost or discarded.
-            if (OVERFLOW == kind) {
+            if (OVERFLOW == kind || event.count() > 1) {
                 continue;
             }
 
