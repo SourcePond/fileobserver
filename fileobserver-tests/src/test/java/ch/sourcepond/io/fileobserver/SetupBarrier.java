@@ -20,6 +20,8 @@ import static org.junit.Assert.assertTrue;
 import static org.osgi.framework.ServiceEvent.REGISTERED;
 
 class SetupBarrier implements PathChangeListener, ServiceListener {
+    private static final int MAX_TRIALS = 20;
+    private static final long TIMEOUT = 1000L;
     private final List<Path> expected;
     final PathChangeListenerTest test;
     private int trials;
@@ -50,8 +52,8 @@ class SetupBarrier implements PathChangeListener, ServiceListener {
     }
 
     public synchronized void awaitWatchedDirectoryRegistration() throws InterruptedException {
-        while (!expected.isEmpty() && 10 > trials++) {
-            wait(1000L);
+        while (!expected.isEmpty() && MAX_TRIALS > trials++) {
+            wait(TIMEOUT);
         }
         assertTrue("Not all expected files received: " + expected, expected.isEmpty());
     }
@@ -72,8 +74,8 @@ class SetupBarrier implements PathChangeListener, ServiceListener {
 
     public synchronized void awaitHookRegistrationCompleted() throws InterruptedException {
         trials = 0;
-        while (!keyDeliveryHookRegistered && 10 > trials++) {
-            wait(1000L);
+        while (!keyDeliveryHookRegistered && MAX_TRIALS > trials++) {
+            wait(TIMEOUT);
         }
         assertTrue(format("Expected service %s has not been registered", KeyDeliveryHook.class.getName()), keyDeliveryHookRegistered);
     }
