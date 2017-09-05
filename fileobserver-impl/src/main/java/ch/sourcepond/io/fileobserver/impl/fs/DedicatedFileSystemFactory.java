@@ -32,7 +32,8 @@ import java.util.concurrent.ExecutorService;
  */
 public class DedicatedFileSystemFactory {
     private final DirectoryFactory directoryFactory;
-    private final ListenerManager dispatcher;
+    private final ListenerManager manager;
+    private final FileSystemEventFactory fileSystemEventFactory;
 
     // Injected by SCR
     private volatile ExecutorService directoryWalkerExecutor;
@@ -41,17 +42,22 @@ public class DedicatedFileSystemFactory {
     private volatile ExecutorService dispatcherExecutor;
 
     // Constructor for BundleActivator
-    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory, final ListenerManager pDispatcher) {
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
+                                      final ListenerManager pManager,
+                                      final FileSystemEventFactory pFileSystemEventFactory) {
         directoryFactory = pDirectoryFactory;
-        dispatcher = pDispatcher;
+        manager = pManager;
+        fileSystemEventFactory = pFileSystemEventFactory;
     }
 
     // Constructor for testing
     public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
                                       final ListenerManager pDispatcher,
+                                      final FileSystemEventFactory pFileSystemEventFactory,
                                       final ExecutorService pDirectoryWalkerExecutor) {
         directoryFactory = pDirectoryFactory;
-        dispatcher = pDispatcher;
+        manager = pDispatcher;
+        fileSystemEventFactory = pFileSystemEventFactory;
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
@@ -79,18 +85,29 @@ public class DedicatedFileSystemFactory {
                 directoryFactory,
                 directoryWalkerExecutor,
                 dirs);
+        final PathChangeHandler pathChangeHandler = new PathChangeHandler(pVirtualRoot, walker, dirs);
+
+        final DelayedPathChangeDispatcher dispatcher = new DelayedPathChangeDispatcher(
+            wrapper,
+            pathChangeHandler,
+            manager,
+            fileSystemEventFactory
+        );
+
         DedicatedFileSystem fs = new DedicatedFileSystem(
                 directoryFactory,
                 wrapper,
                 new DirectoryRebase(directoryFactory, wrapper, dirs),
+                manager,
+                pathChangeHandler,
                 dispatcher,
-                new PathChangeHandler(pVirtualRoot, walker, dirs),
                 dirs);
         fs.start();
         return fs;
     }
 
     public void setConfig(final Config pConfig) {
+        fileSystemEventFactory.setConfig(pConfig);
         directoryFactory.setConfig(pConfig);
     }
 }

@@ -61,6 +61,7 @@ public class DedicatedFileSystemTest {
     private final RootDirectory rootDir2 = mock(RootDirectory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
     private final PathChangeListener observer = mock(PathChangeListener.class);
+    private final DelayedPathChangeDispatcher delayedPathChangeDispatcher = mock(DelayedPathChangeDispatcher.class);
     private final Path rootDirPath1 = mock(Path.class);
     private final Path rootDirPath2 = mock(Path.class);
     private final WatchKey rootWatchKey1 = mock(WatchKey.class);
@@ -93,7 +94,7 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager, pathChangeHandler, dirs);
+        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager, pathChangeHandler, delayedPathChangeDispatcher, dirs);
     }
 
     @Test
@@ -181,7 +182,7 @@ public class DedicatedFileSystemTest {
     public void close() {
         dirs.put(rootDirPath1, rootDir1);
         fs.close();
-        verify(wrapper, timeout(2000)).close();
+        verify(delayedPathChangeDispatcher, timeout(2000)).close();
         assertTrue(dirs.isEmpty());
         verify(pathChangeHandler).removeFileSystem(fs);
     }

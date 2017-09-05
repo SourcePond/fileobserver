@@ -41,10 +41,10 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  *
  */
-public class DedicatedFileSystem implements Closeable, Runnable {
+public class DedicatedFileSystem implements Closeable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
     private final ConcurrentMap<Path, Directory> dirs;
-    private final Thread thread;
+    private final DelayedPathChangeDispatcher dispatcher;
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
@@ -56,14 +56,15 @@ public class DedicatedFileSystem implements Closeable, Runnable {
                         final DirectoryRebase pRebase,
                         final ListenerManager pManager,
                         final PathChangeHandler pPathChangeHandler,
+                        final DelayedPathChangeDispatcher pDispatcher,
                         final ConcurrentMap<Path, Directory> pDirs) {
         pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
         manager = pManager;
+        dispatcher = pDispatcher;
         dirs = pDirs;
-        thread = new Thread(this, format("fileobserver %s", this));
     }
 
     /**
@@ -172,18 +173,11 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      */
     @Override
     public void close() {
-        if (!thread.isInterrupted()) {
-            try {
-                thread.interrupt();
-                LOG.info("Event receiver stopped");
-            } finally {
-                try {
-                    wrapper.close();
-                } finally {
-                    dirs.clear();
-                    pathChangeHandler.removeFileSystem(this);
-                }
-            }
+        try {
+            dispatcher.close();
+        } finally {
+            dirs.clear();
+            pathChangeHandler.removeFileSystem(this);
         }
     }
 
@@ -200,60 +194,7 @@ public class DedicatedFileSystem implements Closeable, Runnable {
      */
     // Lifecycle method for Felix DM
     public void start() {
-        thread.setDaemon(true);
-        thread.start();
+        dispatcher.start();
         LOG.info("Ready for receiving events");
-    }
-
-    private synchronized void processPath(final WatchEvent.Kind<?> pKind,
-                             final Path child) {
-        LOG.debug("Received event of kind {} for path {}", pKind, child);
-        try {
-            if (ENTRY_CREATE == pKind) {
-                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, true);
-            } else if (ENTRY_MODIFY == pKind) {
-                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, false);
-            } else if (ENTRY_DELETE == pKind) {
-                pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);
-            }
-        } catch (final RuntimeException e) {
-            LOG.error(e.getMessage(), e);
-        }
-    }
-
-    private void processEvent(final WatchKey pWatchKey) {
-        final Path directory = (Path) pWatchKey.watchable();
-        for (final WatchEvent<?> event : pWatchKey.pollEvents()) {
-            final WatchEvent.Kind<?> kind = event.kind();
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(format("Changed detected [%s]: %s, context: %s", kind, directory, event.context()));
-            }
-
-            // An OVERFLOW event can
-            // occur regardless if events
-            // are lost or discarded.
-            if (OVERFLOW == kind || event.count() > 1) {
-                continue;
-            }
-
-            processPath(kind, directory.resolve((Path) event.context()));
-        }
-
-        // The case when the WatchKey has been cancelled is
-        // already handled at a different place.
-        pWatchKey.reset();
-    }
-
-    @Override
-    public void run() {
-        while (!currentThread().isInterrupted()) {
-            try {
-                processEvent(wrapper.take());
-            } catch (final ClosedWatchServiceException | InterruptedException e) {
-                LOG.debug(e.getMessage(), e);
-                close();
-            }
-        }
     }
 }

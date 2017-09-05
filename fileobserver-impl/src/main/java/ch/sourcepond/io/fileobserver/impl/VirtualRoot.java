@@ -21,6 +21,7 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
+import ch.sourcepond.io.fileobserver.impl.fs.FileSystemEventFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
@@ -68,6 +69,7 @@ public class VirtualRoot implements RelocationObserver {
     private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
+    private final FileSystemEventFactory eventFactory = new FileSystemEventFactory();
 
 
     // Constructor for BundleActivator
@@ -76,7 +78,8 @@ public class VirtualRoot implements RelocationObserver {
         final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
-                manager);
+                manager,
+                eventFactory);
     }
 
     // Constructor for testing
@@ -106,6 +109,7 @@ public class VirtualRoot implements RelocationObserver {
     @Modified
     public void setConfig(final Config pConfig) {
         dedicatedFileSystemFactory.setConfig(pConfig);
+        eventFactory.setConfig(pConfig);
         manager.setConfig(pConfig);
     }
 
@@ -282,7 +286,7 @@ public class VirtualRoot implements RelocationObserver {
      * Removes the {@link DedicatedFileSystem} instance specified from
      * this virtual root. This happens when the {@link java.nio.file.WatchService} of the
      * fs specified had been closed and a {@link java.nio.file.ClosedWatchServiceException} has been
-     * caused to be thrown because that in {@link DedicatedFileSystem#run()}.
+     * caused to be thrown.
      *
      * @param pDedicatedFileSystem
      */

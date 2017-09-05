@@ -28,4 +28,12 @@ public @interface Config {
             description = "Duration to wait until a file is considered to be completely written"
     )
     long writeDeadlineMillis() default 2000L;
+
+    @AttributeDefinition(
+            min = "0",
+            name = "Dispatch delay",
+            description = "Duration to wait until a received event is actually dispatched. Necessary" +
+                    " to avoid duplicate events."
+    )
+    long eventDispatchDelay() default 1000L;
 }

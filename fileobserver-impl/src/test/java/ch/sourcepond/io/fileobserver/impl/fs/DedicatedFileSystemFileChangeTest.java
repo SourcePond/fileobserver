@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
@@ -62,25 +63,32 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private final ListenerManager manager = mock(ListenerManager.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
+    private final Config config = mock(Config.class);
+    private final FileSystemEventFactory eventFactory = new FileSystemEventFactory();
     private DedicatedFileSystem child;
     private volatile Throwable threadKiller;
     private Path file;
     private WatchServiceWrapper wrapper;
     private WatchKey key;
+    private DelayedPathChangeDispatcher delayedPathChangeDispatcher;
 
     @Before
     public void setup() throws Exception {
         when(manager.getDefaultDispatcher()).thenReturn(dispatcher);
         when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
         when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);
+        when(config.eventDispatchDelay()).thenReturn(1000L);
         wrapper = new WatchServiceWrapper(root_dir_path.getFileSystem());
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
+        eventFactory.setConfig(config);
+        delayedPathChangeDispatcher = new DelayedPathChangeDispatcher(wrapper, this.pathChangeHandler, manager, eventFactory);
         child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager,
-                pathChangeHandler, new ConcurrentHashMap<>());
+                pathChangeHandler, delayedPathChangeDispatcher, new ConcurrentHashMap<>());
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
+
         child.start();
     }
 
