@@ -23,7 +23,6 @@ import static java.time.Instant.now;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 class FileSystemEvent implements Delayed {
-    private final Instant creationTime;
     private final Instant dueTime;
     private final WatchEvent.Kind<?> kind;
     private final Path path;
@@ -32,7 +31,6 @@ class FileSystemEvent implements Delayed {
                     final long pTimeoutInMillis,
                     final WatchEvent.Kind<?> pKind,
                     final Path pPath) {
-        creationTime = pCreationTime;
         dueTime = pCreationTime.plusMillis(pTimeoutInMillis);
         kind = pKind;
         path = pPath;
