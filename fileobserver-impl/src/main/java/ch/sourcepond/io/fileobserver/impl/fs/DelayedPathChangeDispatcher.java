@@ -98,8 +98,12 @@ public class DelayedPathChangeDispatcher implements Closeable {
                 continue;
             }
 
-            events.add(eventFactory.newEvent(kind,
-                    directory.resolve((Path) event.context())));
+            final FileSystemEvent fsEvent = eventFactory.newEvent(kind,
+                    directory.resolve((Path) event.context()));
+
+            if (!events.contains(fsEvent)) {
+                events.add(fsEvent);
+            }
         }
 
         // The case when the WatchKey has been cancelled is
