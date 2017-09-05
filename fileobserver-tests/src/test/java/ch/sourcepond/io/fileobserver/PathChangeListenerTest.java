@@ -33,10 +33,13 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
 import javax.inject.Inject;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
+import java.util.UUID;
 
 import static ch.sourcepond.io.fileobserver.RecursiveDeletion.deleteDirectory;
 import static ch.sourcepond.io.fileobserver.spi.WatchedDirectory.create;
@@ -61,7 +64,6 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
 @ExamReactorStrategy(PerSuite.class)
 public class PathChangeListenerTest extends DirectorySetup {
     private static final String ROOT = "watchedRoot";
-    private static final Random RANDOM = new Random();
 
     @Rule
     public BundleContextClassLoaderRule rule = new BundleContextClassLoaderRule(this);
@@ -116,8 +118,8 @@ public class PathChangeListenerTest extends DirectorySetup {
 
 
     private static void writeArbitraryContent(final Path pFile) throws Exception {
-        try (final OutputStream out = newOutputStream(pFile)) {
-            out.write(RANDOM.nextInt());
+        try (final BufferedWriter out = newBufferedWriter(pFile)) {
+            out.write(UUID.randomUUID().toString());
         }
         sleep(1000);
     }
@@ -136,7 +138,7 @@ public class PathChangeListenerTest extends DirectorySetup {
 
     private <T> ServiceRegistration<T> registerService(final Class<T> pInterface, final T pService) throws Exception {
         final ServiceRegistration<T> reg = context.registerService(pInterface, pService, null);
-        sleep(1500);
+        sleep(2500);
         return reg;
     }
 
@@ -177,7 +179,7 @@ public class PathChangeListenerTest extends DirectorySetup {
             } catch (final IllegalStateException e) {
                 // Ignore
             }
-            sleep(1000);
+            sleep(2500);
         }
     }
 
