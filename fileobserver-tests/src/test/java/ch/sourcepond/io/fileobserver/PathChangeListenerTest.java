@@ -19,7 +19,10 @@ import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import ch.sourcepond.testing.BundleContextClassLoaderRule;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
@@ -30,32 +33,39 @@ import org.ops4j.pax.exam.options.MavenUrlReference;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
 
 import javax.inject.Inject;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Random;
 import java.util.UUID;
 
-import static ch.sourcepond.io.fileobserver.RecursiveDeletion.deleteDirectory;
 import static ch.sourcepond.io.fileobserver.spi.WatchedDirectory.create;
 import static ch.sourcepond.testing.OptionsHelper.karafContainer;
 import static ch.sourcepond.testing.OptionsHelper.mockitoBundles;
 import static java.lang.String.format;
-import static java.lang.System.getProperty;
 import static java.lang.Thread.sleep;
 import static java.nio.file.Files.delete;
 import static java.nio.file.Files.newBufferedWriter;
-import static java.nio.file.Files.newOutputStream;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.notNull;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.same;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.withSettings;
 import static org.ops4j.pax.exam.CoreOptions.maven;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
+import static org.osgi.framework.Constants.OBJECTCLASS;
 
 /**
  *
@@ -127,7 +137,7 @@ public class PathChangeListenerTest extends DirectorySetup {
     @Inject
     private BundleContext context;
 
-    private final PathChangeListener listener = mock(PathChangeListener.class, withSettings().name("listener"));
+    final PathChangeListener listener = mock(PathChangeListener.class, withSettings().name("listener"));
     private final PathChangeListener secondListener = mock(PathChangeListener.class, withSettings().name("secondListener"));
     private ServiceRegistration<WatchedDirectory> watchedDirectoryRegistration;
     private ServiceRegistration<PathChangeListener> listenerRegistration;
@@ -144,6 +154,10 @@ public class PathChangeListenerTest extends DirectorySetup {
 
     @Before
     public void setup() throws Exception {
+        final SetupBarrier barrier = new SetupBarrier(this);
+        context.addServiceListener(barrier, format("(%s=%s)", OBJECTCLASS, KeyDeliveryHook.class.getName()));
+        registerService(PathChangeListener.class, barrier);
+
         doCallRealMethod().when(listener).restrict(notNull(), same(root.getFileSystem()));
         doCallRealMethod().when(secondListener).restrict(notNull(), same(root.getFileSystem()));
 
@@ -151,18 +165,21 @@ public class PathChangeListenerTest extends DirectorySetup {
         // registering an appropriate service.
         watchedDirectory = create(ROOT, root);
         watchedDirectory.addBlacklistPattern("glob:" + ZIP_NAME);
-
         watchedDirectoryRegistration = registerService(WatchedDirectory.class, watchedDirectory);
+        barrier.awaitWatchedDirectoryRegistration();
 
         // Step 2: register PathChangeListener
         listenerRegistration = registerService(PathChangeListener.class, listener);
+        barrier.awaitListenerInformedAboutExistingFiles();
 
         // Step 3: register key-hook
         hookRegistration = registerService(KeyDeliveryHook.class, hook);
+        barrier.awaitHookRegistrationCompleted();
+        context.removeServiceListener(barrier);
         reset(listener, hook);
     }
 
-    private void verifyForceInform(final PathChangeListener pListener) throws Exception {
+    void verifyForceInform(final PathChangeListener pListener) throws Exception {
         verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_networkConf)));
         verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_dhcpConf)));
         verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_manConf)));
