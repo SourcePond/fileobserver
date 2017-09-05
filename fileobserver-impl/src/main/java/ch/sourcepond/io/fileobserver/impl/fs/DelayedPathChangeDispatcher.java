@@ -37,12 +37,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class DelayedPathChangeDispatcher implements Closeable {
 
-    @FunctionalInterface
-    private interface Supplier<T> {
-
-        T get() throws InterruptedException;
-    }
-
     private static final Logger LOG = getLogger(DelayedPathChangeDispatcher.class);
     private final WatchServiceWrapper wrapper;
     private final PathChangeHandler pathChangeHandler;
@@ -97,12 +91,8 @@ public class DelayedPathChangeDispatcher implements Closeable {
                 continue;
             }
 
-            final FileSystemEvent fsEvent = eventFactory.newEvent(kind,
-                    directory.resolve((Path) event.context()));
-
-            if (!events.contains(fsEvent)) {
-                events.add(fsEvent);
-            }
+            events.add(eventFactory.newEvent(kind,
+                    directory.resolve((Path) event.context())));
         }
 
         // The case when the WatchKey has been cancelled is
@@ -161,5 +151,11 @@ public class DelayedPathChangeDispatcher implements Closeable {
 
     private void dispatch() {
         run(events::take, this::dispatchEvent);
+    }
+
+    @FunctionalInterface
+    private interface Supplier<T> {
+
+        T get() throws InterruptedException;
     }
 }

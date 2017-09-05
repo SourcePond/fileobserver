@@ -16,7 +16,6 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
@@ -55,19 +54,5 @@ class FileSystemEvent implements Delayed {
     @Override
     public int compareTo(Delayed o) {
         return dueTime.compareTo(((FileSystemEvent) o).dueTime);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FileSystemEvent that = (FileSystemEvent) o;
-        return Objects.equals(kind, that.kind) &&
-                Objects.equals(path, that.path);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(kind, path);
     }
 }
