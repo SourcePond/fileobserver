@@ -102,8 +102,8 @@ public class DedicatedFileSystemTest {
         dirs.put(rootDirPath1, rootDir1);
         dirs.put(rootDirPath2, rootDir2);
         fs.forceInform(dispatcher);
-        verify(rootDir1).forceInform(dispatcher);
-        verify(rootDir2).forceInform(dispatcher);
+        verify(rootDir1).streamDirectoryAndForceInform(dispatcher);
+        verify(rootDir2).streamDirectoryAndForceInform(dispatcher);
     }
 
     @Test(expected = NullPointerException.class)
@@ -129,8 +129,8 @@ public class DedicatedFileSystemTest {
         assertSame(rootDir1, fs.getDirectory(rootDirPath1));
         final InOrder order = inOrder(rebase, pathChangeHandler, rootDir1);
         order.verify(rebase).rebaseExistingRootDirectories(rootDir1);
-        order.verify(pathChangeHandler).rootAdded(defaultDispatcher, rootDir1);
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
+        order.verify(pathChangeHandler).rootAdded(defaultDispatcher, rootDir1);
         order.verifyNoMoreInteractions();
     }
 

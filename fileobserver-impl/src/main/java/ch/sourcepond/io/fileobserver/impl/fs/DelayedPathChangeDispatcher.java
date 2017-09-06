@@ -87,12 +87,15 @@ public class DelayedPathChangeDispatcher implements Closeable {
             // An OVERFLOW event can
             // occur regardless if events
             // are lost or discarded.
-            if (OVERFLOW == kind || event.count() > 1) {
+            if (OVERFLOW == kind) {
                 continue;
             }
 
-            events.add(eventFactory.newEvent(kind,
-                    directory.resolve((Path) event.context())));
+            final FileSystemEvent fsEvent = eventFactory.newEvent(kind,
+                    directory.resolve((Path) event.context()));
+            if (!events.contains(fsEvent)) {
+                events.add(fsEvent);
+            }
         }
 
         // The case when the WatchKey has been cancelled is

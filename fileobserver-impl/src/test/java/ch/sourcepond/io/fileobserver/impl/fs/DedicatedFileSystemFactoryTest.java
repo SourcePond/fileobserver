@@ -42,12 +42,11 @@ public class DedicatedFileSystemFactoryTest {
     private final VirtualRoot virtualRoot = mock(VirtualRoot.class);
     private final WatchService watchService = mock(WatchService.class);
     private final ExecutorService dispatchExecutor = mock(ExecutorService.class);
-    private final ExecutorService directoryWalkerExecutor = mock(ExecutorService.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final ListenerManager dispatcher = mock(ListenerManager.class);
-    private final FileSystemEventFactory eventFactory  = mock(FileSystemEventFactory.class);
+    private final FileSystemEventFactory eventFactory = mock(FileSystemEventFactory.class);
     private final DedicatedFileSystemFactory factory = new DedicatedFileSystemFactory(directoryFactory,
-            dispatcher, eventFactory, directoryWalkerExecutor);
+            dispatcher, eventFactory);
 
     @Before
     public void setup() throws IOException {
@@ -57,9 +56,8 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void shutdown() {
-        factory.setExecutors(directoryWalkerExecutor, dispatchExecutor);
+        factory.setDispatcherExecutor(dispatchExecutor);
         factory.shutdown();
-        verify(directoryFactory).shutdown();
         verify(dispatchExecutor).shutdown();
     }
 
@@ -67,12 +65,6 @@ public class DedicatedFileSystemFactoryTest {
     public void setResourceFactory() {
         factory.setResourcesFactory(resourcesFactory);
         verify(directoryFactory).setResourcesFactory(resourcesFactory);
-    }
-
-    @Test
-    public void setExecutors() {
-        factory.setExecutors(directoryWalkerExecutor, dispatchExecutor);
-        verify(directoryFactory).setDirectoryWalkerExecutor(directoryWalkerExecutor);
     }
 
     @Test

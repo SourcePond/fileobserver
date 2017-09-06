@@ -33,7 +33,6 @@ import org.ops4j.pax.exam.options.MavenUrlReference;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
 
 import javax.inject.Inject;
@@ -42,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.UUID;
 
+import static ch.sourcepond.io.fileobserver.SetupBarrier.create;
 import static ch.sourcepond.io.fileobserver.spi.WatchedDirectory.create;
 import static ch.sourcepond.testing.OptionsHelper.karafContainer;
 import static ch.sourcepond.testing.OptionsHelper.mockitoBundles;
@@ -65,7 +65,6 @@ import static org.mockito.Mockito.withSettings;
 import static org.ops4j.pax.exam.CoreOptions.maven;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
-import static org.osgi.framework.Constants.OBJECTCLASS;
 
 /**
  *
@@ -131,32 +130,23 @@ public class PathChangeListenerTest extends DirectorySetup {
         try (final BufferedWriter out = newBufferedWriter(pFile)) {
             out.write(UUID.randomUUID().toString());
         }
-        sleep(1000);
     }
 
     @Inject
-    private BundleContext context;
+    BundleContext context;
 
     final PathChangeListener listener = mock(PathChangeListener.class, withSettings().name("listener"));
     private final PathChangeListener secondListener = mock(PathChangeListener.class, withSettings().name("secondListener"));
+    private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
     private ServiceRegistration<WatchedDirectory> watchedDirectoryRegistration;
     private ServiceRegistration<PathChangeListener> listenerRegistration;
-    private ServiceRegistration<PathChangeListener> secondListenerRegistration;
-    private final KeyDeliveryHook hook = mock(KeyDeliveryHook.class);
-    private ServiceRegistration<KeyDeliveryHook> hookRegistration;
     private WatchedDirectory watchedDirectory;
-
-    private <T> ServiceRegistration<T> registerService(final Class<T> pInterface, final T pService) throws Exception {
-        final ServiceRegistration<T> reg = context.registerService(pInterface, pService, null);
-        sleep(2500);
-        return reg;
-    }
+    private SetupBarrier barrier;
 
     @Before
     public void setup() throws Exception {
-        final SetupBarrier barrier = new SetupBarrier(this);
-        context.addServiceListener(barrier, format("(%s=%s)", OBJECTCLASS, KeyDeliveryHook.class.getName()));
-        registerService(PathChangeListener.class, barrier);
+        barrier = create(this);
+        barrier.registerService(PathChangeListener.class, barrier);
 
         doCallRealMethod().when(listener).restrict(notNull(), same(root.getFileSystem()));
         doCallRealMethod().when(secondListener).restrict(notNull(), same(root.getFileSystem()));
@@ -165,17 +155,15 @@ public class PathChangeListenerTest extends DirectorySetup {
         // registering an appropriate service.
         watchedDirectory = create(ROOT, root);
         watchedDirectory.addBlacklistPattern("glob:" + ZIP_NAME);
-        watchedDirectoryRegistration = registerService(WatchedDirectory.class, watchedDirectory);
+        watchedDirectoryRegistration = barrier.registerService(WatchedDirectory.class, watchedDirectory);
         barrier.awaitWatchedDirectoryRegistration();
 
         // Step 2: register PathChangeListener
-        listenerRegistration = registerService(PathChangeListener.class, listener);
+        listenerRegistration = barrier.registerService(PathChangeListener.class, listener);
         barrier.awaitListenerInformedAboutExistingFiles();
 
         // Step 3: register key-hook
-        hookRegistration = registerService(KeyDeliveryHook.class, hook);
-        barrier.awaitHookRegistrationCompleted();
-        context.removeServiceListener(barrier);
+        barrier.registerService(KeyDeliveryHook.class, hook);
         reset(listener, hook);
     }
 
@@ -189,28 +177,14 @@ public class PathChangeListenerTest extends DirectorySetup {
         verify(pListener, timeout(15000)).modified(event(ROOT, root.relativize(root_configProperties)));
     }
 
-    private void unregisterService(final ServiceRegistration<?> pRegistration) throws Exception {
-        if (pRegistration != null) {
-            try {
-                pRegistration.unregister();
-            } catch (final IllegalStateException e) {
-                // Ignore
-            }
-            sleep(2500);
-        }
-    }
-
     @After
     public void tearDown() throws Exception {
-        unregisterService(watchedDirectoryRegistration);
-        unregisterService(listenerRegistration);
-        unregisterService(secondListenerRegistration);
-        unregisterService(hookRegistration);
+        barrier.tearDown();
     }
 
     @Test
     public void doExlusivelyInformNewlyRegisteredListener() throws Exception {
-        secondListenerRegistration = registerService(PathChangeListener.class, secondListener);
+        barrier.registerService(PathChangeListener.class, secondListener);
         verifyForceInform(secondListener);
         verifyZeroInteractions(listener);
     }
@@ -220,7 +194,7 @@ public class PathChangeListenerTest extends DirectorySetup {
      */
     @Test
     public void insureNoInteractionWithUnregisteredFileListener() throws Exception {
-        listenerRegistration.unregister();
+        barrier.unregisterService(listenerRegistration);
 
         delete(root_etc_network_networkConf);
         delete(root_etc_network_dhcpConf);
@@ -240,11 +214,11 @@ public class PathChangeListenerTest extends DirectorySetup {
     @Test
     public void unregisterAndRegisterAdditionalWatchedDirectory() throws Exception {
         // Insure listener gets informed about unregistration
-        watchedDirectoryRegistration.unregister();
+        barrier.unregisterService(watchedDirectoryRegistration);
         verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root)));
 
         // Now, listener should be informed about newly registered root
-        watchedDirectoryRegistration = registerService(WatchedDirectory.class, watchedDirectory);
+        watchedDirectoryRegistration = barrier.registerService(WatchedDirectory.class, watchedDirectory);
 
         verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_networkConf)));
         verify(listener, timeout(15000)).modified(event(ROOT, root.relativize(root_etc_network_dhcpConf)));
@@ -299,6 +273,7 @@ public class PathChangeListenerTest extends DirectorySetup {
      */
     @Test
     public void listenerShouldBeInformedAboutFileChange() throws Exception {
+        sleep(2000);
         writeArbitraryContent(root_etc_network_dhcpConf);
         writeArbitraryContent(root_home_jeff_letterXml);
         writeArbitraryContent(root_configProperties);

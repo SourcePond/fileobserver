@@ -40,7 +40,7 @@ public class RootDirectoryTest extends DirectoryTest {
         final PathChangeListener observer = mock(PathChangeListener.class);
         when(watchedRootDir.isBlacklisted(subdir_1_path.relativize(testfile_11_xml_path))).thenReturn(true);
         root.addWatchedDirectory(watchedRootDir);
-        root.forceInform(dispatcher);
+        root.streamDirectoryAndForceInform(dispatcher);
         verifyZeroInteractions(observer);
     }
 

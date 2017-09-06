@@ -24,18 +24,10 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
-import static java.lang.Thread.currentThread;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
-import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -76,7 +68,7 @@ public class DedicatedFileSystem implements Closeable {
      * to the observer are regular files (not directories).
      */
     public void forceInform(final EventDispatcher pDispatcher) {
-        dirs.values().forEach(d -> d.forceInform(pDispatcher));
+        dirs.values().forEach(d -> d.streamDirectoryAndForceInform(pDispatcher));
     }
 
     /**
@@ -104,13 +96,16 @@ public class DedicatedFileSystem implements Closeable {
             // root directory, they need to be rebased (including their direct children)
             rebase.rebaseExistingRootDirectories(dir);
 
+            // VERY IMPORTANT: in any case, associate the directory with the watched-directory
+            dir.addWatchedDirectory(pWatchedDirectory);
+
             // Register directories; important here is to pass the newly created root-directory
             // (otherwise PathChangeListener#supplement would not be called).
             pathChangeHandler.rootAdded(pDispatcher, dir);
+        } else {
+            // VERY IMPORTANT: in any case, associate the directory with the watched-directory
+            dir.addWatchedDirectory(pWatchedDirectory);
         }
-
-        // VERY IMPORTANT: in any case, associate the directory with the watched-directory
-        dir.addWatchedDirectory(pWatchedDirectory);
     }
 
     /**
