@@ -68,7 +68,7 @@ public class DedicatedFileSystem implements Closeable {
      * to the observer are regular files (not directories).
      */
     public void forceInform(final EventDispatcher pDispatcher) {
-        dirs.values().forEach(d -> d.streamDirectoryAndForceInform(pDispatcher));
+        dirs.values().forEach(d -> d.forceInform(pDispatcher));
     }
 
     /**

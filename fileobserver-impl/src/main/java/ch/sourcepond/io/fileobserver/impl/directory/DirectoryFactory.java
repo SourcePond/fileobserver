@@ -33,6 +33,9 @@ public class DirectoryFactory {
     private volatile Config config;
 
     // Injected by SCR
+    private volatile ExecutorService directoryWalkerExecutor;
+
+    // Injected by SCR
     private volatile ResourcesFactory resourcesFactory;
 
     // Constructor for BundleActivator
@@ -42,6 +45,10 @@ public class DirectoryFactory {
 
     public void setConfig(final Config pConfig) {
         config = pConfig;
+    }
+
+    public void setDirectoryWalkerExecutor(final ExecutorService pDirectoryWalkerExecutor) {
+        directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
     public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
@@ -83,7 +90,22 @@ public class DirectoryFactory {
         return fileKeyFactory.newKey(pDirectoryKey, pRelativePath);
     }
 
+    /**
+     * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
+     * <p>
+     * Asynchronously executes the task specified using the directory walker executor service.
+     *
+     * @param pTask Task to be executed, must not be {@code null}
+     */
+    void executeDirectoryWalkerTask(final Runnable pTask) {
+        directoryWalkerExecutor.execute(pTask);
+    }
+
     long getTimeout() {
         return config.writeDeadlineMillis();
+    }
+
+    public void shutdown() {
+        directoryWalkerExecutor.shutdown();
     }
 }

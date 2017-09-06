@@ -36,6 +36,9 @@ public class DedicatedFileSystemFactory {
     private final FileSystemEventFactory fileSystemEventFactory;
 
     // Injected by SCR
+    private volatile ExecutorService directoryWalkerExecutor;
+
+    // Injected by SCR
     private volatile ExecutorService dispatcherExecutor;
 
     // Constructor for BundleActivator
@@ -47,15 +50,30 @@ public class DedicatedFileSystemFactory {
         fileSystemEventFactory = pFileSystemEventFactory;
     }
 
+    // Constructor for testing
+    public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
+                                      final ListenerManager pDispatcher,
+                                      final FileSystemEventFactory pFileSystemEventFactory,
+                                      final ExecutorService pDirectoryWalkerExecutor) {
+        directoryFactory = pDirectoryFactory;
+        manager = pDispatcher;
+        fileSystemEventFactory = pFileSystemEventFactory;
+        directoryWalkerExecutor = pDirectoryWalkerExecutor;
+    }
+
     public void setResourcesFactory(final ResourcesFactory pResourcesFactory) {
         directoryFactory.setResourcesFactory(pResourcesFactory);
     }
 
-    public void setDispatcherExecutor(final ExecutorService pDispatcherExecutor) {
+    public void setExecutors(final ExecutorService pDirectoryWalkerExecutor,
+                             final ExecutorService pDispatcherExecutor) {
+        directoryFactory.setDirectoryWalkerExecutor(pDirectoryWalkerExecutor);
+        directoryWalkerExecutor = pDirectoryWalkerExecutor;
         dispatcherExecutor = pDispatcherExecutor;
     }
 
     public void shutdown() {
+        directoryFactory.shutdown();
         dispatcherExecutor.shutdown();
     }
 
@@ -65,14 +83,15 @@ public class DedicatedFileSystemFactory {
         final DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
                 wrapper,
                 directoryFactory,
+                directoryWalkerExecutor,
                 dirs);
         final PathChangeHandler pathChangeHandler = new PathChangeHandler(pVirtualRoot, walker, dirs);
 
         final DelayedPathChangeDispatcher dispatcher = new DelayedPathChangeDispatcher(
-            wrapper,
-            pathChangeHandler,
-            manager,
-            fileSystemEventFactory
+                wrapper,
+                pathChangeHandler,
+                manager,
+                fileSystemEventFactory
         );
 
         DedicatedFileSystem fs = new DedicatedFileSystem(

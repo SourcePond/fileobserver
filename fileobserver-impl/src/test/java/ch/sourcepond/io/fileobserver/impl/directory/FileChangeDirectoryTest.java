@@ -188,7 +188,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
 
     @Test
     public void informObserverWhenForceInform() throws IOException, InterruptedException {
-        root_dir.streamDirectoryAndForceInform(dispatcher);
+        root_dir.forceInform(dispatcher);
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_txt_path));
         sleep(500);
         verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
@@ -201,7 +201,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
         deleteResources();
 
         // Should not cause an exception
-        root_dir.streamDirectoryAndForceInform(dispatcher);
+        root_dir.forceInform(dispatcher);
         verifyZeroInteractions(listener);
     }
 
@@ -209,7 +209,7 @@ public class FileChangeDirectoryTest extends DirectoryTest {
     @Test
     public void verifyExceptionInObserverDoesNotKillThread() throws IOException, InterruptedException {
         doThrow(IOException.class).when(listener).modified(any());
-        root_dir.streamDirectoryAndForceInform(dispatcher);
+        root_dir.forceInform(dispatcher);
 
         // Should not cause an exception
         verify(listener, timeout(500)).modified(toEvent(root_dir_path, testfile_txt_path));

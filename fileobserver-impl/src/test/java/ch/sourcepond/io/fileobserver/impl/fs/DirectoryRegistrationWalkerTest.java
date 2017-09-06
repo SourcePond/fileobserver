@@ -29,7 +29,9 @@ import java.nio.file.WatchKey;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.argThat;
@@ -48,6 +50,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private static final String ANY_MESSAGE = "anyMessage";
     private final Logger logger = mock(Logger.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
+    private final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     private final WatchServiceWrapper wrapper = mock(WatchServiceWrapper.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
@@ -72,6 +75,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
     private DirectoryRegistrationWalker walker = new DirectoryRegistrationWalker(
             logger,
             directoryFactory,
+            directoryWalkerExecutor,
             wrapper,
             dirs);
 
@@ -129,7 +133,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
 
     @Test
     public void verifyActivatorConstructor() {
-        new DirectoryRegistrationWalker(wrapper, directoryFactory, dirs);
+        new DirectoryRegistrationWalker(wrapper, directoryFactory, directoryWalkerExecutor, dirs);
     }
 
     /**
@@ -154,6 +158,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         walker = new DirectoryRegistrationWalker(
                 logger,
                 directoryFactory,
+                directoryWalkerExecutor,
                 wrapper,
                 dirs);
         final IOException expected = new IOException(ANY_MESSAGE);
@@ -170,6 +175,7 @@ public class DirectoryRegistrationWalkerTest extends CopyResourcesTest {
         walker = new DirectoryRegistrationWalker(
                 logger,
                 directoryFactory,
+                directoryWalkerExecutor,
                 wrapper,
                 dirs);
         final RuntimeException expected = new RuntimeException(ANY_MESSAGE);

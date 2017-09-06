@@ -13,11 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.directory;
 
-import ch.sourcepond.io.checksum.api.Checksum;
-import ch.sourcepond.io.checksum.api.Resource;
-import ch.sourcepond.io.checksum.api.ResourcesFactory;
-import ch.sourcepond.io.checksum.api.Update;
-import ch.sourcepond.io.checksum.api.UpdateObserver;
+import ch.sourcepond.io.checksum.api.*;
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
 import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.CopyResourcesTest;
@@ -37,12 +33,7 @@ import static java.nio.file.FileSystems.getDefault;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.same;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -58,6 +49,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     final Config config =  mock(Config.class);
     final ResourcesFactory resourcesFactory = mock(ResourcesFactory.class);
     private final ExecutorService dispatcherExecutor = newSingleThreadExecutor();
+    final ExecutorService directoryWalkerExecutor = newSingleThreadExecutor();
     final ExecutorService listenerExecutor = newSingleThreadExecutor();
     final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
     final ListenerManager manager = new ListenerManager();
@@ -79,6 +71,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
         manager.setExecutors(dispatcherExecutor, listenerExecutor);
         wrapper = new WatchServiceWrapper(getDefault());
         factory.setConfig(config);
+        factory.setDirectoryWalkerExecutor(directoryWalkerExecutor);
         factory.setResourcesFactory(resourcesFactory);
     }
 

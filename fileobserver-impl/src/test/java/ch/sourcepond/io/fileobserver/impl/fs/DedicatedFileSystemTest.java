@@ -102,8 +102,8 @@ public class DedicatedFileSystemTest {
         dirs.put(rootDirPath1, rootDir1);
         dirs.put(rootDirPath2, rootDir2);
         fs.forceInform(dispatcher);
-        verify(rootDir1).streamDirectoryAndForceInform(dispatcher);
-        verify(rootDir2).streamDirectoryAndForceInform(dispatcher);
+        verify(rootDir1).forceInform(dispatcher);
+        verify(rootDir2).forceInform(dispatcher);
     }
 
     @Test(expected = NullPointerException.class)

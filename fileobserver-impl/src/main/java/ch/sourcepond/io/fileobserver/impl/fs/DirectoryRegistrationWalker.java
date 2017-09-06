@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
@@ -47,19 +48,23 @@ class DirectoryRegistrationWalker {
     private final WatchServiceWrapper wrapper;
     private final DirectoryFactory directoryFactory;
     private final ConcurrentMap<Path, Directory> dirs;
+    private final Executor directoryWalkerExecutor;
 
     /**
      * Constructor for bundle activator.
      *
      * @param pWrapper
      * @param pDirectoryFactory
+     * @param pDirectoryWalkerExecutor
      * @param pDirs
      */
     DirectoryRegistrationWalker(final WatchServiceWrapper pWrapper,
                                 final DirectoryFactory pDirectoryFactory,
+                                final Executor pDirectoryWalkerExecutor,
                                 final ConcurrentMap<Path, Directory> pDirs) {
         this(getLogger(DirectoryRegistrationWalker.class),
                 pDirectoryFactory,
+                pDirectoryWalkerExecutor,
                 pWrapper,
                 pDirs);
     }
@@ -68,15 +73,18 @@ class DirectoryRegistrationWalker {
      * Constructor for testing
      *
      * @param pLogger
+     * @param pDirectoryWalkerExecutor
      * @param pWrapper
      * @param pDirectoryFactory
      * @param pDirs
      */
     DirectoryRegistrationWalker(final Logger pLogger,
                                 final DirectoryFactory pDirectoryFactory,
+                                final Executor pDirectoryWalkerExecutor,
                                 final WatchServiceWrapper pWrapper,
                                 final ConcurrentMap<Path, Directory> pDirs) {
         logger = pLogger;
+        directoryWalkerExecutor = pDirectoryWalkerExecutor;
         wrapper = pWrapper;
         directoryFactory = pDirectoryFactory;
         dirs = pDirs;
@@ -90,7 +98,7 @@ class DirectoryRegistrationWalker {
      * @param pDirectory Newly created directory, must not be {@code null}
      */
     void directoryCreated(final EventDispatcher pDispatcher, final Path pDirectory) {
-        directoryCreated(pDispatcher, null, pDirectory);
+        directoryCreated(pDispatcher,null, pDirectory);
     }
 
     /**
@@ -115,14 +123,18 @@ class DirectoryRegistrationWalker {
     private void directoryCreated(final EventDispatcher pDispatcher,
                                   final Directory pNewRootOrNull,
                                   final Path pDirectory) {
-        try {
-            walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(
-                    pDispatcher, pNewRootOrNull));
-        } catch (final IOException e) {
-            logger.warn(e.getMessage(), e);
-        } catch (final RuntimeException e) {
-            logger.error(e.getMessage(), e);
-        }
+        // Asynchronously register all sub-directories with the watch-service, and,
+        // inform the registered PathChangeListener
+        directoryWalkerExecutor.execute(() -> {
+            try {
+                walkFileTree(pDirectory, new DirectoryInitializerFileVisitor(
+                        pDispatcher, pNewRootOrNull));
+            } catch (final IOException e) {
+                logger.warn(e.getMessage(), e);
+            } catch (final RuntimeException e) {
+                logger.error(e.getMessage(), e);
+            }
+        });
     }
 
     /**

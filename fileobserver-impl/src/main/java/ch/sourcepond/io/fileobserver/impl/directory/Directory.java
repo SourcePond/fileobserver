@@ -56,7 +56,7 @@ public abstract class Directory {
      * the currently focused listener. Only direct children will be considered,
      * sub-directories and non-regular files will be ignored.
      */
-    public void streamDirectoryAndForceInform(final EventDispatcher pDispatcher) {
+    private void streamDirectoryAndForceInform(final EventDispatcher pDispatcher) {
         try (final DirectoryStream<Path> stream = newDirectoryStream(getPath(), Files::isRegularFile)) {
             stream.forEach(p ->
                     createKeys(p).forEach(k ->
@@ -206,6 +206,16 @@ public abstract class Directory {
                 return true;
             });
         }
+    }
+
+    /**
+     * Iterates over the files contained by this directory and creates tasks which will be executed
+     * sometime in the future. Such a task will inform the listener specified through its
+     * {@link PathChangeListener#modified(PathChangeEvent)} method. Note: only direct children will be
+     * considered, sub-directories and non-regular files will be ignored.
+     */
+    public void forceInform(final EventDispatcher pDispatcher) {
+        getFactory().executeDirectoryWalkerTask(() -> streamDirectoryAndForceInform(pDispatcher));
     }
 
     /**

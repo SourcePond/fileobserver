@@ -123,17 +123,17 @@ public class VirtualRoot implements RelocationObserver {
         final ExecutorService dispatcherExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.dispatcherexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
-                build(Executors::newSingleThreadExecutor);
+                build(Executors::newCachedThreadPool);
         final ExecutorService listenerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.listenerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
-                build(Executors::newSingleThreadExecutor);
+                build(Executors::newCachedThreadPool);
         manager.setExecutors(dispatcherExecutor, listenerExecutor);
         final ExecutorService directoryWalkerExecutor = pFactory.newBuilder(ExecutorService.class).
                 setFilter("(sourcepond.io.fileobserver.directorywalkerexecutor=*)").
                 setShutdownHook(ExecutorService::shutdown).
-                build(Executors::newSingleThreadExecutor);
-        dedicatedFileSystemFactory.setDispatcherExecutor(dispatcherExecutor);
+                build(Executors::newCachedThreadPool);
+        dedicatedFileSystemFactory.setExecutors(directoryWalkerExecutor, dispatcherExecutor);
     }
 
     private void doAddListener(final PathChangeListener pListener) {
@@ -291,7 +291,7 @@ public class VirtualRoot implements RelocationObserver {
      * @param pDedicatedFileSystem
      */
     public void removeFileSystem(final DedicatedFileSystem pDedicatedFileSystem) {
-        for (final Iterator<Map.Entry<FileSystem, DedicatedFileSystem>> it = children.entrySet().iterator(); it.hasNext(); ) {
+        for (final Iterator<Map.Entry<FileSystem, DedicatedFileSystem>> it = children.entrySet().iterator() ; it.hasNext() ; ) {
             final Map.Entry<FileSystem, DedicatedFileSystem> next = it.next();
             if (pDedicatedFileSystem.equals(next.getValue())) {
                 manager.removeFileSystem(next.getKey());

@@ -47,8 +47,7 @@ class FileSystemEvent implements Delayed {
 
     @Override
     public long getDelay(final TimeUnit unit) {
-        final long delayMillis = dueTime.toEpochMilli() - now().toEpochMilli();
-        return unit.convert(delayMillis, MILLISECONDS);
+        return unit.convert(dueTime.toEpochMilli() - now().toEpochMilli(), MILLISECONDS);
     }
 
     @Override
