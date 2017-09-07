@@ -112,8 +112,8 @@ public class SubDirectory extends Directory {
 
     @Override
     public boolean hasKeys() {
-        final Collection<WatchedDirectory> keys = watchedDirectoriesOrNull;
-        return keys != null && !keys.isEmpty();
+        final Collection<WatchedDirectory> watchedDirs = watchedDirectoriesOrNull;
+        return watchedDirs != null && !watchedDirs.isEmpty();
     }
 
     @Override
