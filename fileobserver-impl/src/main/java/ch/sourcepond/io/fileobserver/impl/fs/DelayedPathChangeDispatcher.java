@@ -61,7 +61,7 @@ public class DelayedPathChangeDispatcher implements Closeable {
     private void dispatchEvent(final FileSystemEvent pEvent) {
         final WatchEvent.Kind<?> kind = pEvent.getKind();
         final Path child = pEvent.getPath();
-        LOG.debug("Received event of kind {} for path {}", kind, pEvent.getPath());
+        LOG.debug("Received event of kind {} for path {}", kind, child);
         try {
             if (ENTRY_CREATE == kind) {
                 pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, true);
@@ -79,10 +79,7 @@ public class DelayedPathChangeDispatcher implements Closeable {
         final Path directory = (Path) pWatchKey.watchable();
         for (final WatchEvent<?> event : pWatchKey.pollEvents()) {
             final WatchEvent.Kind<?> kind = event.kind();
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(format("Changed detected [%s]: %s, context: %s", kind, directory, event.context()));
-            }
+            LOG.debug("Changed detected [{}]: {}, context: {}", kind, directory, event.context());
 
             // An OVERFLOW event can
             // occur regardless if events
