@@ -215,7 +215,15 @@ public class PathChangeListenerTest extends DirectorySetup {
     public void unregisterAndRegisterAdditionalWatchedDirectory() throws Exception {
         // Insure listener gets informed about unregistration
         barrier.unregisterService(watchedDirectoryRegistration);
-        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_network_networkConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_network_dhcpConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_etc_manConf)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_jeff_documentTxt)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_jeff_letterXml)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_home_indexIdx)));
+        verify(listener, timeout(15000)).discard(key(ROOT, root.relativize(root_configProperties)));
+        verifyNoMoreInteractions(listener);
+        reset(listener);
 
         // Now, listener should be informed about newly registered root
         watchedDirectoryRegistration = barrier.registerService(WatchedDirectory.class, watchedDirectory);

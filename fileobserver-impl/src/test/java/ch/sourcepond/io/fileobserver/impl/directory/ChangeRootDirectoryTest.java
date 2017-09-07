@@ -17,11 +17,15 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 
 import static ch.sourcepond.io.checksum.api.Algorithm.SHA256;
 import static java.lang.Thread.sleep;
@@ -98,10 +102,15 @@ public class ChangeRootDirectoryTest extends DirectoryTest {
 
     @Test
     public void forceInformModifiedAfterSubRootUnregistration() throws Exception {
-        existing_root_11.removeWatchedDirectory(dispatcher, watchedSubDir1);
-        existing_root_12.removeWatchedDirectory(dispatcher, watchedSubDir2);
-        verify(listener, timeout(500)).discard(toKey(SUB_DIR_KEY1, subdir_11_path, subdir_11_path));
-        verify(listener, timeout(500)).discard(toKey(SUB_DIR_KEY2, subdir_12_path, subdir_12_path));
+        existing_root_11.getResource(testfile_111_txt_path);
+        existing_root_12.getResource(testfile_121_txt_path);
+        existing_root_11.removeWatchedDirectory(dispatcher, watchedSubDir1, potentialSubDirs);
+        existing_root_12.removeWatchedDirectory(dispatcher, watchedSubDir2, potentialSubDirs);
+
+        verify(listener, timeout(500)).discard(toKey(SUB_DIR_KEY1, subdir_11_path, testfile_111_txt_path));
+        verify(listener, timeout(500)).discard(toKey(SUB_DIR_KEY2, subdir_12_path, testfile_121_txt_path));
+
+
         existing_root_11.informIfChanged(dispatcher, new_root, testfile_111_txt_path, false);
         existing_root_12.informIfChanged(dispatcher, new_root, testfile_121_txt_path, false);
         final InOrder order = inOrder(listener);

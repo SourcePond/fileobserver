@@ -68,16 +68,20 @@ public class SubDirectory extends Directory {
     }
 
     @Override
-    public boolean remove(final WatchedDirectory pDirectoryKey) {
-        boolean rc = false;
+    public void remove(final WatchedDirectory pDirectoryKey) {
         final Collection<WatchedDirectory> keys = watchedDirectoriesOrNull;
         if (keys != null) {
-            rc = keys.remove(pDirectoryKey);
+            keys.remove(pDirectoryKey);
             if (keys.isEmpty()) {
                 watchedDirectoriesOrNull = null;
             }
         }
-        return rc;
+    }
+
+    @Override
+    boolean canBeRemoved(WatchedDirectory pWatchedDirectory) {
+        final Collection<WatchedDirectory> keys = watchedDirectoriesOrNull;
+        return keys != null && keys.contains(pWatchedDirectory);
     }
 
     @Override

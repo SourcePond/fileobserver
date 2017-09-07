@@ -17,6 +17,7 @@ import ch.sourcepond.io.checksum.api.Resource;
 import ch.sourcepond.io.fileobserver.api.DispatchKey;
 import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -177,11 +178,12 @@ public class FileChangeDirectoryTest extends DirectoryTest {
      */
     @Test
     public void checkDiscardAfterDirectoryKeyRemoval() throws IOException, InterruptedException {
-        root_dir.removeWatchedDirectory(dispatcher, watchedRootDir);
-        verify(listener, timeout(1000)).discard(toKey(root_dir_path, root_dir_path));
+        root_dir.getResource(testfile_txt_path);
+        root_dir.removeWatchedDirectory(dispatcher, watchedRootDir, potentialSubDirs);
+        verify(listener, timeout(1000)).discard(toKey(root_dir_path, testfile_txt_path));
 
         // This should have no effect
-        root_dir.removeWatchedDirectory(dispatcher, watchedRootDir);
+        root_dir.removeWatchedDirectory(dispatcher, watchedRootDir, potentialSubDirs);
         verify(listener).restrict(notNull(), same(root_dir_path.getFileSystem()));
         verifyNoMoreInteractions(listener);
     }

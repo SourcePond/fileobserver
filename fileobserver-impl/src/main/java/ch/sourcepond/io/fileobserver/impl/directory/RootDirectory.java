@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Represents a root-directory i.e. a directory which has been registered to watched.
  */
 public class RootDirectory extends Directory {
-    private final Collection<WatchedDirectory> directoryKeys;
+    private final Collection<WatchedDirectory> watchedDirectores;
     private final DirectoryFactory factory;
 
     RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey) {
@@ -38,12 +38,12 @@ public class RootDirectory extends Directory {
      *
      * @param pFactory
      * @param pWatchKey
-     * @param pDirectoryKeysOrNull
+     * @param pWatchedDirectoriesOrNull
      */
-    RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey, final Collection<WatchedDirectory> pDirectoryKeysOrNull) {
+    RootDirectory(final DirectoryFactory pFactory, final WatchKey pWatchKey, final Collection<WatchedDirectory> pWatchedDirectoriesOrNull) {
         super(pWatchKey);
         factory = pFactory;
-        directoryKeys = pDirectoryKeysOrNull == null ? new CopyOnWriteArraySet<>() : pDirectoryKeysOrNull;
+        watchedDirectores = pWatchedDirectoriesOrNull == null ? new CopyOnWriteArraySet<>() : pWatchedDirectoriesOrNull;
     }
 
     @Override
@@ -64,23 +64,27 @@ public class RootDirectory extends Directory {
      */
     @Override
     public void addWatchedDirectory(final WatchedDirectory pDirectoryKey) {
-        directoryKeys.add(pDirectoryKey);
+        watchedDirectores.add(pDirectoryKey);
     }
 
     /**
      * Removes the directory-key specfied from this directory instance.
      *
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
-     * @return {@code true} if this directory does not contain directory-keys anymore, {@code false} otherwise
      */
     @Override
-    public boolean remove(final WatchedDirectory pDirectoryKey) {
-        return directoryKeys.remove(pDirectoryKey);
+    public void remove(final WatchedDirectory pDirectoryKey) {
+        watchedDirectores.remove(pDirectoryKey);
+    }
+
+    @Override
+    boolean canBeRemoved(WatchedDirectory pWatchedDirectory) {
+        return watchedDirectores.contains(pWatchedDirectory);
     }
 
     @Override
     Collection<WatchedDirectory> getWatchedDirectories() {
-        return directoryKeys;
+        return watchedDirectores;
     }
 
     /*
@@ -100,12 +104,12 @@ public class RootDirectory extends Directory {
 
     @Override
     public boolean hasKeys() {
-        return !directoryKeys.isEmpty();
+        return !watchedDirectores.isEmpty();
     }
 
     @Override
     public Directory rebase(final Directory pBaseDirectory) {
-        return new SubDirectory(pBaseDirectory, getWatchKey(), directoryKeys);
+        return new SubDirectory(pBaseDirectory, getWatchKey(), watchedDirectores);
     }
 
     @Override

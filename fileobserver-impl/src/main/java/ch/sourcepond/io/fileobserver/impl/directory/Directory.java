@@ -151,15 +151,32 @@ public abstract class Directory {
     abstract long getTimeout();
 
     /**
+     * @param pWatchedDirectory
+     * @return {@code true} if the directory-key specified was removed, {@code false} otherwise.
+     */
+    abstract boolean canBeRemoved(WatchedDirectory pWatchedDirectory);
+
+    /**
      * <p><em>INTERNAL API, only ot be used in class hierarchy</em></p>
      * <p>
      * Removes the directory-key specified from this directory instance. If no such
      * key is registered nothing happens.
      *
      * @param pDirectoryKey Directory-key to be removed, must be not {@code null}
-     * @return {@code true} if the directory-key specified was removed, {@code false} otherwise.
      */
-    abstract boolean remove(WatchedDirectory pDirectoryKey);
+    abstract void remove(WatchedDirectory pDirectoryKey);
+
+    private void discardResourcesOfRemovedWatchedDirectory(final WatchedDirectory pWatchedDirectory,
+                                                           final EventDispatcher pDispatcher,
+                                                           final Directory pParent,
+                                                           final Collection<Directory> pPotentialSubDirs) {
+        pPotentialSubDirs.forEach(potentialSubDir -> {
+            if (pParent.isDirectParentOf(potentialSubDir)) {
+                potentialSubDir.informDiscardAll(pDispatcher, pWatchedDirectory);
+                discardResourcesOfRemovedWatchedDirectory(pWatchedDirectory, pDispatcher, potentialSubDir, pPotentialSubDirs);
+            }
+        });
+    }
 
     /**
      * Removes the watched-directory specified from this directory instance and informs
@@ -168,16 +185,14 @@ public abstract class Directory {
      *
      * @param pWatchedDirectory Directory-key to be removed, must be not {@code null}
      */
-    public void removeWatchedDirectory(final EventDispatcher pDispatcher, final WatchedDirectory pWatchedDirectory) {
-        // It is important to evaluate to relative path before the
-        // has been removed otherwise the resulting key has not the
-        // expected value!
-        final Path relativePath = relativizeAgainstRoot(pWatchedDirectory, getPath());
-
+    public void removeWatchedDirectory(final EventDispatcher pDispatcher,
+                                       final WatchedDirectory pWatchedDirectory,
+                                       final Collection<Directory> pPotentialSubDirs) {
         // Now, the key can be safely removed
-        if (remove(pWatchedDirectory) && pDispatcher.hasListeners()) {
-            final DispatchKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
-            pDispatcher.discard(key);
+        if (canBeRemoved(pWatchedDirectory)) {
+            informDiscardAll(pDispatcher, pWatchedDirectory);
+            discardResourcesOfRemovedWatchedDirectory(pWatchedDirectory, pDispatcher, this, pPotentialSubDirs);
+            remove(pWatchedDirectory);
         }
     }
 
@@ -225,6 +240,16 @@ public abstract class Directory {
      */
     public Path getPath() {
         return (Path) getWatchKey().watchable();
+    }
+
+    private void informDiscardAll(final EventDispatcher pDispatcher, final WatchedDirectory pWatchedDirectory) {
+        if (pDispatcher.hasListeners()) {
+            resources.keySet().forEach(p -> {
+                final Path relativePath = relativizeAgainstRoot(pWatchedDirectory, p);
+                final DispatchKey key = getFactory().newKey(pWatchedDirectory.getKey(), relativePath);
+                pDispatcher.discard(key);
+            });
+        }
     }
 
     /**

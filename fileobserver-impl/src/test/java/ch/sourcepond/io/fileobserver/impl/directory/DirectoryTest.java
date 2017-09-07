@@ -27,6 +27,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 
 import static java.nio.file.FileSystems.getDefault;
@@ -43,6 +45,7 @@ public abstract class DirectoryTest extends CopyResourcesTest {
     static final Object ROOT_DIR_KEY = "rootDirKey";
     static final Object SUB_DIR_KEY1 = "subDirKey1";
     static final Object SUB_DIR_KEY2 = "subDirKey2";
+    final Collection<Directory> potentialSubDirs = new ArrayList<>();
     final WatchedDirectory watchedRootDir = mock(WatchedDirectory.class);
     final WatchedDirectory watchedSubDir1 = mock(WatchedDirectory.class);
     final WatchedDirectory watchedSubDir2 = mock(WatchedDirectory.class);

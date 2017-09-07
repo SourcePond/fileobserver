@@ -160,7 +160,7 @@ public class DedicatedFileSystemTest {
         fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1);
 
         final InOrder order = inOrder(rootDir1, rebase);
-        order.verify(rootDir1).removeWatchedDirectory(defaultDispatcher, watchedDirectory1);
+        order.verify(rootDir1).removeWatchedDirectory(defaultDispatcher, watchedDirectory1, dirs.values());
         order.verify(rootDir1).hasKeys();
         order.verifyNoMoreInteractions();
     }
@@ -172,7 +172,7 @@ public class DedicatedFileSystemTest {
         fs.unregisterRootDirectory(rootDirPath1, watchedDirectory1);
 
         final InOrder order = inOrder(rootDir1, rebase);
-        order.verify(rootDir1).removeWatchedDirectory(defaultDispatcher, watchedDirectory1);
+        order.verify(rootDir1).removeWatchedDirectory(defaultDispatcher, watchedDirectory1, dirs.values());
         order.verify(rootDir1).hasKeys();
         order.verify(rebase).cancelAndRebaseDiscardedDirectory(rootDir1);
         order.verifyNoMoreInteractions();
@@ -213,7 +213,7 @@ public class DedicatedFileSystemTest {
         fs.destinationChanged(watchedDirectory1, rootDirPath1);
 
         final InOrder order = inOrder(rootDir1, pathChangeHandler, diffEventDispatcher);
-        order.verify(rootDir1).removeWatchedDirectory(diffEventDispatcher, watchedDirectory1);
+        order.verify(rootDir1).removeWatchedDirectory(diffEventDispatcher, watchedDirectory1, dirs.values());
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
         order.verify(diffEventDispatcher).close();
     }

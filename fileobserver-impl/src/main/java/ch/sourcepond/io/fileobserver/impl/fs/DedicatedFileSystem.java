@@ -129,7 +129,7 @@ public class DedicatedFileSystem implements Closeable {
             LOG.warn(format("Directory %s is unknown; nothing unregistered", pWatchedDirectory.getDirectory()));
         } else {
             // Remove the directory-key of the watched directory from the key list
-            dir.removeWatchedDirectory(pDispatcher, pWatchedDirectory);
+            dir.removeWatchedDirectory(pDispatcher, pWatchedDirectory, dirs.values());
 
             // If all watched-directories which referenced the directory have been de-registered,
             // it's time to clean-up.
