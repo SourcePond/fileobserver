@@ -14,6 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.PathChangeListener;
+import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.directory.RootDirectory;
@@ -50,8 +51,8 @@ public class DedicatedFileSystemTest {
     private static final Object DIRECTORY_KEY_1 = "dirKey1";
     private static final Object DIRECTORY_KEY_2 = "dirKey2";
     private final ConcurrentMap<Path, Directory> dirs = new ConcurrentHashMap<>();
-    private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private final ListenerManager manager = mock(ListenerManager.class);
+    private final DirectoryRegistrationWalker walker = mock(DirectoryRegistrationWalker.class);
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private final EventDispatcher defaultDispatcher = mock(EventDispatcher.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
@@ -61,11 +62,12 @@ public class DedicatedFileSystemTest {
     private final RootDirectory rootDir2 = mock(RootDirectory.class);
     private final DirectoryRebase rebase = mock(DirectoryRebase.class);
     private final PathChangeListener observer = mock(PathChangeListener.class);
-    private final DelayedPathChangeDispatcher delayedPathChangeDispatcher = mock(DelayedPathChangeDispatcher.class);
+    private final FsEventDispatcher fsEventDispatcher = mock(FsEventDispatcher.class);
     private final Path rootDirPath1 = mock(Path.class);
     private final Path rootDirPath2 = mock(Path.class);
     private final WatchKey rootWatchKey1 = mock(WatchKey.class);
     private final WatchServiceWrapper wrapper = mock(WatchServiceWrapper.class);
+    private final VirtualRoot root = mock(VirtualRoot.class);
     private DedicatedFileSystem fs;
 
     @Before
@@ -94,7 +96,8 @@ public class DedicatedFileSystemTest {
         }).when(rebase).rebaseExistingRootDirectories(notNull());
 
         // Setup fs
-        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager, pathChangeHandler, delayedPathChangeDispatcher, dirs);
+        fs = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager,
+                fsEventDispatcher, root, walker, dirs);
     }
 
     @Test
@@ -117,8 +120,8 @@ public class DedicatedFileSystemTest {
         fs.registerRootDirectory(watchedDirectory1);
         fs.registerRootDirectory(watchedDirectory2);
 
-        final InOrder order = inOrder(pathChangeHandler, rootDir1);
-        order.verify(pathChangeHandler).rootAdded(defaultDispatcher, rootDir1);
+        final InOrder order = inOrder(walker, rootDir1);
+        order.verify(walker).rootAdded(defaultDispatcher, rootDir1);
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory2);
         order.verifyNoMoreInteractions();
     }
@@ -127,10 +130,10 @@ public class DedicatedFileSystemTest {
     public void registerRootDirectory() throws IOException {
         fs.registerRootDirectory(watchedDirectory1);
         assertSame(rootDir1, fs.getDirectory(rootDirPath1));
-        final InOrder order = inOrder(rebase, pathChangeHandler, rootDir1);
+        final InOrder order = inOrder(rebase, walker, rootDir1);
         order.verify(rebase).rebaseExistingRootDirectories(rootDir1);
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
-        order.verify(pathChangeHandler).rootAdded(defaultDispatcher, rootDir1);
+        order.verify(walker).rootAdded(defaultDispatcher, rootDir1);
         order.verifyNoMoreInteractions();
     }
 
@@ -182,9 +185,9 @@ public class DedicatedFileSystemTest {
     public void close() {
         dirs.put(rootDirPath1, rootDir1);
         fs.close();
-        verify(delayedPathChangeDispatcher, timeout(2000)).close();
+        verify(fsEventDispatcher, timeout(2000)).close();
         assertTrue(dirs.isEmpty());
-        verify(pathChangeHandler).removeFileSystem(fs);
+        verify(root).removeFileSystem(fs);
     }
 
 
@@ -212,7 +215,7 @@ public class DedicatedFileSystemTest {
         fs.registerRootDirectory(watchedDirectory1);
         fs.destinationChanged(watchedDirectory1, rootDirPath1);
 
-        final InOrder order = inOrder(rootDir1, pathChangeHandler, diffEventDispatcher);
+        final InOrder order = inOrder(rootDir1, fsEventDispatcher, diffEventDispatcher);
         order.verify(rootDir1).removeWatchedDirectory(diffEventDispatcher, watchedDirectory1, dirs.values());
         order.verify(rootDir1).addWatchedDirectory(watchedDirectory1);
         order.verify(diffEventDispatcher).close();

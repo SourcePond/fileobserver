@@ -50,6 +50,7 @@ public class DedicatedFileSystemFactoryTest {
 
     @Before
     public void setup() throws IOException {
+        factory.setConfig(config);
         when(fs.provider()).thenReturn(provider);
         when(fs.newWatchService()).thenReturn(watchService);
     }
@@ -76,7 +77,6 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void setConfig() {
-        factory.setConfig(config);
         verify(directoryFactory).setConfig(config);
     }
 

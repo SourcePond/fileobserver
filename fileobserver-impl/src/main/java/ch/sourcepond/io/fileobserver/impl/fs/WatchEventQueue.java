@@ -28,7 +28,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 /**
  *
  */
-class WatchEventQueue {
+final class WatchEventQueue {
     private final Deque<WatchEvent.Kind<?>> queue = new LinkedList<>();
 
     private boolean isReCreate(final WatchEvent.Kind<?> pKind) {

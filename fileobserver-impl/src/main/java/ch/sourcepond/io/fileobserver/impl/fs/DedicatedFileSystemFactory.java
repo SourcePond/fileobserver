@@ -81,21 +81,20 @@ public class DedicatedFileSystemFactory {
                 directoryFactory,
                 directoryWalkerExecutor,
                 dirs);
-        final PathChangeHandler pathChangeHandler = new PathChangeHandler(pVirtualRoot, walker, dirs);
-
-        final DelayedPathChangeDispatcher dispatcher = new DelayedPathChangeDispatcher(
+        final FsEventDispatcher dispatcher = new FsEventDispatcher(
+                dirs,
+                walker,
                 wrapper,
-                pathChangeHandler,
                 manager
         );
-
-        DedicatedFileSystem fs = new DedicatedFileSystem(
+        final DedicatedFileSystem fs = new DedicatedFileSystem(
                 directoryFactory,
                 wrapper,
                 new DirectoryRebase(directoryFactory, wrapper, dirs),
                 manager,
-                pathChangeHandler,
                 dispatcher,
+                pVirtualRoot,
+                walker,
                 dirs);
         fs.setConfig(config);
         fs.start();

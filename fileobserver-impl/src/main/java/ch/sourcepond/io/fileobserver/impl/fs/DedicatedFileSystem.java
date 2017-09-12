@@ -15,6 +15,7 @@ package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
 import ch.sourcepond.io.fileobserver.impl.Config;
+import ch.sourcepond.io.fileobserver.impl.VirtualRoot;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.DiffEventDispatcher;
@@ -37,26 +38,29 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DedicatedFileSystem implements Closeable {
     private static final Logger LOG = getLogger(DedicatedFileSystem.class);
     private final ConcurrentMap<Path, Directory> dirs;
-    private final DelayedPathChangeDispatcher dispatcher;
+    private final FsEventDispatcher dispatcher;
     private final DirectoryFactory directoryFactory;
     private final WatchServiceWrapper wrapper;
     private final DirectoryRebase rebase;
     private final ListenerManager manager;
-    private final PathChangeHandler pathChangeHandler;
+    private final DirectoryRegistrationWalker walker;
+    private final VirtualRoot root;
 
     DedicatedFileSystem(final DirectoryFactory pDirectoryFactory,
                         final WatchServiceWrapper pWrapper,
                         final DirectoryRebase pRebase,
                         final ListenerManager pManager,
-                        final PathChangeHandler pPathChangeHandler,
-                        final DelayedPathChangeDispatcher pDispatcher,
+                        final FsEventDispatcher pDispatcher,
+                        final VirtualRoot pRoot,
+                        final DirectoryRegistrationWalker pWalker,
                         final ConcurrentMap<Path, Directory> pDirs) {
-        pathChangeHandler = pPathChangeHandler;
         directoryFactory = pDirectoryFactory;
         wrapper = pWrapper;
         rebase = pRebase;
         manager = pManager;
         dispatcher = pDispatcher;
+        root = pRoot;
+        walker = pWalker;
         dirs = pDirs;
     }
 
@@ -66,9 +70,11 @@ public class DedicatedFileSystem implements Closeable {
 
     /**
      * <p>Iterates through all registered directories and passes all their files to the
-     * {@link ch.sourcepond.io.fileobserver.api.PathChangeListener#modified(PathChangeEvent)} of the observer specified. This is necessary for newly registered
-     * observers who need to know about all watched files. See {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and
-     * {@link PathChangeHandler#pathModified(EventDispatcher, Path, boolean)} to get an idea how directories are registered with this object.
+     * {@link ch.sourcepond.io.fileobserver.api.PathChangeListener#modified(PathChangeEvent)} of the observer specified.
+     * This is necessary for newly registered observers who need to know about all watched files. See
+     * {@link #registerRootDirectory(EventDispatcher, WatchedDirectory)} and to get an idea how directories are
+     * registered with this object.
+     *
      * <p>Note: it's guaranteed that the {@link Path} instances passed
      * to the observer are regular files (not directories).
      */
@@ -106,7 +112,7 @@ public class DedicatedFileSystem implements Closeable {
 
             // Register directories; important here is to pass the newly created root-directory
             // (otherwise PathChangeListener#supplement would not be called).
-            pathChangeHandler.rootAdded(pDispatcher, dir);
+            walker.rootAdded(pDispatcher, dir);
         } else {
             // VERY IMPORTANT: in any case, associate the directory with the watched-directory
             dir.addWatchedDirectory(pWatchedDirectory);
@@ -177,7 +183,7 @@ public class DedicatedFileSystem implements Closeable {
             dispatcher.close();
         } finally {
             dirs.clear();
-            pathChangeHandler.removeFileSystem(this);
+            root.removeFileSystem(this);
         }
     }
 
