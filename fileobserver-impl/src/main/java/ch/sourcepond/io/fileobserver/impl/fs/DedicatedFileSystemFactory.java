@@ -33,7 +33,7 @@ import java.util.concurrent.ExecutorService;
 public class DedicatedFileSystemFactory {
     private final DirectoryFactory directoryFactory;
     private final ListenerManager manager;
-    private final FileSystemEventFactory fileSystemEventFactory;
+    private volatile Config config;
 
     // Injected by SCR
     private volatile ExecutorService directoryWalkerExecutor;
@@ -43,21 +43,17 @@ public class DedicatedFileSystemFactory {
 
     // Constructor for BundleActivator
     public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
-                                      final ListenerManager pManager,
-                                      final FileSystemEventFactory pFileSystemEventFactory) {
+                                      final ListenerManager pManager) {
         directoryFactory = pDirectoryFactory;
         manager = pManager;
-        fileSystemEventFactory = pFileSystemEventFactory;
     }
 
     // Constructor for testing
     public DedicatedFileSystemFactory(final DirectoryFactory pDirectoryFactory,
                                       final ListenerManager pDispatcher,
-                                      final FileSystemEventFactory pFileSystemEventFactory,
                                       final ExecutorService pDirectoryWalkerExecutor) {
         directoryFactory = pDirectoryFactory;
         manager = pDispatcher;
-        fileSystemEventFactory = pFileSystemEventFactory;
         directoryWalkerExecutor = pDirectoryWalkerExecutor;
     }
 
@@ -90,8 +86,7 @@ public class DedicatedFileSystemFactory {
         final DelayedPathChangeDispatcher dispatcher = new DelayedPathChangeDispatcher(
                 wrapper,
                 pathChangeHandler,
-                manager,
-                fileSystemEventFactory
+                manager
         );
 
         DedicatedFileSystem fs = new DedicatedFileSystem(
@@ -102,12 +97,13 @@ public class DedicatedFileSystemFactory {
                 pathChangeHandler,
                 dispatcher,
                 dirs);
+        fs.setConfig(config);
         fs.start();
         return fs;
     }
 
     public void setConfig(final Config pConfig) {
-        fileSystemEventFactory.setConfig(pConfig);
+        config = pConfig;
         directoryFactory.setConfig(pConfig);
     }
 }

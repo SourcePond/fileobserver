@@ -23,8 +23,6 @@ import ch.sourcepond.io.fileobserver.spi.WatchedDirectory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.verification.Timeout;
-import org.mockito.verification.VerificationMode;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -44,9 +42,9 @@ import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,7 +62,6 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     private final EventDispatcher dispatcher = mock(EventDispatcher.class);
     private final PathChangeHandler pathChangeHandler = mock(PathChangeHandler.class);
     private final Config config = mock(Config.class);
-    private final FileSystemEventFactory eventFactory = new FileSystemEventFactory();
     private DedicatedFileSystem child;
     private volatile Throwable threadKiller;
     private Path file;
@@ -77,14 +74,14 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         when(manager.getDefaultDispatcher()).thenReturn(dispatcher);
         when(watchedDirectory.getDirectory()).thenReturn(root_dir_path);
         when(watchedDirectory.getKey()).thenReturn(DIRECTORY_KEY);
-        when(config.eventDispatchDelay()).thenReturn(1000L);
+        when(config.eventDispatchDelayMillis()).thenReturn(1000L);
         wrapper = new WatchServiceWrapper(root_dir_path.getFileSystem());
         key = wrapper.register(root_dir_path);
         when(directoryFactory.newRoot(key)).thenReturn(directory);
-        eventFactory.setConfig(config);
-        delayedPathChangeDispatcher = new DelayedPathChangeDispatcher(wrapper, this.pathChangeHandler, manager, eventFactory);
+        delayedPathChangeDispatcher = new DelayedPathChangeDispatcher(wrapper, this.pathChangeHandler, manager);
         child = new DedicatedFileSystem(directoryFactory, wrapper, rebase, manager,
                 pathChangeHandler, delayedPathChangeDispatcher, new ConcurrentHashMap<>());
+        child.setConfig(config);
         child.registerRootDirectory(watchedDirectory);
 
         file = root_dir_path.resolve(NEW_FILE_NAME);
@@ -106,10 +103,9 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
         }
     }
 
-    // TODO: Use pNew parameter and check test on Linux and macOS
-    private void changeContent(final Path pPath, final VerificationMode pVerification) throws Exception {
+    private void changeContent(final Path pPath) throws Exception {
         writeContent(pPath);
-        verify(pathChangeHandler, new Timeout(15000, pVerification)).pathModified(same(dispatcher), eq(pPath), anyBoolean());
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(pPath), anyBoolean());
         reset(pathChangeHandler);
     }
 
@@ -117,32 +113,33 @@ public class DedicatedFileSystemFileChangeTest extends CopyResourcesTest {
     public void verifyThreadNotKillWhenRuntimeExceptionOccurs() throws Exception {
         doThrow(RuntimeException.class).when(pathChangeHandler).pathModified(same(dispatcher), eq(file), anyBoolean());
         writeContent(file);
-        if ("Linux".equals(getProperty("os.name"))) {
-            verify(pathChangeHandler, new Timeout(15000, times(2))).pathModified(same(dispatcher), eq(file), anyBoolean());
-        } else {
-            verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(file), anyBoolean());
-        }
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(file), anyBoolean());
         assertNull(threadKiller);
     }
 
     @Test
     public void entryCreate() throws Exception {
-        if ("Linux".equals(getProperty("os.name"))) {
-            changeContent(file, times(2));
-        } else {
-            changeContent(file, times(1));
-        }
+        changeContent(file);
     }
 
     @Test
     public void entryModify() throws Exception {
-        changeContent(testfile_txt_path, times(1));
+        changeContent(testfile_txt_path);
+    }
+
+    @Test
+    public void entryReCreate() throws Exception {
+        entryCreate();
+        delete(testfile_txt_path);
+        writeContent(testfile_txt_path);
+        verify(pathChangeHandler, never()).pathDiscarded(same(dispatcher), eq(testfile_txt_path));
+        verify(pathChangeHandler, timeout(15000)).pathModified(same(dispatcher), eq(testfile_txt_path), anyBoolean());
     }
 
     @Test
     public void entryDelete() throws Exception {
         entryCreate();
         delete(file);
-        verify(pathChangeHandler, timeout(1500000)).pathDiscarded(same(dispatcher), eq(file));
+        verify(pathChangeHandler, timeout(15000)).pathDiscarded(same(dispatcher), eq(file));
     }
 }

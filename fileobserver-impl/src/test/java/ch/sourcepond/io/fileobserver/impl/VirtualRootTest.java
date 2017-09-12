@@ -102,7 +102,7 @@ public class VirtualRootTest {
     }
 
     @Test
-    public void setConfig() {
+    public void setConfig() throws Exception {
         verify(dedicatedFsFactory).setConfig(config);
         verify(manager).setConfig(config);
     }

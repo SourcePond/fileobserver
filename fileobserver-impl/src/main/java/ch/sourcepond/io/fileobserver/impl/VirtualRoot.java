@@ -21,7 +21,6 @@ import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.dispatch.DefaultDispatchKeyFactory;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystem;
 import ch.sourcepond.io.fileobserver.impl.fs.DedicatedFileSystemFactory;
-import ch.sourcepond.io.fileobserver.impl.fs.FileSystemEventFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.EventDispatcher;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
 import ch.sourcepond.io.fileobserver.spi.RelocationObserver;
@@ -66,10 +65,9 @@ public class VirtualRoot implements RelocationObserver {
     private final InitSwitch<PathChangeListener> observerInitSwitch = new InitSwitch<>(this::doAddListener);
     private final InitSwitch<KeyDeliveryHook> hooksInitSwitch = new InitSwitch<>(this::doAddHook);
     private final ListenerManager manager;
-    private final Map<Object, WatchedDirectory> watchtedDirectories = new ConcurrentHashMap<>();
+    private final Map<Object, WatchedDirectory> watchedDirectories = new ConcurrentHashMap<>();
     private final ConcurrentMap<FileSystem, DedicatedFileSystem> children = new ConcurrentHashMap<>();
     private final DedicatedFileSystemFactory dedicatedFileSystemFactory;
-    private final FileSystemEventFactory eventFactory = new FileSystemEventFactory();
 
 
     // Constructor for BundleActivator
@@ -78,8 +76,7 @@ public class VirtualRoot implements RelocationObserver {
         final DefaultDispatchKeyFactory keyFactory = new DefaultDispatchKeyFactory();
         dedicatedFileSystemFactory = new DedicatedFileSystemFactory(
                 new DirectoryFactory(keyFactory),
-                manager,
-                eventFactory);
+                manager);
     }
 
     // Constructor for testing
@@ -108,8 +105,8 @@ public class VirtualRoot implements RelocationObserver {
 
     @Modified
     public void setConfig(final Config pConfig) {
+        children.values().forEach(c -> c.setConfig(pConfig));
         dedicatedFileSystemFactory.setConfig(pConfig);
-        eventFactory.setConfig(pConfig);
         manager.setConfig(pConfig);
     }
 
@@ -197,10 +194,10 @@ public class VirtualRoot implements RelocationObserver {
         }
 
         // Insure that the directory-key is unique
-        if (watchtedDirectories.containsKey(key)) {
-            throw new IllegalArgumentException(format("Key %s already used by %s", key, watchtedDirectories.get(key)));
+        if (watchedDirectories.containsKey(key)) {
+            throw new IllegalArgumentException(format("Key %s already used by %s", key, watchedDirectories.get(key)));
         }
-        watchtedDirectories.put(key, pWatchedDirectory);
+        watchedDirectories.put(key, pWatchedDirectory);
 
         try {
             children.computeIfAbsent(directory.getFileSystem(),
@@ -246,7 +243,7 @@ public class VirtualRoot implements RelocationObserver {
             fs.unregisterRootDirectory(pWatchedDirectory.getDirectory(), pWatchedDirectory);
 
             // IMPORTANT: remove watched-directory with key specified.
-            watchtedDirectories.remove(key);
+            watchedDirectories.remove(key);
             pWatchedDirectory.removeObserver(this);
             LOG.info("Removed [{}:{}]", key, directory);
         }
@@ -262,7 +259,7 @@ public class VirtualRoot implements RelocationObserver {
         final Object key = requireNonNull(pWatchedDirectory.getKey(), KEY_IS_NULL);
         final Path directory = requireNonNull(pWatchedDirectory.getDirectory(), DIRECTORY_IS_NULL);
 
-        if (watchtedDirectories.replace(key, pWatchedDirectory) != null) {
+        if (watchedDirectories.replace(key, pWatchedDirectory) != null) {
             if (pPrevious.equals(directory)) {
                 LOG.info("Nothing changed; skipped destination change for {}", pPrevious);
             } else {

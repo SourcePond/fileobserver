@@ -13,16 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.listener.ListenerManager;
 import org.slf4j.Logger;
 
 import java.io.Closeable;
-import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
-import java.util.concurrent.DelayQueue;
-import java.util.function.Consumer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
@@ -30,54 +31,57 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
+import static java.util.concurrent.Executors.newScheduledThreadPool;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  *
  */
-public class DelayedPathChangeDispatcher implements Closeable {
-
+class DelayedPathChangeDispatcher implements Closeable {
     private static final Logger LOG = getLogger(DelayedPathChangeDispatcher.class);
     private final WatchServiceWrapper wrapper;
     private final PathChangeHandler pathChangeHandler;
     private final ListenerManager manager;
-    private final FileSystemEventFactory eventFactory;
     private final Thread receiverThread;
-    private final Thread dispatcherThread;
-    private final DelayQueue<FileSystemEvent> events = new DelayQueue<>();
+    private final ScheduledExecutorService executor = newScheduledThreadPool(1);
+    private final ConcurrentMap<Path, WatchEventQueue> queues = new ConcurrentHashMap<>();
+    private volatile Config config;
 
     DelayedPathChangeDispatcher(final WatchServiceWrapper pWrapper,
                                 final PathChangeHandler pPathChangeHandler,
-                                final ListenerManager pManager,
-                                final FileSystemEventFactory pEventFactory) {
+                                final ListenerManager pManager) {
         wrapper = pWrapper;
         pathChangeHandler = pPathChangeHandler;
         manager = pManager;
-        eventFactory = pEventFactory;
         receiverThread = new Thread(this::receive, format("fs-event receiver %s", wrapper));
-        dispatcherThread = new Thread(this::dispatch, format("fs-event dispatcher %s", wrapper));
     }
 
-    private void dispatchEvent(final FileSystemEvent pEvent) {
-        final WatchEvent.Kind<?> kind = pEvent.getKind();
-        final Path child = pEvent.getPath();
-        LOG.debug("Received event of kind {} for path {}", kind, child);
-        try {
-            if (ENTRY_CREATE == kind) {
-                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, true);
-            } else if (ENTRY_MODIFY == kind) {
-                pathChangeHandler.pathModified(manager.getDefaultDispatcher(), child, false);
-            } else if (ENTRY_DELETE == kind) {
-                pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), child);
-            }
-        } catch (final RuntimeException e) {
-            LOG.error(e.getMessage(), e);
+    private void dispatchEvent(final Path pFile) {
+        final WatchEventQueue queue = queues.remove(pFile);
+        if (queue == null) {
+            LOG.warn("No event queue found for {}, no events will be processed", pFile);
+            return;
         }
+        queue.processQueue(k -> {
+            LOG.debug("Received event of kind {} for path {}", k, pFile);
+            try {
+                if (ENTRY_CREATE == k) {
+                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), pFile, true);
+                } else if (ENTRY_MODIFY == k) {
+                    pathChangeHandler.pathModified(manager.getDefaultDispatcher(), pFile, false);
+                } else if (ENTRY_DELETE == k) {
+                    pathChangeHandler.pathDiscarded(manager.getDefaultDispatcher(), pFile);
+                }
+            } catch (final RuntimeException e) {
+                LOG.error(e.getMessage(), e);
+            }
+        });
     }
 
-    private void delayReceived(final WatchKey pWatchKey) {
-        final Path directory = (Path) pWatchKey.watchable();
-        for (final WatchEvent<?> event : pWatchKey.pollEvents()) {
+    private void delayEvents(final WatchKey pKey) {
+        final Path directory = (Path) pKey.watchable();
+        for (final WatchEvent<?> event : pKey.pollEvents()) {
             final WatchEvent.Kind<?> kind = event.kind();
             LOG.debug("Changed detected [{}]: {}, context: {}", kind, directory, event.context());
 
@@ -88,32 +92,19 @@ public class DelayedPathChangeDispatcher implements Closeable {
                 continue;
             }
 
-            final FileSystemEvent fsEvent = eventFactory.newEvent(kind,
-                    directory.resolve((Path) event.context()));
-            if (!events.contains(fsEvent)) {
-                events.add(fsEvent);
-            }
+            final Path file = directory.resolve((Path) event.context());
+            queues.computeIfAbsent(file, f -> {
+                final WatchEventQueue q = new WatchEventQueue();
+                executor.schedule(() -> dispatchEvent(f), config.eventDispatchDelayMillis(), MILLISECONDS);
+                return q;
+
+            }).push(kind);
         }
-
-        // The case when the WatchKey has been cancelled is
-        // already handled at a different place.
-        pWatchKey.reset();
-    }
-
-    private void shutdown(final Thread pThread) {
-        if (!pThread.isInterrupted()) {
-            pThread.interrupt();
-        }
-    }
-
-    private void startThread(final Thread pThread) {
-        pThread.setDaemon(true);
-        pThread.start();
     }
 
     public void start() {
-        startThread(dispatcherThread);
-        startThread(receiverThread);
+        receiverThread.setDaemon(true);
+        receiverThread.start();
     }
 
     /**
@@ -124,38 +115,28 @@ public class DelayedPathChangeDispatcher implements Closeable {
      */
     @Override
     public void close() {
-        shutdown(receiverThread);
-        shutdown(dispatcherThread);
+        receiverThread.interrupt();
+        executor.shutdown();
         wrapper.close();
     }
 
-    private void close(final Exception e) {
-        close();
-        LOG.debug(e.getMessage(), e);
-    }
-
-    private <T> void run(final Supplier<T> pSupplier, final Consumer<T> pConsumer) {
+    private void receive() {
         while (!currentThread().isInterrupted()) {
             try {
-                pConsumer.accept(pSupplier.get());
-            } catch (final ClosedWatchServiceException | InterruptedException e) {
-                close(e);
+                final WatchKey key = wrapper.take();
+                try {
+                    delayEvents(key);
+                } finally {
+                    key.reset();
+                }
+            } catch (final InterruptedException e) {
+                LOG.warn(e.getMessage(), e);
+                break;
             }
         }
-        LOG.info("Stopped {}", currentThread().getName());
     }
 
-    private void receive() {
-        run(wrapper::take, this::delayReceived);
-    }
-
-    private void dispatch() {
-        run(events::take, this::dispatchEvent);
-    }
-
-    @FunctionalInterface
-    private interface Supplier<T> {
-
-        T get() throws InterruptedException;
+    public void setConfig(Config pConfig) {
+        config = pConfig;
     }
 }

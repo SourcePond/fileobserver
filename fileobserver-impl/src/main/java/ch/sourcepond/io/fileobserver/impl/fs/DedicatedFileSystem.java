@@ -14,6 +14,7 @@ limitations under the License.*/
 package ch.sourcepond.io.fileobserver.impl.fs;
 
 import ch.sourcepond.io.fileobserver.api.PathChangeEvent;
+import ch.sourcepond.io.fileobserver.impl.Config;
 import ch.sourcepond.io.fileobserver.impl.directory.Directory;
 import ch.sourcepond.io.fileobserver.impl.directory.DirectoryFactory;
 import ch.sourcepond.io.fileobserver.impl.listener.DiffEventDispatcher;
@@ -57,6 +58,10 @@ public class DedicatedFileSystem implements Closeable {
         manager = pManager;
         dispatcher = pDispatcher;
         dirs = pDirs;
+    }
+
+    public void setConfig(final Config pConfig) {
+        dispatcher.setConfig(pConfig);
     }
 
     /**

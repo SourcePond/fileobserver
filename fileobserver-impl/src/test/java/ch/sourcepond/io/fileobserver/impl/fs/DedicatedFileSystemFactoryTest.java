@@ -45,9 +45,8 @@ public class DedicatedFileSystemFactoryTest {
     private final ExecutorService directoryWalkerExecutor = mock(ExecutorService.class);
     private final DirectoryFactory directoryFactory = mock(DirectoryFactory.class);
     private final ListenerManager dispatcher = mock(ListenerManager.class);
-    private final FileSystemEventFactory eventFactory  = mock(FileSystemEventFactory.class);
     private final DedicatedFileSystemFactory factory = new DedicatedFileSystemFactory(directoryFactory,
-            dispatcher, eventFactory, directoryWalkerExecutor);
+            dispatcher, directoryWalkerExecutor);
 
     @Before
     public void setup() throws IOException {
@@ -83,7 +82,7 @@ public class DedicatedFileSystemFactoryTest {
 
     @Test
     public void verifyActivatorConstructor() {
-        new DedicatedFileSystemFactory(directoryFactory, dispatcher, eventFactory);
+        new DedicatedFileSystemFactory(directoryFactory, dispatcher);
     }
 
     @Test
