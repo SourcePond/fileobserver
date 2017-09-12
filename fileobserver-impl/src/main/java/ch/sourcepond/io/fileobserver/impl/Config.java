@@ -35,5 +35,5 @@ public @interface Config {
             description = "Duration to wait until a received event is actually dispatched. Necessary" +
                     " to avoid duplicate events."
     )
-    long eventDispatchDelayMillis() default 1000L;
+    long eventDispatchDelayMillis() default 3000L;
 }
